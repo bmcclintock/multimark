@@ -10,7 +10,7 @@ multimarkClosed(Enc.Mat, data.type = "never", covs = data.frame(),
   burnin = 2000, taccept = 0.44, tuneadjust = 0.95, proppbeta = 0.1,
   propzp = 1, propsigmap = 1, npoints = 500, maxnumbasis = 1,
   a0delta = c(1, 1, 1), a0alpha = 1, b0alpha = 1, a = 25, mu0 = 0,
-  sigma2_mu0 = 100, initial.values = NULL, known = integer(),
+  sigma2_mu0 = 1.75, initial.values = NULL, known = integer(),
   divBasis = 100, divredBasis = 100, printlog = FALSE, ...)
 }
 \arguments{
@@ -68,7 +68,7 @@ multimarkClosed(Enc.Mat, data.type = "never", covs = data.frame(),
 
 \item{mu0}{Scaler or vector (of length k) specifying mean of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{mu0 = 0} .}
 
-\item{sigma2_mu0}{Scaler or vector (of length k) specifying variance of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{sigma2_mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{sigma2_mu0 = 100} .}
+\item{sigma2_mu0}{Scaler or vector (of length k) specifying variance of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{sigma2_mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{sigma2_mu0 = 1.75} .}
 
 \item{initial.values}{Optional list of \code{nchain} list(s) specifying intial values for parameters and latent variables. Default is \code{initial.values = NULL}, which causes initial values to be generated automatically. In addition to the parameters ("\code{pbeta}", "\code{N}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_zp}", "\code{zp}", and "\code{psi}"), initial values can be specified for the initial latent history frequencies ("\code{x}") and initial individual encounter history indices ("\code{H}") .}
 
