@@ -1,0 +1,48 @@
+citHeader("To cite the 'multimark' package in publications use:")
+
+year <- sub(".*(2[[:digit:]]{3})-.*", "\\1", meta$Date, perl = TRUE)
+vers <- paste("R package version", meta$Version)
+
+citEntry(entry="Manual",
+         title = "multimark: capture-mark-recapture analysis using multiple non-invasive marks",
+         author = personList(as.person("Brett McClintock")),
+         year = year,
+         note = vers,
+         textVersion =
+         paste("McClintock, B. T. (", year,
+               "). multimark: capture-mark-recapture analysis using multiple non-invasive marks. ",
+               vers, ".", sep="") )
+
+citEntry(entry="Article",
+         title = "Mark-recapture with multiple, non-invasive marks",
+         author = personList(as.person("S. J. Bonner"),
+                             as.person("J. Holmberg")),
+         year     = {2013},
+         journal = "Biometrics",
+         volume     = {69},
+         number     = {},
+         pages     = {766-775},
+
+         textVersion =
+         paste("Bonner, S. J. & Holmberg, J. (2013)",
+          "Mark-recapture with multiple, non-invasive marks.",
+               "Biometrics 69: 766-775")
+)
+
+citEntry(entry="Article",
+         title = "Integrated modeling of bilateral photo-identification data in mark-recapture analyses",
+         author = personList(as.person("B. T. McClintock"),
+                             as.person("P. B. Conn"),
+                             as.person("R. S. Alonso"),
+                             as.person("K. R. Crooks")),
+         year     = {2013},
+         journal = "Ecology",
+         volume     = {94},
+         number     = {7},
+         pages     = {1464-1471},
+
+         textVersion =
+         paste("McClintock, B. T., Conn, P. B., Alonso, R. S. & Crooks, K. R. (2013)",
+          "Integrated modeling of bilateral photo-identification data in mark-recapture analyses.",
+               "Ecology 94(7): 1464-1471")
+)

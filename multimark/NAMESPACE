@@ -1,0 +1,23 @@
+export(
+  multimarkClosed,
+  multimarkCJS,
+  processdata,
+  simdataClosed,
+  simdataCJS,
+  getfreq,
+  getprobsClosed,
+  getprobsCJS,
+  multimodelClosed,
+  multimodelCJS
+)
+
+import(parallel,Matrix,coda)
+
+importFrom(statmod,gauss.quad)
+importFrom(RMark,process.data)
+importFrom(RMark,make.design.data)
+importFrom(methods,setClass)
+importFrom("Brobdingnag",brob,as.brob,sum)
+importFrom(mvtnorm,dmvnorm)
+
+useDynLib(multimark,ClosedC,ProbitCJSC)
