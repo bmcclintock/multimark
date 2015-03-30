@@ -659,7 +659,7 @@ get_known<-function(known,Enc.Mat,naivex,data.type){
 #'  \code{data.type="always"} indicates both type 1 and type 2 encounters are always observed, but some encounter histories may still include only type 1 or type 2 encounters. Observed encounter histories can consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4). Latent encounter histories consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4).
 #'
 #' @param covs A data frame of temporal covariates for detection probabilities (ignored unless \code{mms=NULL}). The number of rows in the data frame must equal the number of sampling occasions. Covariate names cannot be "time", "age", or "h"; these names are reserved for temporal, behavioral, and individual effects when specifying \code{mod.p} and \code{mod.phi}.
-#' @param known Optional integer vector indicating whether the encounter history of an individual is known with certainty (i.e., the observed encounter history is the true encounter history). If specified, \code{known = c(v_1,v_2,...,v_M)} must be a vector of length \code{M = nrow(Enc.Mat)} where \code{v_i = 1} if the encounter history for individual \code{i} is known (\code{v_i = 0} otherwise). Note that known all-zero encounter histories (e.g., `000') are ignored.
+#' @param known Optional integer vector indicating whether the encounter history of an individual is known with certainty (i.e., the observed encounter history is the true encounter history). Encounter histories with at least one type 4 encounter are automatically assumed to be known, and \code{known} does not need to be specified unless there exist encounter histories that do not contain a type 4 encounter that happen to be known with certainty. If specified, \code{known = c(v_1,v_2,...,v_M)} must be a vector of length \code{M = nrow(Enc.Mat)} where \code{v_i = 1} if the encounter history for individual \code{i} is known (\code{v_i = 0} otherwise). Note that known all-zero encounter histories (e.g., `000') are ignored.
 #' @param divBasis Integer scaler for dividing up the matrix calculations when determining the possible set of basis vectors for updating the latent encounter histories (based on \code{data.type} and number of sampling occasions). Default is \code{divBasis=100}. For very large problems, increasing \code{divBasis} can help reduce memory requirements and speed up computations. For smaller problems, reducing \code{divBasis} can speed up computation.
 #' @param divredBasis Integer scaler for dividing up the matrix calculations when reducing the possible set of basis vectors to those that are needed (based on \code{Enc.Mat}) for updating the latent encounter histories. Default is \code{divredBasis=100}. For very large problems, increasing \code{divredBasis} can help reduce memory requirements and speed up computations. For smaller problems, reducing \code{divredBasis} can speed up computation.
 #' 
@@ -717,7 +717,9 @@ processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer(
   
   naivex<-getfreq(Enc.Mat,data.type)
   A<- get_A(noccas,data.type)
+  gc()
   Basis<-get_basis_vectors(noccas,A$Aprime,A$ivect,div=divBasis,data.type=data.type)
+  gc()
   C<-get_C(noccas,data.type=data.type)
   L<-get_L(noccas,data.type=data.type)
   redBasis<-reduced_basis(noccas,Basis,naivex,div=divredBasis,data.type=data.type)[,-1]
