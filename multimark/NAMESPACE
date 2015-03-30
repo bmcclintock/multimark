@@ -4,7 +4,6 @@ export(
   processdata,
   simdataClosed,
   simdataCJS,
-  getfreq,
   getprobsClosed,
   getprobsCJS,
   multimodelClosed,

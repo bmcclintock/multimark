@@ -18,7 +18,7 @@
 void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, double *phibeta0, double *phiprec0, double *phibeta, double *zp, double *sigma2_zp, double *zphi, double *sigma2_zphi, double *delta_1, double *delta_2, double *alpha, int *x, double *psi, int *H, int *z,
               int *noccas, int *M, double *a0delta, double *a0alpha, double *b0alpha, double *l0p, double *d0p, double *l0phi, double *d0phi,
               double *loglike,
-              int *Allhists, int *C, int *L, int *indBasis, int *ncolBasis, int *knownx, double *DMp, double *DMphi, int *pdim, int *phidim,
+              int *nHists, int *Allhists, int *C, int *L, int *indBasis, int *ncolBasis, int *knownx, double *DMp, double *DMphi, int *pdim, int *phidim,
               int *iter, int *thin, int *numbasis,
               int *modp_h, int *modphi_h, int *data_type, int *zpind, int *zphiind, int *zind, int *Hind, int *printlog)
 {
@@ -44,7 +44,7 @@ void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, doub
   int datatype = *data_type;
     
   int niter, th;
-  int J = pow(((datatype) ? 5.0 : 4.0), (double) (T+1));
+  int J = *nHists;
   
   niter = *iter;              /* Number of iterations in the Markov chain */
   th = *thin;                 /* Number of iterations for thinning */

@@ -311,9 +311,9 @@ mcmcCJS<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,
   if(link=="probit"){
     
     posterior <- .C(ProbitCJSC,as.integer(ichain),as.numeric(pbeta0),as.numeric(c(pprec0)),as.numeric(pbeta),as.numeric(phibeta0),as.numeric(c(phiprec0)),as.numeric(phibeta),as.numeric(zp),as.numeric(sigma2_zp),as.numeric(zphi),as.numeric(sigma2_zphi),as.numeric(delta_1),as.numeric(delta_2),as.numeric(alpha),as.integer(inits[[ichain]]$x),as.numeric(psi), as.integer(H), as.integer(z),
-                    as.integer(ncol(mms@Enc.Mat)), as.integer(M), as.numeric(a0delta), as.numeric(a0alpha), as.numeric(b0alpha),as.numeric(l0p),as.numeric(d0p),as.numeric(l0phi),as.numeric(d0phi),
+                    as.integer(noccas), as.integer(M), as.numeric(a0delta), as.numeric(a0alpha), as.numeric(b0alpha),as.numeric(l0p),as.numeric(d0p),as.numeric(l0phi),as.numeric(d0phi),
                     as.numeric(loglike),
-                    as.integer(mms@vAll.hists),as.integer(mms@C),as.integer(mms@L),as.integer(mms@indBasis-1), as.integer(mms@ncolbasis), as.integer(mms@knownx),as.numeric(as.vector(t(DMp))),as.numeric(as.vector(t(DMphi))),as.integer(dim(DMp)),as.integer(dim(DMphi)),
+                    as.integer(length(mms@vAll.hists)/noccas),as.integer(mms@vAll.hists),as.integer(mms@C),as.integer(mms@L),as.integer(mms@indBasis-1), as.integer(mms@ncolbasis), as.integer(mms@knownx),as.numeric(as.vector(t(DMp))),as.numeric(as.vector(t(DMphi))),as.integer(dim(DMp)),as.integer(dim(DMphi)),
                     as.integer(iter), as.integer(thin),as.integer(maxnumbasis),
                     as.integer(mod.p.h),as.integer(mod.phi.h),as.integer(mms@data.type=="sometimes"),as.integer(any(params=="zp")),as.integer(any(params=="zphi")),as.integer(any(params=="z")),as.integer(any(params=="H")),as.integer(printlog),NAOK = TRUE)
   } else {
@@ -322,7 +322,7 @@ mcmcCJS<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,
   names(posterior) <- c("ichain","pbeta0","pprec0","pbeta","phibeta0","phiprec0","phibeta", "zp", "sigma2_zp", "zphi", "sigma2_zphi", "delta_1","delta_2","alpha", "x","psi","H","z",
                         "noccas", "M","a0delta", "a0alpha", "b0alpha","l0p","d0p","l0phi","d0phi",
                         "loglike",
-                        "vAll.hists","C","L", "indBasis", "ncolBasis","knownx","DMp","DMphi","pdim","phidim",
+                        "nHists","vAll.hists","C","L", "indBasis", "ncolBasis","knownx","DMp","DMphi","pdim","phidim",
                         "iter", "thin", "maxnumbasis",
                         "mod.p.h","mod.phi.h","sometimes?","zp?","zphi?","z?","H?","printlog?")
   
@@ -642,9 +642,7 @@ processCJSchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin){
 #' @param b0alpha Specifies "shape2" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{b0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1).
 #' @param link Link function for survival and capture probabilities. Only probit link is currently implemented.
 #' @param initial.values Optional list of \code{nchain} list(s) specifying intial values for parameters and latent variables. Default is \code{initial.values = NULL}, which causes initial values to be generated automatically. In addition to the parameters ("\code{pbeta}", "\code{phibeta}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_zp}", "\code{sigma2_zphi}", "\code{zp}", "\code{zphi}", and "\code{psi}"), initial values can be specified for the initial latent history frequencies ("\code{x}") and initial individual encounter history indices ("\code{H}").
-#' @param known Optional integer vector indicating whether the encounter history of an individual is known with certainty (i.e., the observed encounter history is the true encounter history). If specified, \code{known = c(v_1,v_2,...,v_M)} must be a vector of length \code{M = nrow(Enc.Mat)} where \code{v_i = 1} if the encounter history for individual \code{i} (\eqn{H_i}) is known (\code{v_i = 0} otherwise). Note that known all-zero encounter histories (i.e., \code{v_i = 1} and \eqn{H_i = 1}) are not currently allowed.
-#' @param divBasis Integer scaler for dividing up the matrix calculations when determining the possible set of basis vectors for updating the latent encounter histories (based on \code{data.type} and number of sampling occasions). Default is \code{divBasis=100}. For very large problems, increasing \code{divBasis} can help reduce memory requirements and speed up computations. For smaller problems, reducing \code{divBasis} can speed up computation.
-#' @param divredBasis Integer scaler for dividing up the matrix calculations when reducing the possible set of basis vectors to those that are needed (based on \code{Enc.Mat}) for updating the latent encounter histories. Default is \code{divredBasis=100}. For very large problems, increasing \code{divredBasis} can help reduce memory requirements and speed up computations. For smaller problems, reducing \code{divredBasis} can speed up computation.
+#' @param known Optional integer vector indicating whether the encounter history of an individual is known with certainty (i.e., the observed encounter history is the true encounter history). Encounter histories with at least one type 4 encounter are automatically assumed to be known, and \code{known} does not need to be specified unless there exist encounter histories that do not contain a type 4 encounter that happen to be known with certainty (e.g., from independent telemetry studies). If specified, \code{known = c(v_1,v_2,...,v_M)} must be a vector of length \code{M = nrow(Enc.Mat)} where \code{v_i = 1} if the encounter history for individual \code{i} is known (\code{v_i = 0} otherwise). Note that known all-zero encounter histories (e.g., `000') are ignored.
 #' @param printlog Logical indicating whether to print the progress of chain(s) and any errors to a log file in the working directory. Updates are printed as 1\% increments of \code{iter} of each chain are completed. Setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-based"" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.
 #' @param ... Additional "\code{parameters}" arguments for specifying \code{mod.p} and \code{mod.phi}. See \code{\link[RMark]{make.design.data}}.
 #'
@@ -669,14 +667,14 @@ processCJSchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin){
 #' data <- simdataCJS()
 #' 
 #' #Fit default open population model
-#' sim.dot <- multimarkCJS(data$Enc.Mat)
+#' sim.dot <- multimarkCJS(data$Enc.Mat,nchains=2)
 #' 
-#' #Calculate capture and survival probabilities for each cohort and time
-#' pphi <- getprobsCJS(sim.dot)
-#' summary(pphi)}
-multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.p=~1,mod.phi=~1,parms=c("pbeta","phibeta","delta_1","delta_2"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,propphibeta=0.1,propzphi=1,propsigmaphi=1,maxnumbasis=1,pbeta0=0,pSigma0=100,phibeta0=0,phiSigma0=100,l0p=1,d0p=0.01,l0phi=1,d0phi=0.01,a0delta=c(1,1,1),a0alpha=1,b0alpha=1,initial.values=NULL,known=integer(),divBasis=100,divredBasis=100,link="probit",printlog=FALSE,...){
+#' #Posterior summary for monitored parameters
+#' summary(sim.dot$mcmc)
+#' plot(sim.dot$mcmc)}
+multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.p=~1,mod.phi=~1,parms=c("pbeta","phibeta","delta_1","delta_2"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,propphibeta=0.1,propzphi=1,propsigmaphi=1,maxnumbasis=1,pbeta0=0,pSigma0=100,phibeta0=0,phiSigma0=100,l0p=1,d0p=0.01,l0phi=1,d0phi=0.01,a0delta=c(1,1,1),a0alpha=1,b0alpha=1,initial.values=NULL,known=integer(),link="probit",printlog=FALSE,...){
   
-  if(is.null(mms)) mms <- processdata(Enc.Mat,data.type,covs,known,divBasis,divredBasis)
+  if(is.null(mms)) mms <- processdata(Enc.Mat,data.type,covs,known)
   if(class(mms)!="multimarksetup") stop("'mms' must be an object of class 'multimarksetup'")
   validObject(mms)
   

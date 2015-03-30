@@ -17,7 +17,7 @@
 void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double *z, double *sigma2_z, double *delta_1, double *delta_2, double *alpha, int *x, double *N, double *psi, int *H, 
               int *noccas, int *M, double *a0delta, double *a0alpha, double *b0alpha, double *A,
               double *Propsd, double *accept, double *posterior,
-              int *Allhists, int *C, int *indBasis, int *ncolBasis, int *knownx, double *DMp, double *DMc, int *pdim,
+              int *nHists, int *Allhists, int *C, int *indBasis, int *ncolBasis, int *knownx, double *DMp, double *DMc, int *pdim,
               int *iter, int *thin, int *adapt, int *bin, double *taccept, double *tuneadjust, int *numbasis,
               int *npoints, double *weights, double *nodes, int *mod_h, int *data_type, int *zind, int *Hind, int *printlog)
 {
@@ -41,7 +41,7 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
   int datatype = *data_type;
     
   int niter, th, ada, n;
-  int J = pow(((datatype) ? 5.0 : 4.0), (double) (T));
+  int J = *nHists;
   int indhist;
   
   niter = *iter;              /* Number of iterations in the Markov chain */

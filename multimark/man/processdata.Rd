@@ -5,7 +5,7 @@
 \title{Generate model inputs for fitting 'multimark' models}
 \usage{
 processdata(Enc.Mat, data.type = "never", covs = data.frame(),
-  known = integer(), divBasis = 100, divredBasis = 100)
+  known = integer())
 }
 \arguments{
 \item{Enc.Mat}{A matrix of observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions (ignored unless \code{mms=NULL}).}
@@ -20,11 +20,7 @@ processdata(Enc.Mat, data.type = "never", covs = data.frame(),
 
 \item{covs}{A data frame of temporal covariates for detection probabilities (ignored unless \code{mms=NULL}). The number of rows in the data frame must equal the number of sampling occasions. Covariate names cannot be "time", "age", or "h"; these names are reserved for temporal, behavioral, and individual effects when specifying \code{mod.p} and \code{mod.phi}.}
 
-\item{known}{Optional integer vector indicating whether the encounter history of an individual is known with certainty (i.e., the observed encounter history is the true encounter history). If specified, \code{known = c(v_1,v_2,...,v_M)} must be a vector of length \code{M = nrow(Enc.Mat)} where \code{v_i = 1} if the encounter history for individual \code{i} is known (\code{v_i = 0} otherwise). Note that known all-zero encounter histories (e.g., `000') are ignored.}
-
-\item{divBasis}{Integer scaler for dividing up the matrix calculations when determining the possible set of basis vectors for updating the latent encounter histories (based on \code{data.type} and number of sampling occasions). Default is \code{divBasis=100}. For very large problems, increasing \code{divBasis} can help reduce memory requirements and speed up computations. For smaller problems, reducing \code{divBasis} can speed up computation.}
-
-\item{divredBasis}{Integer scaler for dividing up the matrix calculations when reducing the possible set of basis vectors to those that are needed (based on \code{Enc.Mat}) for updating the latent encounter histories. Default is \code{divredBasis=100}. For very large problems, increasing \code{divredBasis} can help reduce memory requirements and speed up computations. For smaller problems, reducing \code{divredBasis} can speed up computation.}
+\item{known}{Optional integer vector indicating whether the encounter history of an individual is known with certainty (i.e., the observed encounter history is the true encounter history). Encounter histories with at least one type 4 encounter are automatically assumed to be known, and \code{known} does not need to be specified unless there exist encounter histories that do not contain a type 4 encounter that happen to be known with certainty (e.g., from independent telemetry studies). If specified, \code{known = c(v_1,v_2,...,v_M)} must be a vector of length \code{M = nrow(Enc.Mat)} where \code{v_i = 1} if the encounter history for individual \code{i} is known (\code{v_i = 0} otherwise). Note that known all-zero encounter histories (e.g., `000') are ignored.}
 }
 \value{
 An object of class \code{multimarksetup}.

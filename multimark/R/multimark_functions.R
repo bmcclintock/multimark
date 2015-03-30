@@ -47,41 +47,7 @@ setClass("multimarksetup", representation=list(Enc.Mat="matrix",data.type="chara
 
 tol <- 1.e-6
 
-#' Generate encounter history frequencies
-#'
-#' This function generates an ordered vector of encounter history frequencies 
-#' 
-#' @param Enc.Mat A matrix of observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions.
-#' @param data.type Specifies the encounter history data type. All data types include non-detections (type 0 encounter), type 1 encounter (e.g., left-side), and type 2 encounters (e.g., right-side). When both type 1 and type 2 encounters occur for the same individual within a sampling occasion, these can either be "non-simultaneous" (type 3 encounter) or "simultaneous" (type 4 encounter). Three data types are currently permitted:
-#' 
-#'  \code{data.type="never"} indicates both type 1 and type 2 encounters are never observed for the same individual within a sampling occasion, and observed encounter histories therefore include only type 1 or type 2 encounters (e.g., only left- and right-sided photographs were collected). Observed encounter histories can consist of non-detections (0), type 1 encounters (1), and type 2 encounters (2). See \code{\link{bobcat}}. Latent encounter histories consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 3 encounters (3).
-#'
-#'  \code{data.type="sometimes"} indicates both type 1 and type 2 encounters are sometimes observed (e.g., both-sided photographs are sometimes obtained, but not necessarily for all individuals). Observed encounter histories can consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), type 3 encounters (3), and type 4 encounters (4). Type 3 encounters can only be observed when an individual has at least one type 4 encounter. Latent encounter histories consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), type 3 encounters (3), and type 4 encounters (4). 
-#'
-#'  \code{data.type="always"} indicates both type 1 and type 2 encounters are always observed, but some encounter histories may still include only type 1 or type 2 encounters. Observed encounter histories can consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4). Latent encounter histories consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4).
-#'
-#' @details This function calculates frequencies for the latent encounter history frequencies by assuming a 1-to-1 mapping of the observed histories (\code{Enc.Mat}) to latent histories. 
-#' 
-#' For the \code{"never"} and \code{"always"} data types, the index of latent history \eqn{i = 1 + \sum_{t=1}^T \omega_t*4^{T-t}}{i = 1 + \sum_{t=1}^T \omega_t*4^{T-t}}, with \eqn{\omega_t \in {0, 1, 2, 3}} to represent a non-encounter, a type 1 encounter, a type 2 encounter, and both type 1 and type 2 encounter (i.e., type 3 encounter for \code{"never"} and type 4 encounter for \code{"always"}), respectively, for sampling occasion \eqn{t=1,\ldots,T}. 
-#' 
-#' For the "sometimes" data type, the index of latent history \eqn{i = 1 + \sum_{t=1}^T \omega_t*5^{T-t}}{i = 1 + \sum_{t=1}^T \omega_t*5^{T-t}}, with \eqn{\omega_t \in {0, 1, 2, 3,  4}} to represent a non-encounter, a type 1 encounter, a type 2 encounter, type 3 encounter, and type 4 encounter, respectively, for sampling occasion \eqn{t=1,\ldots,T}.
-#' @return A vector of encounter history frequencies of length \eqn{4^T} for the "never" and "always" data types or of length \eqn{5^T} for the "sometimes" data type.
-#' @author Brett T. McClintock
-#' @references 
-#' Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.
-#' 
-#' McClintock, B. T., Conn, P. B., Alonso, R. S., and Crooks, K. R. 2013. Integrated modeling of bilateral photo-identification data in mark-recapture analyses. \emph{Ecology} 94: 1464-1471.
-#' @examples
-#' #simulate closed capture data with 2 sampling occasions for data.type="sometimes"
-#' data_type <- "sometimes"
-#' data <- simdataClosed(noccas=2,data.type=data_type)
-#'  
-#' #generate initial latent history freqencies from observed encounter histories
-#' getfreq(data$Enc.Mat,data.type=data_type)
-#'  
-#' #calculate freqencies for true encounter histories
-#' getfreq(data$trueEnc.Mat,data.type=data_type)
-getfreq <- function(Enc.Mat,data.type){
+getfreq<-function(Enc.Mat,histindex,data.type){
   
   temp.Enc.Mat <- Enc.Mat
   
@@ -99,56 +65,117 @@ getfreq <- function(Enc.Mat,data.type){
   Value<-ind^c((temp.noccas-1):0)
   Hist.num <- 1 + temp.Enc.Mat %*% Value
   
-  temp.x<-integer(ind^temp.noccas)
-  temp.x[sort(unique(Hist.num))]=table(Hist.num)
+  J <- length(histindex)
+  
+  temp.x<-integer(J)
+  temp.x[sort(unique(match(Hist.num,histindex)))]=table(Hist.num)
   temp.x[1] <- M-base::sum(temp.x[-1])
-  names(temp.x)=paste0("x[",1:ind^temp.noccas,"]")
+  names(temp.x)=paste0("x[",1:J,"]")
   as.vector(temp.x,mode="integer")
 }
 
-get_A <- function(noccas,data.type){
+get_A<-function(Enc.Mat,data.type){
+  
+  noccas<-ncol(Enc.Mat)
+  M<-nrow(Enc.Mat)
+  
+  Enc.Mat1<-NULL
+  Enc.Mat2<-NULL
+  Enc.Matknown<-NULL
+  
+  if(data.type=="never"){     
+    for(i in 1:M){
+      if(base::sum(Enc.Mat[i,]==1)>0 | base::sum(Enc.Mat[i,]==3)>0) {
+        Enc.Mat1<-rbind(Enc.Mat1,Enc.Mat[i,],deparse.level=0)
+      }
+      if(base::sum(Enc.Mat[i,]==2)>0  | base::sum(Enc.Mat[i,]==3)>0) {
+        Enc.Mat2<-rbind(Enc.Mat2,Enc.Mat[i,],deparse.level=0)
+      }
+    }
+  } else if(data.type=="always"){    
+    for(i in 1:M){
+      if(base::sum(Enc.Mat[i,]==1)>0 & base::sum(Enc.Mat[i,]==4)==0) {
+        Enc.Mat1<-rbind(Enc.Mat1,Enc.Mat[i,],deparse.level=0)
+      }
+      if(base::sum(Enc.Mat[i,]==2)>0 & base::sum(Enc.Mat[i,]==4)==0) {
+        Enc.Mat2<-rbind(Enc.Mat2,Enc.Mat[i,],deparse.level=0)
+      }
+      if(base::sum(Enc.Mat[i,]==4)>0){
+        Enc.Matknown<-rbind(Enc.Matknown,Enc.Mat[i,],deparse.level=0)
+      }
+    }
+  } else if(data.type=="sometimes"){  
+    for(i in 1:M){
+      if((base::sum(Enc.Mat[i,]==1)>0 | base::sum(Enc.Mat[i,]==3)>0) & base::sum(Enc.Mat[i,]==4)==0) {
+        Enc.Mat1<-rbind(Enc.Mat1,Enc.Mat[i,],deparse.level=0)
+      }
+      if((base::sum(Enc.Mat[i,]==2)>0 | base::sum(Enc.Mat[i,]==3)>0) & base::sum(Enc.Mat[i,]==4)==0) {
+        Enc.Mat2<-rbind(Enc.Mat2,Enc.Mat[i,],deparse.level=0)
+      }
+      if(base::sum(Enc.Mat[i,]==4)>0){
+        Enc.Matknown<-rbind(Enc.Matknown,Enc.Mat[i,],deparse.level=0)
+      }
+    }
+  }
+  
+  if(any(Enc.Mat1==2)){
+    Enc.Mat1[which(Enc.Mat1==2)]=0
+  }
+  if(any(Enc.Mat1>2)){
+    Enc.Mat1[which(Enc.Mat1>2)]=1
+  }
+  if(any(Enc.Mat2==1)){
+    Enc.Mat2[which(Enc.Mat2==1)]=0
+  }
+  if(any(Enc.Mat2>2)){
+    Enc.Mat2[which(Enc.Mat2>2)]=2
+  }
+  
+  Enc.Mat1<-unique(Enc.Mat1)
+  Enc.Mat2<-unique(Enc.Mat2)
+  nEnc.Mat1<-nrow(Enc.Mat1)
+  nEnc.Mat2<-nrow(Enc.Mat2)
+  nEnc.Matknown<-0
+  if(length(Enc.Matknown)){
+    Enc.Matknown<-unique(Enc.Matknown)
+    nEnc.Matknown<-nrow(Enc.Matknown)
+  }
+  
+  if(length(nEnc.Mat1) & length(nEnc.Mat2)){
+    All.hists<-rbind(Enc.Mat1,Enc.Mat2,Enc.Matknown,matrix(0,nrow=nEnc.Mat1*nEnc.Mat2,ncol=noccas))
+    starthist<-nEnc.Mat1+nEnc.Mat2+nEnc.Matknown
+    
+    for(i in 1:nEnc.Mat1){
+      for(j in 1:nEnc.Mat2){
+        All.hists[starthist+(i-1)*nEnc.Mat2+j,]<-Enc.Mat1[i,]+Enc.Mat2[j,]    
+      }
+    }
+  } else {
+    All.hists<-rbind(Enc.Mat1,Enc.Mat2,Enc.Matknown)
+  }
   
   if(data.type=="never"){
     ind<-4
-    r<-4^noccas-2*(2^noccas-1)          #r is the number of free variables (i.e., the number of basis vectors)
   } else if(data.type=="always"){
     ind<-4
-    r<-3^noccas-2^(noccas+1)+2
+    All.hists[which(All.hists==3)]<-4
   } else if(data.type=="sometimes"){
     ind<-5
-    r<-4^noccas-2*(2^noccas-1) 
   }
   
-  cat("Dimension of basis for null space of A is ",ind^noccas," x ",r," = ",ind^noccas*r,"\n")
-  if(noccas>6){
-    cat("  This might be a while...that's a darned big null space! \n")
-  }
+  All.hists<-unique(rbind(rep(0,noccas),All.hists))
   
-  #first, create correponding matrix w/all possible latent histories using recursive algorithm
-  dimAllhists <- (ind^noccas)*noccas
-  nonzeroAllhists<-ind^(noccas-1)*noccas*(ind-1)
-  indexAllhists<-integer(nonzeroAllhists)
-  valueAllhists<-integer(nonzeroAllhists)
+  J<-nrow(All.hists)
   
-  indexcount<-0
-  for(i in 1:noccas){
-    if(data.type=="never"){
-      series<-rep(c(rep(0,ind^(noccas-i)),rep(1,ind^(noccas-i)),rep(2,ind^(noccas-i)),rep(3,ind^(noccas-i))),ind^(i-1))     
-    } else if(data.type=="sometimes"){
-      series<-rep(c(rep(0,ind^(noccas-i)),rep(1,ind^(noccas-i)),rep(2,ind^(noccas-i)),rep(3,ind^(noccas-i)),rep(4,ind^(noccas-i))),ind^(i-1))      
-    } else if(data.type=="always"){
-      series<-rep(c(rep(0,ind^(noccas-i)),rep(1,ind^(noccas-i)),rep(2,ind^(noccas-i)),rep(4,ind^(noccas-i))),ind^(i-1))
-    }
-    seriesind<-which(series>0)
-    indexAllhists[indexcount+1:length(seriesind)] <- seriesind+(i-1)*dimAllhists/noccas;
-    valueAllhists[indexcount+1:length(seriesind)] <- series[seriesind];
-    indexcount<-indexcount+length(seriesind)
-  }
+  Value <- ind^c((noccas-1):0)
   
-  All.hists<-Matrix(0,nrow=(ind^noccas),ncol=noccas)
-  All.hists[indexAllhists] <- valueAllhists
+  tmp.All.hists<-All.hists
+  if(data.type=="always") tmp.All.hists[which(All.hists==4)]<-3
+  histindex <- 1 + tmp.All.hists %*% Value
   
-  Value<-ind^c((noccas-1):0)
+  All.hists <- All.hists[order(histindex),]
+  histindex <- sort(histindex)
+  rownames(All.hists) <- histindex
   
   # Construct A matrix   
   ivect<-which(((rowSums(All.hists==1)>0 & rowSums(All.hists==2)>0) | rowSums(All.hists==3)>0) & (rowSums(All.hists==4)==0))  
@@ -157,115 +184,45 @@ get_A <- function(noccas,data.type){
   temp.2<-Matrix(0,nrow=length(ivect),ncol=noccas)
   temp.1[which(temp.hist==1 | temp.hist>2)] <- 1
   temp.2[which(temp.hist>1)] <- 2
-  places1<-as.vector(temp.1 %*% Value) 
-  places2<-as.vector(temp.2 %*% Value)
+  places1<-as.vector(1+temp.1 %*% Value) 
+  places2<-as.vector(1+temp.2 %*% Value)
   
-  A<-sparseMatrix(i=c(ivect,ivect),j=c(places1+1,places2+1),dims=c(ind^noccas,ind^noccas),x=1)
+  A<-sparseMatrix(i=c(ivect,ivect),j=c(match(places1,histindex),match(places2,histindex)),dims=c(J,J),x=1)
   diag(A)[-ivect] <- 1
   A<-A[,-1]
   A<-A[,-which(colSums(A)==0)]
   
-  gc()
-  out<-list(Aprime=t(A),vAll.hists=as.vector(t(All.hists),mode="integer"),ivect=ivect)
+  A<-list(Aprime=t(A),vAll.hists=as.vector(t(All.hists),mode="integer"),ivect=ivect,histindex=histindex)
 }
 
-get_basis_vectors <- function(noccas,tA,ivect,div,data.type){
+get_basis_vectors <- function(tA,ivect,data.type){
   #This function caculates basis vectors based on data type (data.type) and latent frequencies (x).  
   #Function returns a matrix of the relevant basis vectors for the null space of A'.
   
   # Arguments: 
   # noccas = number of sampling occasions (T in paper)
   # A and ivect are objects returned by "get_A" above.
-  # div = integer for dividing matrix manipulation workload for very large null spaces. If experiencing memory issues, try larger values for div.  If memory not an issue and computation is too slow, try lower values for div.
   # data.type = data type that determines mapping of recorded histories to latent histories (see Table 1 in paper). 
   #   Data type "never" indicates simultaneous type 1 and type 2 detections are never observed, "sometimes" indicates simultaneous type 1 and type 2 detections are sometimes observed, and "always" indicates simultaneous type 1 and type 2 detections are always observed
   
-  #determine basis vectors
   if(data.type=="never"){
     ind<-4
-    r<-4^noccas-2*(2^noccas-1)                   #r is the number of free variables (i.e., the number of basis vectors)
   } else if(data.type=="always"){
     ind<-4
-    r<-3^noccas-2^(noccas+1)+2
   } else if(data.type=="sometimes"){
     ind<-5
-    r<-4^noccas-2*(2^noccas-1) 
   }
   
-  cat("Constructing basis vectors \n")
+  J <- ncol(tA)
   
-  free<-c(1,ivect)   # indices for the free variables (i.e., the latent histories that spawn >1 recorded history)
+  free<-c(1,ivect)   # indices for the free variables 
   
-  bound<-seq(1:(ind^noccas))[-free]  # indices for the bound variables (i.e., the latent histories that spawn only 1 recorded history)
+  bound<-seq(1:J)[-free]  # indices for the bound variables (i.e., the latent histories that spawn only 1 recorded history)
   
-  k<-length(bound)
-  
-  Basis<-Diagonal(ind^noccas)[,-bound]
-  
-  if(div>1 & noccas>3){
-    if(div>ceiling(r/2)){stop(paste0("'divBasis' must be less than ",ceiling(r/2)+1," when 'data.type'=",data.type," and 'noccas'=",noccas))}
-    div_r  <-  ceiling(seq(2,r+1,length=div))
-    pb <- txtProgressBar(min=1,max=length(div_r),char="+",width=100,style=3)
-    setTxtProgressBar(pb, 1)
-    for(i in 1:(length(div_r)-1)){
-      Basis[bound,(div_r[i]):(div_r[i+1]-1)] <- -tA[,free[(div_r[i]):(div_r[i+1]-1)]] 
-      setTxtProgressBar(pb, i+1)
-      gc()
-    }
-    close(pb)
-  } else {
-    Basis[bound,-1] <- -tA[,free[-1]]     
-  }
-  gc()
-  return(Basis)
-}
+  Basis<-Diagonal(J)[,-bound]
+  Basis[bound,-1] <- -tA[,free[-1]]     
 
-reduced_basis<-function(noccas,Basis,x,div,data.type){
-  #Given the initial frequency vector 'x', eliminate Basis vectors which always produce negative frequencies.  
-  #For example, with T=3, if latent history \omega_2 = '001' has frequency x_2 = 0, then any basis vector with a '-1' in the second row will produce negative frequencies and can be eliminated. For the never and sometimes data types, one would eliminate basis vectors 2, 5, 6, 23, 24, 29, and 30. For the always data type, one would eliminate basis vectors 3, 9, and 13.
-  
-  # Arguments: 
-  # noccas = number of sampling occasions (T in paper)
-  # Basis is basis vectors object returned by "get_basis_vectors" above.
-  # x = initial frequencies for latent histories return by "getfreq" above.
-  # div = integer for dividing matrix manipulation workload for very large null spaces. If experiencing memory issues, try larger values for div.  If memory not an issue and computation is too slow, try lower values for div.
-  # data.type = data type that determines mapping of recorded histories to latent histories (see Table 1 in paper). 
-  #   Data type "never" indicates simultaneous type 1 and type 2 detections are never observed, "sometimes" indicates simultaneous type 1 and type 2 detections are sometimes observed, and "always" indicates simultaneous type 1 and type 2 detections are always observed
-  
-  if(data.type=="never"){
-    ind<-4
-    r<-4^noccas-2*(2^noccas-1)                   #r is the number of free variables (i.e., the number of basis vectors)
-  } else if(data.type=="always"){
-    ind<-4
-    r<-3^noccas-2^(noccas+1)+2
-  } else if(data.type=="sometimes"){
-    ind<-5
-    r<-4^noccas-2*(2^noccas-1) 
-  }
-  
-  cat("Reducing dimension of basis based on observed histories \n")
-  x<-c(1,which(x[-1]>0)+1)
-  freqvect<-numeric(ind^noccas)
-  freqvect[x] <- 1
-  if(div>1 & noccas>3){
-    if(div>ceiling(r/2)){stop(paste0("'divredBasis' must be less than ",ceiling(r/2)+1," when 'data.type'=",data.type," and 'noccas'=",noccas))}
-    temp<-numeric(r)
-    temp[1]<-base::sum((freqvect+Basis[,1])<0)
-    div_r  <-  ceiling(seq(2,r+1,length=div))
-    pb <- txtProgressBar(min=1,max=length(div_r),char="+",width=100,style=3)
-    setTxtProgressBar(pb, 1)
-    for(i in 1:(length(div_r)-1)){
-      sequ <- (div_r[i]):(div_r[i+1]-1)
-      temp[sequ] <- colSums((freqvect+Basis[,sequ])<0)
-      setTxtProgressBar(pb, i+1)
-      gc()
-    }
-    close(pb)
-  } else {
-    temp<-colSums((freqvect+Basis)<0)
-  }
-  gc()
-  return(Basis[,which(temp<1)])
+  return(Basis)
 }
 
 get_Enc <- function(tEnc.Mat,data.type){
@@ -321,6 +278,8 @@ get_H <- function(mms,x){
   if(all(x==mms@naivex)){
     
     temp.Enc.Mat <- mms@Enc.Mat
+    noccas <- ncol(temp.Enc.Mat)
+    All.hists <- matrix(mms@vAll.hists,byrow=TRUE,ncol=noccas)
     
     if(mms@data.type=="never"){
       ind<-4
@@ -330,13 +289,18 @@ get_H <- function(mms,x){
       if(length(tmp.simult)){
         temp.Enc.Mat[tmp.simult] <- 3
       }
+      tmp.simult <- which(All.hists==4)
+      if(length(tmp.simult)){
+        All.hists[tmp.simult] <- 3
+      }
     } else if(mms@data.type=="sometimes"){
       ind<-5
-    }
-    
-    noccas <- ncol(temp.Enc.Mat)
+    } 
+
     Value<-ind^c((noccas-1):0)
-    H <- 1 + temp.Enc.Mat %*% Value
+    Hindex <- 1 + temp.Enc.Mat %*% Value
+    histindex <- 1 + All.hists %*% Value
+    H <- match(Hindex,histindex)
     
   } else {
     H<-integer(base::sum(x))
@@ -348,33 +312,13 @@ get_H <- function(mms,x){
   H
 }
 
-get_C <-function(noccas,data.type){
-  if(data.type=="never"){
-    ind<-4
-  } else if(data.type=="always"){
-    ind<-4
-  } else if(data.type=="sometimes"){
-    ind<-5
-  }
-  Cind<-ind^(seq(1,noccas))-ind^(seq(0,noccas-1))
-  c(as.integer(noccas+1),rep(seq(noccas,1),times=Cind))
+get_C <-function(All.hists){
+  apply(All.hists>0,1,which.max)
 }
 
-get_L <-function(noccas,data.type){
-  if(data.type=="never"){
-    ind<-4
-  } else if(data.type=="always"){
-    ind<-4
-  } else if(data.type=="sometimes"){
-    ind<-5
-  }
-  
-  L<-rep(noccas,ind^noccas)
-  for(i in 1:(noccas-1)){
-    L[seq(1,ind^noccas,ind^i)]=noccas-i
-  }
-  L[1]=0
-  as.integer(L)
+get_L <-function(All.hists){
+  noccas<-ncol(All.hists)
+  as.integer(noccas - get_C(All.hists[,noccas:1]) + 1)
 }
   
 expit<-function(x){
@@ -629,17 +573,17 @@ get_inits<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0del
   return(inits)
 }
 
-get_known<-function(known,Enc.Mat,naivex,data.type){
+get_known<-function(known,Enc.Mat,histindex,data.type){
   M <- nrow(Enc.Mat)
   if(length(known) & base::sum(known)>0){
     if(length(known)!=M | base::sum(known)>M){
       stop(paste0("'known' must be an integer vector of length ",M," with sum between 0 and ",M))
     } else {
-      knownx <- getfreq(Enc.Mat[which(known>0),],data.type)
+      knownx <- getfreq(Enc.Mat[which(known>0),],histindex,data.type)
       if(base::sum(apply(Enc.Mat==3 | Enc.Mat==4,1,base::sum)>0)>base::sum(knownx)) stop("'known' vector misspecified. Encounter histories containing simultaneous encounters are known")     
     }
   } else {
-    knownx <- integer(length(naivex))
+    knownx <- integer(length(histindex))
   }
   knownx
 }
@@ -659,9 +603,7 @@ get_known<-function(known,Enc.Mat,naivex,data.type){
 #'  \code{data.type="always"} indicates both type 1 and type 2 encounters are always observed, but some encounter histories may still include only type 1 or type 2 encounters. Observed encounter histories can consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4). Latent encounter histories consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4).
 #'
 #' @param covs A data frame of temporal covariates for detection probabilities (ignored unless \code{mms=NULL}). The number of rows in the data frame must equal the number of sampling occasions. Covariate names cannot be "time", "age", or "h"; these names are reserved for temporal, behavioral, and individual effects when specifying \code{mod.p} and \code{mod.phi}.
-#' @param known Optional integer vector indicating whether the encounter history of an individual is known with certainty (i.e., the observed encounter history is the true encounter history). Encounter histories with at least one type 4 encounter are automatically assumed to be known, and \code{known} does not need to be specified unless there exist encounter histories that do not contain a type 4 encounter that happen to be known with certainty. If specified, \code{known = c(v_1,v_2,...,v_M)} must be a vector of length \code{M = nrow(Enc.Mat)} where \code{v_i = 1} if the encounter history for individual \code{i} is known (\code{v_i = 0} otherwise). Note that known all-zero encounter histories (e.g., `000') are ignored.
-#' @param divBasis Integer scaler for dividing up the matrix calculations when determining the possible set of basis vectors for updating the latent encounter histories (based on \code{data.type} and number of sampling occasions). Default is \code{divBasis=100}. For very large problems, increasing \code{divBasis} can help reduce memory requirements and speed up computations. For smaller problems, reducing \code{divBasis} can speed up computation.
-#' @param divredBasis Integer scaler for dividing up the matrix calculations when reducing the possible set of basis vectors to those that are needed (based on \code{Enc.Mat}) for updating the latent encounter histories. Default is \code{divredBasis=100}. For very large problems, increasing \code{divredBasis} can help reduce memory requirements and speed up computations. For smaller problems, reducing \code{divredBasis} can speed up computation.
+#' @param known Optional integer vector indicating whether the encounter history of an individual is known with certainty (i.e., the observed encounter history is the true encounter history). Encounter histories with at least one type 4 encounter are automatically assumed to be known, and \code{known} does not need to be specified unless there exist encounter histories that do not contain a type 4 encounter that happen to be known with certainty (e.g., from independent telemetry studies). If specified, \code{known = c(v_1,v_2,...,v_M)} must be a vector of length \code{M = nrow(Enc.Mat)} where \code{v_i = 1} if the encounter history for individual \code{i} is known (\code{v_i = 0} otherwise). Note that known all-zero encounter histories (e.g., `000') are ignored.
 #' 
 #' @return An object of class \code{multimarksetup}.
 #' @author Brett T. McClintock
@@ -680,7 +622,7 @@ get_known<-function(known,Enc.Mat,naivex,data.type){
 #' 
 #' #Run two parallel chains for bobcat data with temporal effects (i.e., mod.p=~time)
 #' bobcat.time <- multimarkClosed(mms=setup,mod.p=~time,nchains=2)}
-processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer(),divBasis=100,divredBasis=100){
+processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer()){
   
   if(!is.matrix(Enc.Mat)) stop("'Enc.Mat' must be a matrix")
   
@@ -715,18 +657,14 @@ processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer(
     if(any(match(colnames(covs),nonames,nomatch=0)>0)) stop(paste0("'",nonames[match(colnames(covs),nonames,nomatch=0)],"' cannot be used for covariate ('covs') names. "))
   }
   
-  naivex<-getfreq(Enc.Mat,data.type)
-  A<- get_A(noccas,data.type)
-  gc()
-  Basis<-get_basis_vectors(noccas,A$Aprime,A$ivect,div=divBasis,data.type=data.type)
-  gc()
-  C<-get_C(noccas,data.type=data.type)
-  L<-get_L(noccas,data.type=data.type)
-  redBasis<-reduced_basis(noccas,Basis,naivex,div=divredBasis,data.type=data.type)[,-1]
-  gc()
-  ncolbasis<-ncol(redBasis)
-  indBasis<-as.vector(which(redBasis!=0)-(ind^noccas)*rep(seq(0,ncolbasis-1),each=3),mode="integer")
-  knownx<-get_known(known,Enc.Mat,naivex,data.type)
+  A<- get_A(Enc.Mat,data.type)
+  naivex<-getfreq(Enc.Mat,A$histindex,data.type)
+  Basis<-get_basis_vectors(A$Aprime,A$ivect,data.type=data.type)[,-1]
+  C<-get_C(matrix(A$vAll.hists,byrow=TRUE,ncol=noccas))
+  L<-get_L(matrix(A$vAll.hists,byrow=TRUE,ncol=noccas))
+  ncolbasis<-ncol(Basis)
+  indBasis<-as.vector(which(Basis!=0)-length(A$histindex)*rep(seq(0,ncolbasis-1),each=3),mode="integer")
+  knownx<-get_known(known,Enc.Mat,A$histindex,data.type)
   mms<-new(Class="multimarksetup",Enc.Mat=Enc.Mat,data.type=data.type,vAll.hists=A$vAll.hists,Aprime=A$Aprime,indBasis=indBasis,ncolbasis=ncolbasis,knownx=knownx,C=C,L=L,naivex=naivex,covs=covs)  
   return(mms)
 }

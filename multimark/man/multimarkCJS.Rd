@@ -13,8 +13,7 @@ multimarkCJS(Enc.Mat, data.type = "never", covs = data.frame(),
   pbeta0 = 0, pSigma0 = 100, phibeta0 = 0, phiSigma0 = 100, l0p = 1,
   d0p = 0.01, l0phi = 1, d0phi = 0.01, a0delta = c(1, 1, 1),
   a0alpha = 1, b0alpha = 1, initial.values = NULL, known = integer(),
-  divBasis = 100, divredBasis = 100, link = "probit", printlog = FALSE,
-  ...)
+  link = "probit", printlog = FALSE, ...)
 }
 \arguments{
 \item{Enc.Mat}{A matrix of observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions (ignored unless \code{mms=NULL}).}
@@ -91,11 +90,7 @@ multimarkCJS(Enc.Mat, data.type = "never", covs = data.frame(),
 
 \item{initial.values}{Optional list of \code{nchain} list(s) specifying intial values for parameters and latent variables. Default is \code{initial.values = NULL}, which causes initial values to be generated automatically. In addition to the parameters ("\code{pbeta}", "\code{phibeta}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_zp}", "\code{sigma2_zphi}", "\code{zp}", "\code{zphi}", and "\code{psi}"), initial values can be specified for the initial latent history frequencies ("\code{x}") and initial individual encounter history indices ("\code{H}").}
 
-\item{known}{Optional integer vector indicating whether the encounter history of an individual is known with certainty (i.e., the observed encounter history is the true encounter history). If specified, \code{known = c(v_1,v_2,...,v_M)} must be a vector of length \code{M = nrow(Enc.Mat)} where \code{v_i = 1} if the encounter history for individual \code{i} (\eqn{H_i}) is known (\code{v_i = 0} otherwise). Note that known all-zero encounter histories (i.e., \code{v_i = 1} and \eqn{H_i = 1}) are not currently allowed.}
-
-\item{divBasis}{Integer scaler for dividing up the matrix calculations when determining the possible set of basis vectors for updating the latent encounter histories (based on \code{data.type} and number of sampling occasions). Default is \code{divBasis=100}. For very large problems, increasing \code{divBasis} can help reduce memory requirements and speed up computations. For smaller problems, reducing \code{divBasis} can speed up computation.}
-
-\item{divredBasis}{Integer scaler for dividing up the matrix calculations when reducing the possible set of basis vectors to those that are needed (based on \code{Enc.Mat}) for updating the latent encounter histories. Default is \code{divredBasis=100}. For very large problems, increasing \code{divredBasis} can help reduce memory requirements and speed up computations. For smaller problems, reducing \code{divredBasis} can speed up computation.}
+\item{known}{Optional integer vector indicating whether the encounter history of an individual is known with certainty (i.e., the observed encounter history is the true encounter history). Encounter histories with at least one type 4 encounter are automatically assumed to be known, and \code{known} does not need to be specified unless there exist encounter histories that do not contain a type 4 encounter that happen to be known with certainty (e.g., from independent telemetry studies). If specified, \code{known = c(v_1,v_2,...,v_M)} must be a vector of length \code{M = nrow(Enc.Mat)} where \code{v_i = 1} if the encounter history for individual \code{i} is known (\code{v_i = 0} otherwise). Note that known all-zero encounter histories (e.g., `000') are ignored.}
 
 \item{link}{Link function for survival and capture probabilities. Only probit link is currently implemented.}
 
@@ -123,11 +118,11 @@ The first time \code{multimarkCJS} (or \code{\link{multimarkClosed}}) is called,
 data <- simdataCJS()
 
 #Fit default open population model
-sim.dot <- multimarkCJS(data$Enc.Mat)
+sim.dot <- multimarkCJS(data$Enc.Mat,nchains=2)
 
-#Calculate capture and survival probabilities for each cohort and time
-pphi <- getprobsCJS(sim.dot)
-summary(pphi)}
+#Posterior summary for monitored parameters
+summary(sim.dot$mcmc)
+plot(sim.dot$mcmc)}
 }
 \author{
 Brett T. McClintock
