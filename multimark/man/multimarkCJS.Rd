@@ -5,14 +5,14 @@
 \title{Fit open population survival models for capture-mark-recapture data consisting of multiple non-invasive marks}
 \usage{
 multimarkCJS(Enc.Mat, data.type = "never", covs = data.frame(),
-  mms = NULL, mod.p = ~1, mod.phi = ~1, parms = c("pbeta", "phibeta",
-  "delta_1", "delta_2"), nchains = 1, iter = 12000, adapt = 1000,
-  bin = 50, thin = 1, burnin = 2000, taccept = 0.44,
+  mms = NULL, mod.p = ~1, mod.phi = ~1, mod.delta = ~type,
+  parms = c("pbeta", "phibeta", "delta"), nchains = 1, iter = 12000,
+  adapt = 1000, bin = 50, thin = 1, burnin = 2000, taccept = 0.44,
   tuneadjust = 0.95, proppbeta = 0.1, propzp = 1, propsigmap = 1,
   propphibeta = 0.1, propzphi = 1, propsigmaphi = 1, maxnumbasis = 1,
   pbeta0 = 0, pSigma0 = 100, phibeta0 = 0, phiSigma0 = 100, l0p = 1,
-  d0p = 0.01, l0phi = 1, d0phi = 0.01, a0delta = c(1, 1, 1),
-  a0alpha = 1, b0alpha = 1, initial.values = NULL, known = integer(),
+  d0p = 0.01, l0phi = 1, d0phi = 0.01, a0delta = 1, a0alpha = 1,
+  b0alpha = 1, initial.values = NULL, known = integer(),
   link = "probit", printlog = FALSE, ...)
 }
 \arguments{
@@ -34,7 +34,9 @@ multimarkCJS(Enc.Mat, data.type = "never", covs = data.frame(),
 
 \item{mod.phi}{Model formula for survival probability (\eqn{\phi}). For example, \code{mod.phi=~1} specifies no effects (i.e., intercept only), \code{mod.phi~time} specifies temporal effects, \code{mod.phi~age} specifies age effects, \code{mod.phi~h} specifies individual heterogeneity, and \code{mod.phi~time+age} specifies additive temporal and age effects.}
 
-\item{parms}{A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are probit-scale detection probability parameters ("\code{pbeta}" for \eqn{p} and "\code{phibeta}" for \eqn{\phi}), probability of type 1 encounter, given detection ("\code{delta_1})", probability of type 2 encounter, given detection ("\code{delta_2}"), probability of simultaneous type 1 and type 2 detection, given both types encountered ("\code{alpha}"), probit-scale individual heterogeneity variance terms ("\code{sigma2_zp}" for \eqn{p} and "\code{sigma2_zphi}" for \eqn{\phi}), probit-scale individual effects ("\code{zp}" and "\code{zphi}"), and the probability that any given observed history corresponds to a legitmate individual ("\code{psi}"). Individual encounter history indices ("\code{H}") and the log likelihood ("\code{loglike}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.}
+\item{mod.delta}{Model formula for conditional probabilities of type 1 (delta_1) and type 2 (delta_2) encounters, given detection. Currently only \code{mod.delta=~1} (i.e., \eqn{delta_1 = delta_2}) and \code{mod.delta=~type} (i.e., \eqn{delta_1 \ne delta_2}) are implemented.}
+
+\item{parms}{A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are probit-scale detection probability parameters ("\code{pbeta}" for \eqn{p} and "\code{phibeta}" for \eqn{\phi}), conditional probability of type 1 or type 2 encounter, given detection ("\code{delta})", probability of simultaneous type 1 and type 2 detection, given both types encountered ("\code{alpha}"), probit-scale individual heterogeneity variance terms ("\code{sigma2_zp}" for \eqn{p} and "\code{sigma2_zphi}" for \eqn{\phi}), probit-scale individual effects ("\code{zp}" and "\code{zphi}"), and the probability that any given observed history corresponds to a legitmate individual ("\code{psi}"). Individual encounter history indices ("\code{H}") and the log likelihood ("\code{loglike}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.}
 
 \item{nchains}{The number of parallel MCMC chains for the model.}
 
@@ -82,7 +84,7 @@ multimarkCJS(Enc.Mat, data.type = "never", covs = data.frame(),
 
 \item{d0phi}{Specifies "scale" parameter for [sigma2_zphi] ~ invGamma(l0phi,d0phi) prior. Default is \code{d0phi = 0.01}.}
 
-\item{a0delta}{Vector of length 3 specifying parameters of [delta_1, delta_2, 1-delta_1-delta_2] ~ Dirichlet(a0delta) prior for the conditional (on detection) probability of type 1 (delta_1), type 2 (delta_2), and both type 1 and type 2 encounters (1-delta_1-delta_2). Default is ``uninformative'' \code{a0delta = c(1,1,1)}.}
+\item{a0delta}{Scaler or vector (of length d) specifying the prior for the conditional (on detection) probability of type 1 (delta_1), type 2 (delta_2), and both type 1 and type 2 encounters (1-delta_1-delta_2). If \code{a0delta} is a scaler, then this value is used for all a0delta[j] for j = 1, ..., d. For \code{mod.delta=~type}, d=3 with [delta_1, delta_2, 1-delta_1-delta_2] ~ Dirichlet(a0delta) prior. For \code{mod.delta=~1}, k=2 with [tau] ~ Beta(a0delta[1],a0delta[2]) prior, where (delta_1,delta_2,1-delta_1-delta_2) = (tau/2,tau/2,1-tau). If See McClintock et al. (2013) for more details.}
 
 \item{a0alpha}{Specifies "shape1" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{a0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1).}
 
@@ -103,7 +105,8 @@ A list containing the following:
 \item{mcmc}{Markov chain Monte Carlo object of class \code{\link[coda]{mcmc.list}}.}
 \item{mod.p}{Model formula for detection probability (as specified by \code{mod.p} above).}
 \item{mod.phi}{Model formula for survival probability (as specified by \code{mod.phi} above).}
-\item{DM}{A list of design matrices for detection probability generated for model \code{mod.p}, where DM$p is the design matrix for capture probability (\eqn{p}) and DM$phi is the design matrix for survival probability (\eqn{\phi}).}
+\item{mod.delta}{Model formula for conditional probability of type 1 or type 2 encounter, given detection (as specified by \code{mod.delta} above).}
+\item{DM}{A list of design matrices for detection and survival probability respectively generated by \code{mod.p} and \code{mod.phi}, where DM$p is the design matrix for capture probability (\eqn{p}) and DM$phi is the design matrix for survival probability (\eqn{\phi}).}
 \item{initial.values}{A list containing the parameter and latent variable values at iteration \code{iter} for each chain. Values are provided for "\code{pbeta}", "\code{phibeta}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_zp}" "\code{sigma2_zphi}", "\code{zp}", "\code{zphi}", "\code{psi}", "\code{x}", and "\code{H}".}
 }
 \description{

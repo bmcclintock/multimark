@@ -548,15 +548,30 @@ get_inits<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0del
     }
     if(length(initial.values[[ichain]]$delta_1) & length(initial.values[[ichain]]$delta_2)){
       if(length(initial.values[[ichain]]$delta_1)==1 & length(initial.values[[ichain]]$delta_2)==1 & (dunif(initial.values[[ichain]]$delta_1+initial.values[[ichain]]$delta_2))){
-        inits[[ichain]]$delta_1 <- initial.values[[ichain]]$delta_1
-        inits[[ichain]]$delta_2 <- initial.values[[ichain]]$delta_2
+        if(DM$mod.delta==formula(~type)){
+          inits[[ichain]]$delta_1 <- initial.values[[ichain]]$delta_1
+          inits[[ichain]]$delta_2 <- initial.values[[ichain]]$delta_2
+        } else {
+          if(initial.values[[ichain]]$delta_1!=initial.values[[ichain]]$delta_2){
+            warning("mod.delta=~1 but initial values for 'delta_1' and 'delta_2' are different; 'delta_1 / 2' used as initial value for 'delta'")  
+            inits[[ichain]]$delta_1<-inits[[ichain]]$delta_2<-inits[[ichain]]$delta<-initial.values[[ichain]]$delta_1/2
+          } else {
+            inits[[ichain]]$delta_1<-inits[[ichain]]$delta_2<-inits[[ichain]]$delta<-initial.values[[ichain]]$delta_1
+          }
+        }
       } else {
         stop("initial values for delta_1 and delta_2 must be positive scalars with sum less than 1")
       }
     } else if(length(initial.values[[ichain]]$delta_1) | length(initial.values[[ichain]]$delta_2)){
       stop("initial values for delta_1 and delta_2 must be positive scalars with sum less than 1")    
     } else {
-      delta<-rdirichlet(1,a0delta)
+      if(DM$mod.delta==formula(~type)){
+        delta<-rdirichlet(1,a0delta)
+      } else {
+        inits[[ichain]]$delta <- rbeta(1,a0delta[1],a0delta[2])/2
+        delta<-numeric(2)
+        delta[1]<-delta[2]<-inits[[ichain]]$delta
+      }
       inits[[ichain]]$delta_1<-delta[1]
       inits[[ichain]]$delta_2<-delta[2]    
     }   
@@ -653,7 +668,7 @@ processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer(
     if(nrow(covs)!=noccas){
       stop(paste("covariates (covs) must contain an entry for each occasion"))
     }
-    nonames <- c("group","time","Time","c","h")
+    nonames <- c("group","time","Time","c","h","type")
     if(any(match(colnames(covs),nonames,nomatch=0)>0)) stop(paste0("'",nonames[match(colnames(covs),nonames,nomatch=0)],"' cannot be used for covariate ('covs') names. "))
   }
   

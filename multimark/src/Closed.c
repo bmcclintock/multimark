@@ -19,7 +19,7 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
               double *Propsd, double *accept, double *posterior,
               int *nHists, int *Allhists, int *C, int *indBasis, int *ncolBasis, int *knownx, double *DMp, double *DMc, int *pdim,
               int *iter, int *thin, int *adapt, int *bin, double *taccept, double *tuneadjust, int *numbasis,
-              int *npoints, double *weights, double *nodes, int *mod_h, int *data_type, int *zind, int *Hind, int *printlog)
+              int *npoints, double *weights, double *nodes, int *mod_h, int *data_type, int *zind, int *Hind, int *delta_type, int *printlog)
 {
   
   GetRNGstate(); 
@@ -39,6 +39,7 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
   int supN = *M; 
   int Mk = supN*(T);      
   int datatype = *data_type;
+  int deltatype = *delta_type;
     
   int niter, th, ada, n;
   int J = *nHists;
@@ -147,7 +148,7 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
     
   /* Calculate the log-likelihood */  
   double ll=LIKE(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,supN,C,Ns,pstar);
-  posterior[0]=POSTERIOR(ll,betas,qs,zs,deltavect,alphas,sigma_zs,Ns,psis,mu0,sigma2_mu0,a0_delta,*a0alpha,*b0alpha,*A,supN,dimp,*mod_h,datatype);
+  posterior[0]=POSTERIOR(ll,betas,qs,zs,deltavect,alphas,sigma_zs,Ns,psis,mu0,sigma2_mu0,a0_delta,*a0alpha,*b0alpha,*A,supN,dimp,*mod_h,datatype,deltatype);
   if(!R_FINITE(ll)) {
     Rprintf("Fatal error in chain %d: initial likelihood is '%f'. \n",*ichain,ll);
     *iter = g;
@@ -270,9 +271,16 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
     }
     
     /* update delta_1 and delta_2 */
-    GETDELTA(deltavect, xs, Allhists, T, J, 3, a0_delta); 
-    delta_1s=deltavect[0];
-    delta_2s=deltavect[1];    
+    if(deltatype){
+      GETDELTA(deltavect, xs, Allhists, T, J, 3, a0_delta); 
+      delta_1s=deltavect[0];
+      delta_2s=deltavect[1];   
+    } else {
+      sha = a0_delta[0] + FREQSUM(xs,Allhists,T,J,1) + FREQSUM(xs,Allhists,T,J,2);
+      sca = a0_delta[1] + FREQSUM(xs,Allhists,T,J,3) + FREQSUM(xs,Allhists,T,J,4);
+      delta_1s = rbeta(sha,sca) / 2.0;
+      delta_2s = delta_1s;
+    }
     
     ll=LIKE(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,supN,C,Ns,pstar);
   
@@ -420,7 +428,7 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
         x[j]=xs[j];
       }
       
-      posterior[(g/th - 1)]=POSTERIOR(ll,betas,qs,zs,deltavect,alphas,sigma_zs,Ns,psis,mu0,sigma2_mu0,a0_delta,*a0alpha,*b0alpha,*A,supN,dimp,*mod_h,datatype); 
+      posterior[(g/th - 1)]=POSTERIOR(ll,betas,qs,zs,deltavect,alphas,sigma_zs,Ns,psis,mu0,sigma2_mu0,a0_delta,*a0alpha,*b0alpha,*A,supN,dimp,*mod_h,datatype,deltatype); 
       if(!R_FINITE(posterior[(g/th - 1)])) {Rprintf("Fatal error in chain %d: please report to <brett.mcclintock@noaa.gov \n",*ichain); *iter = g; return;}
       
     }
@@ -521,7 +529,7 @@ double DDIRICHLET(double *x, double *alpha, int dim)
   return(logdens);
 }
 
-double POSTERIOR(double ll, double *beta, int *qs, double *z, double *deltavect, double alpha, double sigma_z, double Ns, double psi, double *mu0, double *sigma2_mu0, double *a0_delta, double a0_alpha, double b0_alpha, double A, int supN, int pdim, int modh, int datatype)
+double POSTERIOR(double ll, double *beta, int *qs, double *z, double *deltavect, double alpha, double sigma_z, double Ns, double psi, double *mu0, double *sigma2_mu0, double *a0_delta, double a0_alpha, double b0_alpha, double A, int supN, int pdim, int modh, int datatype, int deltatype)
 {
   double pos=ll;
   int i,j;
@@ -537,7 +545,11 @@ double POSTERIOR(double ll, double *beta, int *qs, double *z, double *deltavect,
     }
     pos += log(2.0*dcauchy(sigma_z,0.0,A,0));
   }
-  pos += DDIRICHLET(deltavect,a0_delta,3);
+  if(deltatype){
+    pos += DDIRICHLET(deltavect,a0_delta,3);
+  } else {
+    pos += dbeta((deltavect[0]+deltavect[1]),a0_delta[0],a0_delta[1],1);
+  }
   if(datatype){
     pos += dbeta(alpha,a0_alpha,b0_alpha,1);
   }

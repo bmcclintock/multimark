@@ -5,11 +5,11 @@
 \title{Fit closed population abundance models for capture-mark-recapture data consisting of multiple non-invasive marks}
 \usage{
 multimarkClosed(Enc.Mat, data.type = "never", covs = data.frame(),
-  mms = NULL, mod.p = ~1, parms = c("pbeta", "delta_1", "delta_2", "N"),
-  nchains = 1, iter = 12000, adapt = 1000, bin = 50, thin = 1,
+  mms = NULL, mod.p = ~1, mod.delta = ~type, parms = c("pbeta", "delta",
+  "N"), nchains = 1, iter = 12000, adapt = 1000, bin = 50, thin = 1,
   burnin = 2000, taccept = 0.44, tuneadjust = 0.95, proppbeta = 0.1,
   propzp = 1, propsigmap = 1, npoints = 500, maxnumbasis = 1,
-  a0delta = c(1, 1, 1), a0alpha = 1, b0alpha = 1, a = 25, mu0 = 0,
+  a0delta = 1, a0alpha = 1, b0alpha = 1, a = 25, mu0 = 0,
   sigma2_mu0 = 1.75, initial.values = NULL, known = integer(),
   printlog = FALSE, ...)
 }
@@ -30,7 +30,9 @@ multimarkClosed(Enc.Mat, data.type = "never", covs = data.frame(),
 
 \item{mod.p}{Model formula for detection probability. For example, \code{mod.p=~1} specifies no effects (i.e., intercept only), \code{mod.p~time} specifies temporal effects, \code{mod.p~c} specifies behavioral reponse (i.e., trap "happy" or "shy"), \code{mod.p~h} specifies individual heterogeneity, and \code{mod.p~time+c} specifies additive temporal and behavioral effects .}
 
-\item{parms}{A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are logit-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), probability of type 1 encounter, given detection ("\code{delta_1})", probability of type 2 encounter, given detection ("\code{delta_2}"), probability of simultaneous type 1 and type 2 detection, given both types encountered ("\code{alpha}"), logit-scale individual heterogeneity variance term ("\code{sigma2_zp}"), logit-scale individual effects ("\code{zp}"), and the probability that any given observed history corresponds to a legitmate individual ("\code{psi}"). Individual encounter history indices ("\code{H}") and the log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables .}
+\item{mod.delta}{Model formula for conditional probabilities of type 1 (delta_1) and type 2 (delta_2) encounters, given detection. Currently only \code{mod.delta=~1} (i.e., \eqn{delta_1 = delta_2}) and \code{mod.delta=~type} (i.e., \eqn{delta_1 \ne delta_2}) are implemented.}
+
+\item{parms}{A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are logit-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), conditional probability of type 1 or type 2 encounter, given detection ("\code{delta})", probability of simultaneous type 1 and type 2 detection, given both types encountered ("\code{alpha}"), logit-scale individual heterogeneity variance term ("\code{sigma2_zp}"), logit-scale individual effects ("\code{zp}"), and the probability that any given observed history corresponds to a legitmate individual ("\code{psi}"). Individual encounter history indices ("\code{H}") and the log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables .}
 
 \item{nchains}{The number of parallel MCMC chains for the model .}
 
@@ -58,7 +60,7 @@ multimarkClosed(Enc.Mat, data.type = "never", covs = data.frame(),
 
 \item{maxnumbasis}{Maximum number of basis vectors to use when proposing latent history frequency updates. Default is \code{maxnumbasis = 1}, but higher values can potentially improve mixing .}
 
-\item{a0delta}{Vector of length 3 specifying parameters of [delta_1, delta_2, 1-delta_1-delta_2] ~ Dirichlet(a0delta) prior for the conditional (on detection) probability of type 1 (delta_1), type 2 (delta_2), and both type 1 and type 2 encounters (1-delta_1-delta_2). Default is ``uninformative'' \code{a0delta = c(1,1,1)} .}
+\item{a0delta}{Scaler or vector (of length d) specifying the prior for the conditional (on detection) probability of type 1 (delta_1), type 2 (delta_2), and both type 1 and type 2 encounters (1-delta_1-delta_2). If \code{a0delta} is a scaler, then this value is used for all a0delta[j] for j = 1, ..., d. For \code{mod.delta=~type}, d=3 with [delta_1, delta_2, 1-delta_1-delta_2] ~ Dirichlet(a0delta) prior. For \code{mod.delta=~1}, k=2 with [tau] ~ Beta(a0delta[1],a0delta[2]) prior, where (delta_1,delta_2,1-delta_1-delta_2) = (tau/2,tau/2,1-tau). If See McClintock et al. (2013) for more details.}
 
 \item{a0alpha}{Specifies "shape1" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{a0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1) .}
 
@@ -82,6 +84,7 @@ multimarkClosed(Enc.Mat, data.type = "never", covs = data.frame(),
 A list containing the following:
 \item{mcmc}{Markov chain Monte Carlo object of class \code{\link[coda]{mcmc.list}}.}
 \item{mod.p}{Model formula for detection probability (as specified by \code{mod.p} above).}
+\item{mod.delta}{Model formula for conditional probability of type 1 or type 2 encounter, given detection (as specified by \code{mod.delta} above).}
 \item{DM}{A list of design matrices for detection probability generated for model \code{mod.p}, where DM$p is the design matrix for initial capture probability (p) and DM$c is the design matrix for recapture probability (c).}
 \item{initial.values}{A list containing the parameter and latent variable values at iteration \code{iter} for each chain. Values are provided for "\code{pbeta}", "\code{N}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_zp}", "\code{zp}", "\code{psi}", "\code{x}", and "\code{H}".}
 }

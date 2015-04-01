@@ -78,7 +78,7 @@ simdataClosed <- function(N=100,noccas=5,pbeta=-0.4,tau=0,sigma2_zp=0,delta_1=0.
   return(list(Enc.Mat=Enc.Mat,trueEnc.Mat=tEnc.Mat))
 }
 
-get_DMClosed<-function(mod,Enc.Mat,covs,type="Closed",...){
+get_DMClosed<-function(mod.p,mod.delta,Enc.Mat,covs,type="Closed",...){
   Enc.Mat[which(Enc.Mat>0)] <- 1
   ch<-as.character(as.matrix( apply(Enc.Mat, 1, paste, collapse = ""), ncol=1 ))
   if(length(which(ch==paste(rep(0,ncol(Enc.Mat)),collapse="")))){
@@ -89,15 +89,15 @@ get_DMClosed<-function(mod,Enc.Mat,covs,type="Closed",...){
   temp$c<-temp$p
   temp$c$model.index<-temp$c$model.index+CH$nocc
   temp$c$c<-1
-  modterms<-attributes(terms(mod))$term.labels
+  modterms<-attributes(terms(mod.p))$term.labels
   if(any(modterms=="time")){
-    mod<-formula(paste("~-1",paste(modterms,collapse="+"),sep="+"))
+    mod.p<-formula(paste("~-1",paste(modterms,collapse="+"),sep="+"))
   }
   if(any(modterms=="h")){
     if(length(modterms)>1){
-      mod<-formula(paste("~-1",paste(modterms[-which(modterms=="h")],collapse="+"),sep="+"))
+      mod.p<-formula(paste("~-1",paste(modterms[-which(modterms=="h")],collapse="+"),sep="+"))
     } else {
-      mod<-formula(~1)  
+      mod.p<-formula(~1)  
     }
     mod.p.h<-TRUE 
   } else {
@@ -107,8 +107,8 @@ get_DMClosed<-function(mod,Enc.Mat,covs,type="Closed",...){
     temp$p<-cbind(temp$p,covs)
     temp$c<-cbind(temp$c,covs)
   }
-  DMp<-model.matrix(mod,temp$p)
-  DMc<-model.matrix(mod,temp$c)
+  DMp<-model.matrix(mod.p,temp$p)
+  DMc<-model.matrix(mod.p,temp$c)
   
   if(nrow(DMp)!=CH$nocc) stop(paste("model design matrix must have",CH$nocc,"rows"))
   
@@ -121,7 +121,11 @@ get_DMClosed<-function(mod,Enc.Mat,covs,type="Closed",...){
   rownames(DMp) <- paste0("p[",1:CH$nocc,"]")
   rownames(DMc) <- paste0("c[",1:CH$nocc,"]")
   
-  return(list(p=DMp,c=DMc,mod.p.h=mod.p.h))
+  deltattr <- attributes(terms(mod.delta))$term.labels
+  if(length(deltattr)){
+    if(deltattr!="type") stop("'mod.delta' must be '~1' or '~type'")
+  }
+  return(list(p=DMp,c=DMc,mod.p.h=mod.p.h,mod.delta=mod.delta))
 }
 
 pstarintegrand<-function(beta,sigma,DM,gq){
@@ -178,9 +182,9 @@ mcmcClosed<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,tacce
                   as.numeric(Prop.sd),as.numeric(arate),as.numeric(logPosterior),
                   as.integer(length(mms@vAll.hists)/noccas),as.integer(mms@vAll.hists), as.integer(mms@C), as.integer(mms@indBasis-1), as.integer(mms@ncolbasis), as.integer(mms@knownx), as.numeric(as.vector(t(DMp))), as.numeric(as.vector(t(DMc))),as.integer(pdim),
                   as.integer(iter), as.integer(thin), as.integer(adapt), as.integer(bin), as.numeric(taccept),as.numeric(tuneadjust),as.integer(maxnumbasis),
-                  as.integer(npoints),as.numeric(weights),as.numeric(nodes),as.integer(mod.p.h),as.integer(mms@data.type=="sometimes"),as.integer(any(params=="zp")),as.integer(any(params=="H")),as.integer(printlog),NAOK = TRUE) 
+                  as.integer(npoints),as.numeric(weights),as.numeric(nodes),as.integer(mod.p.h),as.integer(mms@data.type=="sometimes"),as.integer(any(params=="zp")),as.integer(any(params=="H")),as.integer(DM$mod.delta==formula(~type)),as.integer(printlog),NAOK = TRUE) 
   
-  names(posterior) <- c("ichain","mu_0","sigma2_mu","pbeta", "zp", "sigma2_zp", "delta_1","delta_2","alpha", "x", "N", "psi","H", "noccas", "M","a0delta", "a0alpha", "b0alpha","a","Prop.sd","arate","logPosterior","nHists","vAll.hists","C", "indBasis", "ncolBasis","knownx","DMp","DMc","pdim","iter", "thin", "adapt", "bin", "taccept","tuneadjust","maxnumbasis","npoints","weights","nodes","mod.p.h","sometimes?","zp?","H?","printlog?")
+  names(posterior) <- c("ichain","mu_0","sigma2_mu","pbeta", "zp", "sigma2_zp", "delta_1","delta_2","alpha", "x", "N", "psi","H", "noccas", "M","a0delta", "a0alpha", "b0alpha","a","Prop.sd","arate","logPosterior","nHists","vAll.hists","C", "indBasis", "ncolBasis","knownx","DMp","DMc","pdim","iter", "thin", "adapt", "bin", "taccept","tuneadjust","maxnumbasis","npoints","weights","nodes","mod.p.h","sometimes?","zp?","H?","type?","printlog?")
   
   g <- posterior$iter
   x <- posterior$x
@@ -210,8 +214,12 @@ loglikeClosed<-function(parms,DM,noccas,C,All.hists,gq){
   } else {
     zp <- rep(0,length(H))
   }
-  delta_1 <- parms$delta_1
-  delta_2 <- parms$delta_2
+  if(DM$mod.delta==formula(~type)){
+    delta_1 <- parms$delta_1
+    delta_2 <- parms$delta_2
+  } else {
+    delta_1 <- delta_2 <- parms$delta
+  }
   alpha <- parms$alpha
   
   Hind <- H[which(H>1)]
@@ -239,9 +247,14 @@ priorsClosed<-function(parms,DM,priorparms,data_type){
   
   priors <- (base::sum(dnorm(parms$pbeta,priorparms$mu0,sqrt(priorparms$sigma2_mu0),log=TRUE))
              + base::sum(dbinom((parms$H>1),1,parms$psi,log=TRUE))
-             + ddirichlet(c(parms$delta_1,parms$delta_2,1.-parms$delta_1-parms$delta_2),priorparms$a0delta)
              + dbeta(parms$alpha,priorparms$a0alpha,priorparms$b0alpha,log=TRUE)
              + -log(parms$N))
+  
+  if(DM$mod.delta==formula(~type)){
+    priors <- priors + ddirichlet(c(parms$delta_1,parms$delta_2,1.-parms$delta_1-parms$delta_2),priorparms$a0delta)
+  } else {
+    priors <- priors + dbeta(2*parms$delta,priorparms$a0delta[1],priorparms$a0delta[2],log=TRUE)
+  }
   
   if(data_type=="sometimes"){
     priors <- priors + dbeta(parms$alpha,priorparms$a0alpha,priorparms$b0alpha,log=TRUE)
@@ -297,7 +310,6 @@ checkClosed<-function(parms,parmlist,mms,DM,iter,bin,thin,burnin,taccept,tuneadj
   if(tuneadjust<=0 | tuneadjust>1) stop ("'tuneadjust' must be >0 and <=1")
   if(npoints<1) stop("'npoints' must be greater than 0")
   if(maxnumbasis<1 | maxnumbasis>mms@ncolbasis) stop(paste("'maxnumbasis' must be between 1 and ",mms@ncolbasis))
-  if(length(a0delta)!=3) stop("'a0delta' must be a postive vector of length 3")
   if(!all(c(a0delta,a0alpha,b0alpha,a,sigma2_mu0)>0)) stop("'a0delta', 'a0alpha', 'b0alpha', 'a', and 'sigma2_mu0' must be >0")
   
   mod.p.h<-DM$mod.p.h
@@ -319,6 +331,17 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
   parms<-params
   if(any(parms=="pbeta")){
     parms<-c(paste0("pbeta[",colnames(DM$p),"]"),params[which(params!="pbeta")])
+  }
+  if(any(parms=="delta")){
+    if(DM$mod.delta==formula(~type)){
+      deltaname<-c("delta_1","delta_2")   
+      parms<-c(parms[which(parms!="delta")],"delta_1","delta_2") 
+    } else {
+      deltaname<-c("delta")   
+      parms<-c(parms[which(parms!="delta")],"delta_1") 
+    }
+  } else {
+    deltaname<-NULL
   }
   if(any(parms=="zp")){
     zpname<-paste0("zp[",1:M,"]")
@@ -366,6 +389,13 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
     chains[[ichain]] <- chains[[ichain]]$posterior
     colnames(chains[[ichain]]) <- names(initstemp)   
     chains[[ichain]] <- chains[[ichain]][,parms]
+    if(!is.null(deltaname)){
+      if(!is.null(nrow(chains[[ichain]]))) {
+        colnames(chains[[ichain]])[which(substr(colnames(chains[[ichain]]),1,nchar("delta"))=="delta")] <- deltaname
+      } else {
+        names(chains[[ichain]])[which(substr(names(chains[[ichain]]),1,nchar("delta"))=="delta")] <- deltaname     
+      }
+    }
     chains[[ichain]] <- mcmc(chains[[ichain]],start=1,thin=1)
     if(burnin<thin){
       temp=seq(thin,max(1,iter),thin)
@@ -395,7 +425,8 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
 #' @param covs A data frame of temporal covariates for detection probabilities (ignored unless \code{mms=NULL}). The number of rows in the data frame must equal the number of sampling occasions. Covariate names cannot be "time", "age", or "h"; these names are reserved for temporal, behavioral, and individual effects when specifying \code{mod.p} and \code{mod.phi}.
 #' @param mms An optional object of class \code{multimarksetup-class}; if \code{NULL} it is created. See \code{\link{processdata}}.
 #' @param mod.p Model formula for detection probability. For example, \code{mod.p=~1} specifies no effects (i.e., intercept only), \code{mod.p~time} specifies temporal effects, \code{mod.p~c} specifies behavioral reponse (i.e., trap "happy" or "shy"), \code{mod.p~h} specifies individual heterogeneity, and \code{mod.p~time+c} specifies additive temporal and behavioral effects .
-#' @param parms A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are logit-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), probability of type 1 encounter, given detection ("\code{delta_1})", probability of type 2 encounter, given detection ("\code{delta_2}"), probability of simultaneous type 1 and type 2 detection, given both types encountered ("\code{alpha}"), logit-scale individual heterogeneity variance term ("\code{sigma2_zp}"), logit-scale individual effects ("\code{zp}"), and the probability that any given observed history corresponds to a legitmate individual ("\code{psi}"). Individual encounter history indices ("\code{H}") and the log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables .
+#' @param mod.delta Model formula for conditional probabilities of type 1 (delta_1) and type 2 (delta_2) encounters, given detection. Currently only \code{mod.delta=~1} (i.e., \eqn{delta_1 = delta_2}) and \code{mod.delta=~type} (i.e., \eqn{delta_1 \ne delta_2}) are implemented.
+#' @param parms A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are logit-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), conditional probability of type 1 or type 2 encounter, given detection ("\code{delta})", probability of simultaneous type 1 and type 2 detection, given both types encountered ("\code{alpha}"), logit-scale individual heterogeneity variance term ("\code{sigma2_zp}"), logit-scale individual effects ("\code{zp}"), and the probability that any given observed history corresponds to a legitmate individual ("\code{psi}"). Individual encounter history indices ("\code{H}") and the log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables .
 #' @param nchains The number of parallel MCMC chains for the model .
 #' @param iter The number of MCMC iterations .
 #' @param adapt The number of iterations for proposal distribution adaptation. If \code{adapt = 0} then no adaptation occurs .
@@ -409,7 +440,7 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
 #' @param propsigmap Scaler specifying the initial Gamma(shape = 1/\code{propsigmap}, scale = sigma_zp*\code{propsigmap}) proposal distribution for sigma_zp = sqrt(sigma2_zp). Default is \code{propsigmap=1} .
 #' @param npoints Number of Gauss-Hermite quadrature points to use for numerical integration. Accuracy increases with number of points, but so does computation time .
 #' @param maxnumbasis Maximum number of basis vectors to use when proposing latent history frequency updates. Default is \code{maxnumbasis = 1}, but higher values can potentially improve mixing .
-#' @param a0delta Vector of length 3 specifying parameters of [delta_1, delta_2, 1-delta_1-delta_2] ~ Dirichlet(a0delta) prior for the conditional (on detection) probability of type 1 (delta_1), type 2 (delta_2), and both type 1 and type 2 encounters (1-delta_1-delta_2). Default is ``uninformative'' \code{a0delta = c(1,1,1)} .
+#' @param a0delta Scaler or vector (of length d) specifying the prior for the conditional (on detection) probability of type 1 (delta_1), type 2 (delta_2), and both type 1 and type 2 encounters (1-delta_1-delta_2). If \code{a0delta} is a scaler, then this value is used for all a0delta[j] for j = 1, ..., d. For \code{mod.delta=~type}, d=3 with [delta_1, delta_2, 1-delta_1-delta_2] ~ Dirichlet(a0delta) prior. For \code{mod.delta=~1}, k=2 with [tau] ~ Beta(a0delta[1],a0delta[2]) prior, where (delta_1,delta_2,1-delta_1-delta_2) = (tau/2,tau/2,1-tau). If See McClintock et al. (2013) for more details.
 #' @param a0alpha Specifies "shape1" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{a0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1) .
 #' @param b0alpha Specifies "shape2" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{b0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1) .
 #' @param a Scale parameter for [sigma_z] ~ half-Cauchy(a) prior for the individual hetegeneity term sigma_zp = sqrt(sigma2_zp). Default is ``uninformative'' \code{a = 25} .
@@ -424,6 +455,7 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
 #' @return A list containing the following:
 #' \item{mcmc}{Markov chain Monte Carlo object of class \code{\link[coda]{mcmc.list}}.}
 #' \item{mod.p}{Model formula for detection probability (as specified by \code{mod.p} above).}
+#' \item{mod.delta}{Model formula for conditional probability of type 1 or type 2 encounter, given detection (as specified by \code{mod.delta} above).}
 #' \item{DM}{A list of design matrices for detection probability generated for model \code{mod.p}, where DM$p is the design matrix for initial capture probability (p) and DM$c is the design matrix for recapture probability (c).}
 #' \item{initial.values}{A list containing the parameter and latent variable values at iteration \code{iter} for each chain. Values are provided for "\code{pbeta}", "\code{N}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_zp}", "\code{zp}", "\code{psi}", "\code{x}", and "\code{H}".}
 #' @author Brett T. McClintock
@@ -442,14 +474,15 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
 #' #Posterior summary for monitored parameters
 #' summary(bobcat.dot$mcmc)
 #' plot(bobcat.dot$mcmc)}
-multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.p=~1,parms=c("pbeta","delta_1","delta_2","N"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,npoints=500,maxnumbasis=1,a0delta=c(1,1,1),a0alpha=1,b0alpha=1,a=25,mu0=0,sigma2_mu0=1.75,initial.values=NULL,known=integer(),printlog=FALSE,...){
+multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.p=~1,mod.delta=~type,parms=c("pbeta","delta","N"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,npoints=500,maxnumbasis=1,a0delta=1,a0alpha=1,b0alpha=1,a=25,mu0=0,sigma2_mu0=1.75,initial.values=NULL,known=integer(),printlog=FALSE,...){
   
   if(is.null(mms)) mms <- processdata(Enc.Mat,data.type,covs,known)
   if(class(mms)!="multimarksetup") stop("'mms' must be an object of class 'multimarksetup'")
   validObject(mms)
   
   if(class(mod.p)!="formula") stop("'mod.p' must be an object of class 'formula'")
-  DM<-get_DMClosed(mod.p,mms@Enc.Mat,covs=mms@covs,...)
+  if(class(mod.delta)!="formula") stop("'mod.delta' must be an object of class 'formula'")
+  DM<-get_DMClosed(mod.p,mod.delta,mms@Enc.Mat,covs=mms@covs,...)
   
   if(iter>0){
     if(iter<=burnin) stop(paste("'burnin' must be less than ",iter))
@@ -457,7 +490,7 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
     burnin<-0
   }
   
-  parmlist<-c("pbeta","delta_1","delta_2","N","sigma2_zp","zp","alpha","psi","H","logPosterior")
+  parmlist<-c("pbeta","delta","N","sigma2_zp","zp","alpha","psi","H","logPosterior")
   params <- checkClosed(parms,parmlist,mms,DM,iter,bin,thin,burnin,taccept,tuneadjust,npoints,maxnumbasis,a0delta,a0alpha,b0alpha,a,sigma2_mu0)
   
   data.type<-mms@data.type
@@ -469,6 +502,7 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
   
   mu0 <- checkvecs(mu0,pdim,"mu0")
   sigma2_mu0 <- checkvecs(sigma2_mu0,pdim,"sigma2_mu0")
+  a0delta <- checkvecs(a0delta,ifelse(mod.delta==formula(~type),3,2),"a0delta")
   
   gq<-gauss.quad(npoints,kind="hermite")
   
@@ -477,7 +511,8 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
   priorparms <-list(a0delta=a0delta,a0alpha=a0alpha,b0alpha=b0alpha,a=a,mu0=mu0,sigma2_mu0=sigma2_mu0,npoints=npoints)
   
   message("\nFitting closed capture model with logit link")
-  message("p model = ",as.character(mod.p),"\n")
+  message("p model = ",as.character(mod.p))
+  message("delta model = ",as.character(mod.delta),"\n")
   message("Initializing model \n")
   posteriorClosed(inits,DM,mms,priorparms,gq)
   
@@ -507,7 +542,7 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
   gc()
   
   chains <- processClosedchains(chains,params,DM,M,noccas,nchains,iter,burnin,thin)
-  return(list(mcmc=chains$chains,mod.p=mod.p,DM=list(p=DM$p,c=DM$c),initial.values=chains$initial.values,priorparms=priorparms))
+  return(list(mcmc=chains$chains,mod.p=mod.p,mod.delta=mod.delta,DM=list(p=DM$p,c=DM$c),initial.values=chains$initial.values,priorparms=priorparms))
 }
 
 #' Calculate posterior capture and recapture probabilities
@@ -585,8 +620,9 @@ checkparmsClosed <- function(mms,modlist,params,parmlist,M){
   }
 }
 
-monitorparmsClosed <- function(parms,parmlist,noccas){    
-  if(!all(match(parms,parmlist,nomatch=0))) stop(paste("monitored parameters ('parms') can only include:",paste(parmlist,collapse=",")))
+monitorparmsClosed <- function(parms,parmlist,noccas){ 
+  
+  if(!all(match(parms,parmlist,nomatch=0))) stop(paste0("monitored parameters ('monparms') can only include: ",paste(parmlist[-length(parmlist)],collapse=", "),", or ",parmlist[length(parmlist)]))
   
   commonparms <- parms
   
@@ -614,7 +650,7 @@ monitorparmsClosed <- function(parms,parmlist,noccas){
 
 checkmmClosedinput<-function(mms,modlist,nmod,nchains,iter,modprior){
   if(class(mms)!="multimarksetup") stop("'mms' must be an object of class 'multimarksetup'")
-  if(!all(match(unlist(unique(lapply(modlist,names))),c("mcmc","mod.p","DM","initial.values","priorparms"),nomatch=0))) stop("each object in 'modlist' must be a list returned by multimarkClosed()")
+  if(!all(match(unlist(unique(lapply(modlist,names))),c("mcmc","mod.p","mod.delta","DM","initial.values","priorparms"),nomatch=0))) stop("each object in 'modlist' must be a list returned by multimarkClosed()")
   if(!all(lapply(modlist,function(x) is.mcmc.list(x$mcmc))==TRUE)) stop("each object in 'modlist' must be a list returned by multimarkClosed() output")
   if(nmod<2) stop("'modlist' must contain at least two models")
   if(length(nchains)!=1) stop("all models must have same number of chains")
@@ -626,20 +662,39 @@ checkmmClosedinput<-function(mms,modlist,nmod,nchains,iter,modprior){
 drawmissingClosed<-function(M.cur,missing,pbetapropsd,sigppropshape,sigppropscale){
   missingpbeta <- rnorm(length(missing$missingpbetaparms[[M.cur]]),sd=pbetapropsd)
   names(missingpbeta) <- missing$missingpbetaparms[[M.cur]]
+  missingdelta <- numeric()
+  if(length(missing$missingdeltaparms[[M.cur]])){
+    if(length(missing$missingdeltaparms[[M.cur]])==1){
+      missingdelta <- rbeta(1,1,1)/2
+    } else {
+      missingdelta <- rdirichlet(1,c(1,1,1))[1:2]
+    }
+  }
+  names(missingdelta) <- missing$missingdeltaparms[[M.cur]]
   missingsigp  <- rinvgamma(length(missing$missingsigpparms[[M.cur]]),shape=sigppropshape,scale=sigppropscale)
   names(missingsigp) <- missing$missingsigpparms[[M.cur]]
   missingzp <- rnorm(length(missing$missingzpparms[[M.cur]]),sd=missing$zppropsd+sqrt(missingsigp)*missing$usesigp)
   names(missingzp) <- missing$missingzpparms[[M.cur]]
-  missing <- c(missingpbeta,missingzp,missingsigp)
+  missing <- c(missingpbeta,missingdelta,missingzp,missingsigp)
   missing
 }
 
 getbrobprobClosed<-function(imod,modprior,posterior,cur.parms,missing,pbetapropsd,sigppropshape,sigppropscale){
+  deltadens <- 0
+  if(length(missing$missingdeltaparms[[imod]])){
+    if(length(missing$missingdeltaparms[[imod]])==1){
+      deltadens <- dbeta(2*cur.parms[missing$missingdeltaparms[[imod]]],1,1,log=TRUE)
+    } else {
+      delta <- c(cur.parms[missing$missingdeltaparms[[imod]]],1.-sum(cur.parms[missing$missingdeltaparms[[imod]]]))
+      deltadens <- ddirichlet(delta,c(1,1,1))
+    }
+  }
   brob(log(modprior[imod]) 
        + posterior 
        + base::sum(dnorm(cur.parms[missing$missingpbetaparms[[imod]]],sd=pbetapropsd,log=TRUE))
        + base::sum(dnorm(cur.parms[missing$missingzpparms[[imod]]],sd=missing$zppropsd+sqrt(cur.parms[missing$missingsigpparms[[imod]]])*missing$usesigp,log=TRUE))
-       + base::sum(dinvgamma(cur.parms[missing$missingsigpparms[[imod]]],shape=sigppropshape,scale=sigppropscale)))
+       + base::sum(dinvgamma(cur.parms[missing$missingsigpparms[[imod]]],shape=sigppropshape,scale=sigppropscale))
+       + deltadens)
 }
 
 getcurClosedparmslist<-function(cur.parms,DM,M,noccas,data_type,alpha){
@@ -654,6 +709,8 @@ getcurClosedparmslist<-function(cur.parms,DM,M,noccas,data_type,alpha){
   parmslist[[1]]$psi <- cur.parms["psi"]
   parmslist[[1]]$delta_1 <- cur.parms["delta_1"]
   parmslist[[1]]$delta_2 <- cur.parms["delta_2"]
+  parmslist[[1]]$delta <- cur.parms["delta"]
+
   if(data_type=="sometimes"){
     parmslist[[1]]$alpha <- cur.parms["alpha"]
   } else {
@@ -673,6 +730,8 @@ missingparmnamesClosed<-function(params,M,noccas,zppropsd){
   
   missingpbetaparms <- extractmissingparms(missingparms,"pbeta")
   
+  missingdeltaparms <- extractmissingparms(missingparms,"delta")
+  
   missingsigpparms <- lapply(missingparms,function(x) unlist(x,use.names=FALSE)[which(x=="sigma2_zp")])
   
   missingzpparms <- extractmissingparms(missingparms,"zp[")
@@ -683,7 +742,7 @@ missingparmnamesClosed<-function(params,M,noccas,zppropsd){
   } else {
     usesigp <-0
   }
-  list(commonparms=commonparms,missingparms=missingparms,missingpbetaparms=missingpbetaparms,missingsigpparms=missingsigpparms,missingzpparms=missingzpparms,zppropsd=zppropsd,usesigp=usesigp) 
+  list(commonparms=commonparms,missingparms=missingparms,missingpbetaparms=missingpbetaparms,missingdeltaparms=missingdeltaparms,missingsigpparms=missingsigpparms,missingzpparms=missingzpparms,zppropsd=zppropsd,usesigp=usesigp) 
 }
 
 #' Multimodel inference for 'multimark' closed population abundance models
@@ -694,7 +753,7 @@ missingparmnamesClosed<-function(params,M,noccas,zppropsd){
 #' @param mms An object of class \code{multimarksetup}. See \code{\link{multimarksetup-class}}.
 #' @param modlist A list of individual model output lists returned by \code{\link{multimarkClosed}}. The models must have the same number of chains and MCMC iterations.
 #' @param modprior Vector of length \code{length(modlist)} containing prior model probabilities. Default is \code{modprior = rep(1/length(modlist), length(modlist))}.
-#' @param monparms Parameters to monitor. Only parameters common to all models can be monitored (e.g., "\code{pbeta[(Intercept)]}", "\code{N}", "\code{psi}", "\code{delta_1}", "\code{delta_2}"), but derived capture ("\code{p}") and recapture ("\code{c}") probabilities can also be monitored. Default is \code{monparms = "N"}.
+#' @param monparms Parameters to monitor. Only parameters common to all models can be monitored (e.g., "\code{pbeta[(Intercept)]}", "\code{N}", "\code{psi}"), but derived capture ("\code{p}") and recapture ("\code{c}") probabilities can also be monitored. Default is \code{monparms = "N"}.
 #' @param miter The number of RJMCMC iterations per chain. If \code{NULL}, then the number of MCMC iterations for each individual model chain is used.
 #' @param M1 Integer indicating the initial model, where \code{M1=i} initializes the RJMCMC algorithm in the model corresponding to \code{modlist[[i]]} for i=1,...,  \code{length(modlist)}. If \code{NULL}, the algorithm is initialized in the most general model. Default is \code{M1=NULL}.
 #' @param pbetapropsd Scaler specifying the standard deviation of the Normal(0, pbetapropsd) proposal distribution for "\code{pbeta}"  parameters. Default is \code{pbetapropsd=1}. See Barker & Link (2013) for more details.
@@ -744,14 +803,15 @@ multimodelClosed<-function(mms,modlist,modprior=rep(1/length(modlist),length(mod
   
   if(is.null(miter)) miter <- iter
   
-  modnames <- unlist(lapply(modlist,function(x) x$mod.p)) 
+  pmodnames <- unlist(lapply(modlist,function(x) x$mod.p)) 
+  deltamodnames <- unlist(lapply(modlist,function(x) x$mod.delta)) 
   
   params <- lapply(modlist,function(x) varnames(x$mcmc))
   
-  checkparmsClosed(mms,modlist,params,parmlist=c("pbeta[(Intercept)]","delta_1","delta_2","N","psi",paste0("H[",1:M,"]"),"logPosterior"),M)
+  checkparmsClosed(mms,modlist,params,parmlist=c("pbeta[(Intercept)]","N","psi",paste0("H[",1:M,"]"),"logPosterior"),M)
   
   message("\nPerforming closed population Bayesian multimodel inference by RJMCMC \n")
-  cat(paste0("mod",1:nmod,": ","p(",modnames,")"),"",sep="\n")
+  cat(paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")"),"",sep="\n")
   
   missing <- missingparmnamesClosed(params,M,noccas,zppropsd) 
   
@@ -785,6 +845,7 @@ multimodelClosed<-function(mms,modlist,modprior=rep(1/length(modlist),length(mod
     cur.parms <- c(modlist[[M.cur]]$mcmc[[ichain]][sample(iter,1),],modmissingparms)
     
     DM <- modlist[[M.cur]]$DM
+    DM$mod.delta <- modlist[[M.cur]]$mod.delta
     DM$mod.p.h <- mod.p.h[[M.cur]]
     
     cur.parms.list <- getcurClosedparmslist(cur.parms,DM,M,noccas,data_type,alpha)  
@@ -796,6 +857,7 @@ multimodelClosed<-function(mms,modlist,modprior=rep(1/length(modlist),length(mod
       for(imod in (1:nmod)[-M.cur]){ 
         
         DM <- modlist[[imod]]$DM
+        DM$mod.delta <- modlist[[imod]]$mod.delta
         DM$mod.p.h <- mod.p.h[imod]
         
         cur.parms.list[[1]]$pbeta <- cur.parms[paste0("pbeta[",colnames(DM$p),"]")]
@@ -808,7 +870,7 @@ multimodelClosed<-function(mms,modlist,modprior=rep(1/length(modlist),length(mod
       }
       
       if(any(is.na(as.numeric(mod.prob.brob)))){
-        warning(paste0("'NA' posterior for model '",modnames[is.na(as.numeric(mod.prob.brob))],"' at iteration ",iiter,"; model move rejected."))
+        warning(paste0("'NA' posterior for model '","p(",pmodnames[is.na(as.numeric(mod.prob.brob))],")delta(",deltamodnames[is.na(as.numeric(mod.prob.brob))],")' at iteration ",iiter,"; model move rejected."))
       } else {       
         mod.prob[ichain,iiter,] <- as.numeric(mod.prob.brob/Brobdingnag::sum(mod.prob.brob))
         M.cur <- (1:nmod)[rmultinom(1, 1, mod.prob[ichain,iiter,])==1]
@@ -821,6 +883,7 @@ multimodelClosed<-function(mms,modlist,modprior=rep(1/length(modlist),length(mod
       multimodel[[ichain]][iiter,commonparms] <- cur.parms[commonparms]
       
       DM <- modlist[[M.cur]]$DM
+      DM$mod.delta <- modlist[[M.cur]]$mod.delta
       DM$mod.p.h <- mod.p.h[[M.cur]]
       
       cur.parms.list <- getcurClosedparmslist(cur.parms,DM,M,noccas,data_type,alpha) 
@@ -836,13 +899,13 @@ multimodelClosed<-function(mms,modlist,modprior=rep(1/length(modlist),length(mod
   pos.prob <- vector('list',nchains)
   for(ichain in 1:nchains){
     pos.prob[[ichain]] <-hist(multimodel[[ichain]][,"M"],plot=F,breaks=0:nmod)$density
-    names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": p(",modnames,")")
+    names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")")
     multimodel[[ichain]] <- mcmc(multimodel[[ichain]])
   }
   
   multimodel <- as.mcmc.list(multimodel)
   names(pos.prob) <- paste0("chain",1:nchains)
   pos.prob[["overall"]]<- hist(unlist(multimodel[, "M"]),plot = F, breaks = 0:nmod)$density
-  names(pos.prob$overall) <- paste0("mod",1:nmod,": p(",modnames,")")
+  names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")")
   list(rjmcmc=multimodel,pos.prob=pos.prob) 
 }
