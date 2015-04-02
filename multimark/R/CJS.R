@@ -97,8 +97,8 @@ get_z<-function(mms,DM,H,pbeta,zp,phibeta,zphi){
   
   for(cohort in 1:(noccas-1)){
     ind <- c(0,cumsum(seq(noccas-1,2)))[cohort]+1:(noccas-cohort)
-    p[cohort,,cohort:(noccas-1)] <- pnorm(matrix(rep(XBp[ind],each=M)+zp,nrow=M,ncol=noccas-cohort)) 
-    phi[cohort,,cohort:(noccas-1)] <- pnorm(matrix(rep(XBphi[ind],each=M)+zphi,nrow=M,ncol=noccas-cohort)) 
+    p[cohort,,cohort:(noccas-1)] <- pmin(pmax(pnorm(matrix(rep(XBp[ind],each=M)+zp,nrow=M,ncol=noccas-cohort)),tol),1.-tol) 
+    phi[cohort,,cohort:(noccas-1)] <- pmin(pmax(pnorm(matrix(rep(XBphi[ind],each=M)+zphi,nrow=M,ncol=noccas-cohort)),tol),1.-tol)  
   }
   
   z <- matrix(0,M,noccas)
@@ -138,8 +138,8 @@ get_z<-function(mms,DM,H,pbeta,zp,phibeta,zphi){
 #  
 #  for(cohort in 1:(noccas-1)){
 #    ind <- c(0,cumsum(seq(noccas-1,2)))[cohort]+1:(noccas-cohort)
-#    p[cohort,,cohort:(noccas-1)] <- pnorm(matrix(rep(XBp[ind],each=M)+zp,nrow=M,ncol=noccas-cohort)) 
-#    phi[cohort,,cohort:(noccas-1)] <- pnorm(matrix(rep(XBphi[ind],each=M)+zphi,nrow=M,ncol=noccas-cohort)) 
+#    p[cohort,,cohort:(noccas-1)] <- pmin(pmax(pnorm(matrix(rep(XBp[ind],each=M)+zp,nrow=M,ncol=noccas-cohort)),tol),1.-tol)  
+#    phi[cohort,,cohort:(noccas-1)] <- pmin(pmax(pnorm(matrix(rep(XBphi[ind],each=M)+zphi,nrow=M,ncol=noccas-cohort)),tol),1.-tol)  
 #  }
 #  
 #  z <- matrix(0,M,noccas)

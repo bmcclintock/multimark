@@ -727,7 +727,7 @@ inverseXB<-function(ichain,iout,betanames,mod.h,DM,noccas,varind,vars,parm,sigpa
     } else {
       sigma2<-matrix(iout$mcmc[[ichain]][sigparm],nrow=1)  
     }
-    cat("Performing numerical integration over ",parm," individual effects for chain ",ichain,". This might take a while. \n",sep="")
+    message("Performing numerical integration over ",parm," individual effects for chain ",ichain,". This might take a while. \n")
     
     invbeta<-matrix(0,nrow=length(sigma2),ncol=noccas)
     pb <- txtProgressBar(min=0,max=noccas,char="+",width=100,style=3)

@@ -429,7 +429,7 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
       }
       
       posterior[(g/th - 1)]=POSTERIOR(ll,betas,qs,zs,deltavect,alphas,sigma_zs,Ns,psis,mu0,sigma2_mu0,a0_delta,*a0alpha,*b0alpha,*A,supN,dimp,*mod_h,datatype,deltatype); 
-      if(!R_FINITE(posterior[(g/th - 1)])) {Rprintf("Fatal error in chain %d: please report to <brett.mcclintock@noaa.gov \n",*ichain); *iter = g; return;}
+      if(!R_FINITE(posterior[(g/th - 1)])) {Rprintf("Fatal error in chain %d: please report to <brett.mcclintock@noaa.gov> \n",*ichain); *iter = g; return;}
       
     }
 
