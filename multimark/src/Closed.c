@@ -242,9 +242,9 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
       sca=sigma_zs/sha;
       sigma_zstar = rgamma(sha,sca);
       if(sigma_zstar>sqrttol){
-        op=dgamma(sigma_zstar,sha,sca,1);
+        op=dgamma(sigma_zstar,sha,sca,1) - pgamma(sqrttol,sha,sca,0,1);
         sca=sigma_zstar/sha;
-        np=dgamma(sigma_zs,sha,sca,1);
+        np=dgamma(sigma_zs,sha,sca,1) - pgamma(sqrttol,sha,sca,0,1);
         op+=log(2.0*dcauchy(sigma_zs,0.0,*A,0));
         np+=log(2.0*dcauchy(sigma_zstar,0.0,*A,0));
         for(i=0; i<supN; i++){

@@ -25,7 +25,7 @@
 #' \item{Enc.Mat}{A matrix containing the observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions.}
 #' \item{trueEnc.Mat}{A matrix containing the true (latent) encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions.}
 #' @author Brett T. McClintock 
-#' @seealso \code{\link{getfreq}}, \code{\link{processdata}}, \code{\link{multimarkClosed}}
+#' @seealso \code{\link{processdata}}, \code{\link{multimarkClosed}}
 #' @references
 #' Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.
 #' 
