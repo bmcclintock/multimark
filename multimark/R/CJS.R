@@ -873,7 +873,7 @@ checkparmsCJS <- function(mms,modlist,params,parmlist,M){
   }
 }
 
-checkmmCJSinput<-function(mms,modlist,nmod,nchains,iter,modprior){
+checkmmCJSinput<-function(mms,modlist,nmod,nchains,iter,modprior,M1){
   if(class(mms)!="multimarksetup") stop("'mms' must be an object of class 'multimarksetup'")
   if(!all(match(unlist(unique(lapply(modlist,names))),c("mcmc","mod.p","mod.phi","mod.delta","DM","initial.values","priorparms"),nomatch=0))) stop("each object in 'modlist' must be a list returned by multimarkCJS()")
   if(!all(lapply(modlist,function(x) is.mcmc.list(x$mcmc))==TRUE)) stop("each object in 'modlist' must be a list returned by multimarkCJS() output")
@@ -882,6 +882,8 @@ checkmmCJSinput<-function(mms,modlist,nmod,nchains,iter,modprior){
   if(length(iter)!=1) stop("all chains must have same number of iterations")
   if(length(modprior)!=nmod | base::sum(modprior)!=1) stop(paste("'modprior' must be a vector of length ",nmod," that sums to 1"))
   if(mms@data.type=="sometimes" & !all(lapply(modlist,function(x) any(varnames(x$mcmc)=="alpha"))==TRUE)) stop("'alpha' parameter not found for all models")
+  if(length(M1)!=nchains) stop("'M1' must be an integer vector of length ",nchains)
+  if(!all(match(M1,1:nmod,nomatch=0))) stop("'M1' must be an integer vector of length ",nchains," with values ranging from 1 to ",nmod)
 }
 
 drawmissingCJS<-function(M.cur,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale){
@@ -1038,7 +1040,7 @@ monitorparmsCJS <- function(parms,parmlist,noccas){
 #' @param modprior Vector of length \code{length(modlist)} containing prior model probabilities. Default is \code{modprior = rep(1/length(modlist), length(modlist))}.
 #' @param monparms Parameters to monitor. Only parameters common to all models can be monitored (e.g., "\code{pbeta[(Intercept)]}", "\code{phibeta[(Intercept)]}", "\code{psi}"), but derived survival ("\code{phi}") and capture ("\code{p}") probabilities can also be monitored. Default is \code{monparms = "phi"}.
 #' @param miter The number of RJMCMC iterations per chain. If \code{NULL}, then the number of MCMC iterations for each individual model chain is used.
-#' @param M1 Integer indicating the initial model, where \code{M1=i} initializes the RJMCMC algorithm in the model corresponding to \code{modlist[[i]]} for i=1,...,  \code{length(modlist)}. If \code{NULL}, the algorithm is initialized in the most general model. Default is \code{M1=NULL}.
+#' @param M1 Integer vector indicating the initial model for each chain, where \code{M1_j=i} initializes the RJMCMC algorithm for chain j in the model corresponding to \code{modlist[[i]]} for i=1,...,  \code{length(modlist)}. If \code{NULL}, the algorithm for all chains is initialized in the most general model. Default is \code{M1=NULL}.
 #' @param pbetapropsd Scaler specifying the standard deviation of the Normal(0, pbetapropsd) proposal distribution for "\code{pbeta}"  parameters. Default is \code{pbetapropsd=1}. See Barker & Link (2013) for more details.
 #' @param zppropsd Scaler specifying the standard deviation of the Normal(0, zppropsd) proposal distribution for "\code{zp}"  parameters. Only applies if at least one (but not all) model(s) include individual hetergeneity in detection probability. If \code{NULL}, "\code{zppropsd=sqrt(sigma2_zp)}" is used. Default is \code{zppropsd=NULL}. See Barker & Link (2013) for more details.  
 #' @param phibetapropsd Scaler specifying the standard deviation of the Normal(0, phibetapropsd) proposal distribution for "\code{phibeta}"  parameters. Default is \code{phibetapropsd=1}. See Barker & Link (2013) for more details.
@@ -1085,7 +1087,11 @@ multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlis
   iter <- unlist(unique(lapply(modlist,function(x) unique(lapply(x$mcmc,nrow)))))
   nchains <- unlist(unique(lapply(modlist,function(x) length(x$mcmc))))
   
-  checkmmCJSinput(mms,modlist,nmod,nchains,iter,modprior)
+  params <- lapply(modlist,function(x) varnames(x$mcmc))
+  
+  if(is.null(M1)) M1 <- rep(which.max(lapply(params,length))[1],nchains)
+  
+  checkmmCJSinput(mms,modlist,nmod,nchains,iter,modprior,M1)
   
   noccas<-ncol(mms@Enc.Mat)
   M<-nrow(mms@Enc.Mat)
@@ -1096,8 +1102,6 @@ multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlis
   pmodnames <- unlist(lapply(modlist,function(x) x$mod.p)) 
   phimodnames <- unlist(lapply(modlist,function(x) x$mod.phi))
   deltamodnames <- unlist(lapply(modlist,function(x) x$mod.delta)) 
-  
-  params <- lapply(modlist,function(x) varnames(x$mcmc))
   
   checkparmsCJS(mms,modlist,params,parmlist=c("pbeta[(Intercept)]","phibeta[(Intercept)]","psi",paste0("H[",1:M,"]"),paste0("z[",rep(1:M,each=noccas),",",1:noccas,"]"),"loglike"),M)
   
@@ -1131,7 +1135,7 @@ multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlis
   setTxtProgressBar(pb, 1)
   for(ichain in 1:nchains){
     
-    M.cur<- ifelse(is.null(M1),which.max(lapply(params,length))[1],M1)
+    M.cur<- M1[ichain]
     
     modmissingparms <- drawmissingCJS(M.cur,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale)
     cur.parms <- c(modlist[[M.cur]]$mcmc[[ichain]][sample(iter,1),],modmissingparms)

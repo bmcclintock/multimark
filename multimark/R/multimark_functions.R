@@ -313,7 +313,7 @@ get_H <- function(mms,x){
 }
 
 get_C <-function(All.hists){
-  apply(All.hists>0,1,which.max)
+  as.integer(c(ncol(All.hists)+1,apply(All.hists[-1,]>0,1,which.max)))
 }
 
 get_L <-function(All.hists){

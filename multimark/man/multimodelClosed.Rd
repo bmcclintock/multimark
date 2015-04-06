@@ -20,7 +20,7 @@ multimodelClosed(mms, modlist, modprior = rep(1/length(modlist),
 
 \item{miter}{The number of RJMCMC iterations per chain. If \code{NULL}, then the number of MCMC iterations for each individual model chain is used.}
 
-\item{M1}{Integer indicating the initial model, where \code{M1=i} initializes the RJMCMC algorithm in the model corresponding to \code{modlist[[i]]} for i=1,...,  \code{length(modlist)}. If \code{NULL}, the algorithm is initialized in the most general model. Default is \code{M1=NULL}.}
+\item{M1}{Integer vector indicating the initial model for each chain, where \code{M1_j=i} initializes the RJMCMC algorithm for chain j in the model corresponding to \code{modlist[[i]]} for i=1,...,  \code{length(modlist)}. If \code{NULL}, the algorithm for all chains is initialized in the most general model. Default is \code{M1=NULL}.}
 
 \item{pbetapropsd}{Scaler specifying the standard deviation of the Normal(0, pbetapropsd) proposal distribution for "\code{pbeta}"  parameters. Default is \code{pbetapropsd=1}. See Barker & Link (2013) for more details.}
 
