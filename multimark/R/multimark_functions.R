@@ -220,8 +220,7 @@ get_basis_vectors <- function(tA,ivect,data.type){
   bound<-seq(1:J)[-free]  # indices for the bound variables (i.e., the latent histories that spawn only 1 recorded history)
   
   Basis<-Diagonal(J)[,-bound]
-  Basis[bound,-1] <- -tA[,free[-1]]     
-
+  if(length(free)>1) Basis[bound,-1] <- -tA[,free[-1]]     
   return(Basis)
 }
 
@@ -595,6 +594,7 @@ get_known<-function(known,Enc.Mat,histindex,data.type){
       stop(paste0("'known' must be an integer vector of length ",M," with sum between 0 and ",M))
     } else {
       knownx <- getfreq(Enc.Mat[which(known>0),],histindex,data.type)
+      knownx[1] <- integer(1) #ignore known all-zero histories
       if(base::sum(apply(Enc.Mat==3 | Enc.Mat==4,1,base::sum)>0)>base::sum(knownx)) stop("'known' vector misspecified. Encounter histories containing simultaneous encounters are known")     
     }
   } else {
@@ -674,12 +674,18 @@ processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer(
   
   A<- get_A(Enc.Mat,data.type)
   naivex<-getfreq(Enc.Mat,A$histindex,data.type)
-  Basis<-get_basis_vectors(A$Aprime,A$ivect,data.type=data.type)[,-1]
+  knownx<-get_known(known,Enc.Mat,A$histindex,data.type)
   C<-get_C(matrix(A$vAll.hists,byrow=TRUE,ncol=noccas))
   L<-get_L(matrix(A$vAll.hists,byrow=TRUE,ncol=noccas))
-  ncolbasis<-ncol(Basis)
-  indBasis<-as.vector(which(Basis!=0)-length(A$histindex)*rep(seq(0,ncolbasis-1),each=3),mode="integer")
-  knownx<-get_known(known,Enc.Mat,A$histindex,data.type)
+  Basis<-get_basis_vectors(A$Aprime,A$ivect,data.type=data.type)
+  if(is.null(dim(Basis)) | sum(knownx)==M){
+    ncolbasis<-integer(1)
+    indBasis<-integer()    
+  } else {
+    Basis <- Basis[,-1]
+    ncolbasis<-ncol(Basis)
+    indBasis<-as.vector(which(Basis!=0)-length(A$histindex)*rep(seq(0,ncolbasis-1),each=3),mode="integer")
+  }
   mms<-new(Class="multimarksetup",Enc.Mat=Enc.Mat,data.type=data.type,vAll.hists=A$vAll.hists,Aprime=A$Aprime,indBasis=indBasis,ncolbasis=ncolbasis,knownx=knownx,C=C,L=L,naivex=naivex,covs=covs)  
   return(mms)
 }

@@ -486,7 +486,7 @@ checkCJS<-function(parms,parmlist,mms,DM,iter,bin,thin,burnin,taccept,tuneadjust
   }
   
   if(thin>max(1,floor((iter-burnin)/2)) | thin<1) stop(paste("'thin' must be >0 and <=",max(1,floor((iter-burnin)/2))))
-  if(maxnumbasis<1 | maxnumbasis>mms@ncolbasis) stop(paste("'maxnumbasis' must be between 1 and ",mms@ncolbasis))
+  if(mms@ncolbasis & (maxnumbasis<1 | maxnumbasis>mms@ncolbasis)) stop(paste("'maxnumbasis' must be between 1 and ",mms@ncolbasis))
   if(!all(c(a0delta,a0alpha,b0alpha,l0p,d0p,l0phi,d0phi,diag(as.matrix(pSigma0)),diag(as.matrix(phiSigma0)))>0)) stop("'a0delta', 'a0alpha', 'b0alpha', 'l0p', 'd0p', 'l0phi', 'd0phi', and diagonal elements of 'pSigma0' and 'phiSigma0' must be >0")
   
   
@@ -744,7 +744,8 @@ multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.
   
   priorparms <-list(a0delta=a0delta,a0alpha=a0alpha,b0alpha=b0alpha,pbeta0=pbeta0,pSigma0=pSigma0,phibeta0=phibeta0,phiSigma0=phiSigma0,l0p=l0p,d0p=d0p,l0phi=l0phi,d0phi=d0phi)
   
-  message("\nFitting open population model with ",link," link")
+  message("\nFitting open population model with ",link," link\n")
+  message("data type = \"",data.type,"\"\n")
   message("p model = ",as.character(mod.p))
   message("phi model = ",as.character(mod.phi))
   message("delta model = ",as.character(mod.delta),"\n")

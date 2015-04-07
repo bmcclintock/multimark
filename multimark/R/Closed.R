@@ -510,7 +510,8 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
   
   priorparms <-list(a0delta=a0delta,a0alpha=a0alpha,b0alpha=b0alpha,a=a,mu0=mu0,sigma2_mu0=sigma2_mu0,npoints=npoints)
   
-  message("\nFitting closed capture model with logit link")
+  message("\nFitting closed capture model with logit link\n")
+  message("data type = \"",data.type,"\"\n")
   message("p model = ",as.character(mod.p))
   message("delta model = ",as.character(mod.delta),"\n")
   message("Initializing model \n")

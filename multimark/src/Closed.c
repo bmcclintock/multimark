@@ -287,9 +287,9 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
     /* update x and H (latent history frequencies) */
     op=0.0;
     np=0.0;
-    nbasis = GETCK(*numbasis,0);
+    nbasis = (*ncolBasis ? GETCK(*numbasis,0) : 0);
     obasesum=0;
-    ind=1;
+    ind=0;
     for(k=0; k< *ncolBasis; k++){
       if(xs[indBasis[k*3+2]]+min(xs[indBasis[k*3]],xs[indBasis[k*3+1]])){
         indbase[k]=1.0;
@@ -297,6 +297,7 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
       } else {
         indbase[k]=0.0;
       }
+      ind=1;
     }
     for(j=0; j< nbasis; j++){
 
