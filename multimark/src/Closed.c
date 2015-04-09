@@ -94,6 +94,7 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
     xnew[j]=xs[j];
     knownxs[j]= knownx[j];
   }
+  int xind;
   
   int npts = *npoints;
   double weight[npts],node[npts];
@@ -291,19 +292,20 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
     obasesum=0;
     ind=0;
     for(k=0; k< *ncolBasis; k++){
-      if(xs[indBasis[k*3+2]]+min(xs[indBasis[k*3]],xs[indBasis[k*3+1]])){
+      if(min(xs[indBasis[k*3+2]]-knownxs[indBasis[k*3+2]],xs[0])+min(xs[indBasis[k*3]]-knownxs[indBasis[k*3]],xs[indBasis[k*3+1]]-knownxs[indBasis[k*3+1]])){
         indbase[k]=1.0;
         obasesum+=1;
+        ind=1;
       } else {
         indbase[k]=0.0;
       }
-      ind=1;
     }
     for(j=0; j< nbasis; j++){
 
       if(obasesum){
         base=sample(*ncolBasis, indbase);
-        c_k=GETCK(xnew[indBasis[base*3+2]]+min(xnew[indBasis[base*3]],xnew[indBasis[base*3+1]]),xnew[indBasis[base*3+2]]) - xnew[indBasis[base*3+2]];
+        xind = min(xnew[indBasis[base*3+2]] - knownxs[indBasis[base*3+2]],xnew[0]);
+        c_k=GETCK(xind+min(xnew[indBasis[base*3]]-knownxs[indBasis[base*3]],xnew[indBasis[base*3+1]]-knownxs[indBasis[base*3+1]]),xind) - xind;
         if(c_k>0){
           dimadd=c_k;
           dimrem=2*c_k;
@@ -324,15 +326,12 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
         }
         nbasesum=0;
         for(i=0; i< *ncolBasis; i++){
-          if(xnew[indBasis[i*3+2]]+min(xnew[indBasis[i*3]],xnew[indBasis[i*3+1]])){
+          if(min(xnew[indBasis[i*3+2]]-knownxs[indBasis[i*3+2]],xnew[0])+min(xnew[indBasis[i*3]]-knownxs[indBasis[i*3]],xnew[indBasis[i*3+1]]-knownxs[indBasis[i*3+1]])){
             indbase[i]=1.0;
             nbasesum+=1;
           } else {
             indbase[i]=0.0;
           }
-        }
-        for(k=0; k<3; k++){
-          ind = ( (xnew[indBasis[base*3+k]]<knownxs[indBasis[base*3+k]]) ? (int) 0 : ind);
         }
         op += -log((double) obasesum);
         np += -log((double) nbasesum);
