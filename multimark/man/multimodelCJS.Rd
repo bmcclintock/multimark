@@ -54,19 +54,20 @@ Note that setting \code{parms="all"} is required when fitting individual \code{\
 \donttest{
 #Generate object of class "multimarksetup" from simulated data
 # with declining temporal trend in survival probability
-noccas <- 5
-phibetatime <- seq(2,0,length=noccas-1)
-data <- simdataCJS(N=200,noccas=noccas,phibeta=phibetatime)
-setup <- processdata(data$Enc.Mat)
+noccas <- 7
+data_type = "always"
+phibetaTime <- seq(2,0,length=noccas-1)
+data <- simdataCJS(noccas=noccas,phibeta=phibetaTime,data.type=data_type)
+setup <- processdata(data$Enc.Mat,data.type=data_type)
 
 #Run two parallel chains using the default model. Note parms="all".
 sim.pdot.phidot <- multimarkCJS(mms=setup,parms="all",nchains=2)
 
-#Run two parallel chains with time effects for phi. Note parms="all".
-sim.pdot.phitime <- multimarkCJS(mms=setup,mod.phi=~time,parms="all",nchains=2)
+#Run two parallel chains with temporal trend for phi. Note parms="all".
+sim.pdot.phiTime <- multimarkCJS(mms=setup,mod.phi=~Time,parms="all",nchains=2)
 
 #Perform RJMCMC using defaults
-modlist <- list(mod1=sim.pdot.phidot,mod2=sim.pdot.phitime)
+modlist <- list(mod1=sim.pdot.phidot,mod2=sim.pdot.phiTime)
 sim.M <- multimodelCJS(mms=setup,modlist=modlist)
 
 #Posterior model probabilities

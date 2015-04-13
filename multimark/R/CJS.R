@@ -1062,21 +1062,22 @@ monitorparmsCJS <- function(parms,parmlist,noccas){
 #' \donttest{
 #' #Generate object of class "multimarksetup" from simulated data 
 #' # with declining temporal trend in survival probability
-#' noccas <- 5
-#' phibetatime <- seq(2,0,length=noccas-1)
-#' data <- simdataCJS(N=200,noccas=noccas,phibeta=phibetatime)
-#' setup <- processdata(data$Enc.Mat)
-#'   
+#' noccas <- 7
+#' data_type = "always"
+#' phibetaTime <- seq(2,0,length=noccas-1)
+#' data <- simdataCJS(noccas=noccas,phibeta=phibetaTime,data.type=data_type)
+#' setup <- processdata(data$Enc.Mat,data.type=data_type)
+#' 
 #' #Run two parallel chains using the default model. Note parms="all".
 #' sim.pdot.phidot <- multimarkCJS(mms=setup,parms="all",nchains=2)
 #' 
-#' #Run two parallel chains with time effects for phi. Note parms="all".
-#' sim.pdot.phitime <- multimarkCJS(mms=setup,mod.phi=~time,parms="all",nchains=2)
+#' #Run two parallel chains with temporal trend for phi. Note parms="all".
+#' sim.pdot.phiTime <- multimarkCJS(mms=setup,mod.phi=~Time,parms="all",nchains=2)
 #' 
 #' #Perform RJMCMC using defaults
-#' modlist <- list(mod1=sim.pdot.phidot,mod2=sim.pdot.phitime)
+#' modlist <- list(mod1=sim.pdot.phidot,mod2=sim.pdot.phiTime)
 #' sim.M <- multimodelCJS(mms=setup,modlist=modlist)
-#'  
+#' 
 #' #Posterior model probabilities
 #' sim.M$pos.prob
 #' 
@@ -1120,7 +1121,6 @@ multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlis
   mod.p.h <- unlist(lapply(modlist,function(x) any("h"==attributes(terms(x$mod.p))$term.labels)))
   mod.phi.h <- unlist(lapply(modlist,function(x) any("h"==attributes(terms(x$mod.phi))$term.labels)))
   
-  mod.prob <- array(0,dim=c(nchains,miter,nmod))
   mod.prob.brob <- as.brob(numeric(nmod))
   
   data_type <- mms@data.type
@@ -1174,8 +1174,8 @@ multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlis
       if(any(is.na(as.numeric(mod.prob.brob)))){
         warning(paste0("'NA' posterior for model '","p(",pmodnames[is.na(as.numeric(mod.prob.brob))],")phi(",phimodnames[is.na(as.numeric(mod.prob.brob))],")delta(",deltamodnames[is.na(as.numeric(mod.prob.brob))],")' at iteration ",iiter,"; model move rejected."))
       } else {       
-        mod.prob[ichain,iiter,] <- as.numeric(mod.prob.brob/Brobdingnag::sum(mod.prob.brob))
-        M.cur <- (1:nmod)[rmultinom(1, 1, mod.prob[ichain,iiter,])==1]
+        mod.prob <- as.numeric(mod.prob.brob/Brobdingnag::sum(mod.prob.brob))
+        M.cur <- (1:nmod)[rmultinom(1, 1, mod.prob)==1]
       }
       
       modmissingparms <- drawmissingCJS(M.cur,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale)

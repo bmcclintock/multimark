@@ -828,7 +828,6 @@ multimodelClosed<-function(mms,modlist,modprior=rep(1/length(modlist),length(mod
   
   mod.p.h <- unlist(lapply(modlist,function(x) any("h"==attributes(terms(x$mod.p))$term.labels)))
   
-  mod.prob <- array(0,dim=c(nchains,miter,nmod))
   mod.prob.brob <- as.brob(numeric(nmod))
   
   data_type <- mms@data.type
@@ -877,8 +876,8 @@ multimodelClosed<-function(mms,modlist,modprior=rep(1/length(modlist),length(mod
       if(any(is.na(as.numeric(mod.prob.brob)))){
         warning(paste0("'NA' posterior for model '","p(",pmodnames[is.na(as.numeric(mod.prob.brob))],")delta(",deltamodnames[is.na(as.numeric(mod.prob.brob))],")' at iteration ",iiter,"; model move rejected."))
       } else {       
-        mod.prob[ichain,iiter,] <- as.numeric(mod.prob.brob/Brobdingnag::sum(mod.prob.brob))
-        M.cur <- (1:nmod)[rmultinom(1, 1, mod.prob[ichain,iiter,])==1]
+        mod.prob <- as.numeric(mod.prob.brob/Brobdingnag::sum(mod.prob.brob))
+        M.cur <- (1:nmod)[rmultinom(1, 1, mod.prob)==1]
       }
       
       modmissingparms <- drawmissingClosed(M.cur,missing,pbetapropsd,sigppropshape,sigppropscale)
