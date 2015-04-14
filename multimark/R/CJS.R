@@ -694,6 +694,8 @@ processCJSchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin){
 #'
 #' McClintock, B. T., Bailey, L. L., Dreher, B. P., and Link, W. A. 2014. Probit models for capture-recapture data subject to imperfect detection, individual heterogeneity and misidentification. \emph{The Annals of Applied Statistics} 8: 2461-2484.
 #' @examples
+#' \dontshow{
+#' test<-multimarkCJS(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0)}
 #' \donttest{
 #' #Simulate open population data using defaults
 #' data <- simdataCJS()
@@ -798,18 +800,19 @@ multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.
 #' @author Brett T. McClintock
 #' @seealso \code{\link{multimarkCJS}}
 #' @examples
+#' \dontshow{
+#' test<-getprobsCJS(multimarkCJS(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0))}
 #' \donttest{
 #' #Simulate open population data with temporal variation in survival
 #' noccas <- 5
 #' data <- simdataCJS(noccas=noccas, phibeta=rnorm(noccas-1,1.6,0.1))
 #'  
 #' #Fit open population model with temporal variation in survival
-#' sim.dot <- multimarkCJS(data$Enc.Mat,mod.phi=~time)
+#' sim.time <- multimarkCJS(data$Enc.Mat,mod.phi=~time)
 #'     
 #' #Calculate capture and survival probabilities for each cohort and time
-#' pphi <- getprobsCJS(sim.dot)
-#' summary(pphi)
-#' }
+#' pphi <- getprobsCJS(sim.time)
+#' summary(pphi)}
 getprobsCJS<-function(out,link="probit"){
   
   DMp<-out$DM$p
@@ -1059,13 +1062,16 @@ monitorparmsCJS <- function(parms,parmlist,noccas){
 #' @references
 #' Barker, R. J. and Link. W. A. 2013. Bayesian multimodel inference by RJMCMC: a Gibbs sampling approach. The American Statistician 67: 150-156.
 #' @examples
+#' \dontshow{
+#' setup<-processdata(bobcat)
+#' test.dot<-multimarkCJS(mms=setup,parms="all",iter=10,burnin=0)
+#' test<-multimodelCJS(mms=setup,modlist=list(mod1=test.dot,mod2=test.dot))
+#' }
 #' \donttest{
-#' #Generate object of class "multimarksetup" from simulated data 
-#' # with declining temporal trend in survival probability
-#' noccas <- 7
+#' #Generate object of class "multimarksetup" from simulated data
 #' data_type = "always"
-#' phibetaTime <- seq(2,0,length=noccas-1)
-#' data <- simdataCJS(noccas=noccas,phibeta=phibetaTime,data.type=data_type)
+#' noccas <- 7
+#' data <- simdataCJS(noccas=noccas,data.type=data_type)
 #' setup <- processdata(data$Enc.Mat,data.type=data_type)
 #' 
 #' #Run two parallel chains using the default model. Note parms="all".

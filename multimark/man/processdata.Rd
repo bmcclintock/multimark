@@ -29,6 +29,8 @@ An object of class \code{multimarksetup}.
 This function generates an object of class \code{multimarksetup} that is required to fit `multimark' models.
 }
 \examples{
+\dontshow{
+test <- processdata(bobcat)}
 \donttest{
 #Generate object of class "multimarksetup"
 setup <- processdata(bobcat)

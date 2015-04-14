@@ -13,6 +13,9 @@
 *
 * You should have received a copy of the GNU General Public License
 * along with this program. If not, see <http://www.gnu.org/licenses/>.
+*
+* Modifed March 2015 by Brett McClintock for use in the R package 'multimark'
+*
 */
 /**
 * @file matrix.h

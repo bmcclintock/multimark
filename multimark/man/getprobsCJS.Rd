@@ -20,18 +20,19 @@ An object of class \code{\link[coda]{mcmc.list}} containing the following:
 This function calculates posterior capture (\eqn{p}) and survival (\eqn{\phi}) probabilities for each sampling occasion from \code{\link{multimarkCJS}} output.
 }
 \examples{
+\dontshow{
+test<-getprobsCJS(multimarkCJS(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0))}
 \donttest{
 #Simulate open population data with temporal variation in survival
 noccas <- 5
 data <- simdataCJS(noccas=noccas, phibeta=rnorm(noccas-1,1.6,0.1))
 
 #Fit open population model with temporal variation in survival
-sim.dot <- multimarkCJS(data$Enc.Mat,mod.phi=~time)
+sim.time <- multimarkCJS(data$Enc.Mat,mod.phi=~time)
 
 #Calculate capture and survival probabilities for each cohort and time
-pphi <- getprobsCJS(sim.dot)
-summary(pphi)
-}
+pphi <- getprobsCJS(sim.time)
+summary(pphi)}
 }
 \author{
 Brett T. McClintock

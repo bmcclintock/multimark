@@ -467,6 +467,8 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
 #' 
 #' McClintock, B. T., Bailey, L. L., Dreher, B. P., and Link, W. A. 2014. Probit models for capture-recapture data subject to imperfect detection, individual heterogeneity and misidentification. \emph{The Annals of Applied Statistics} 8: 2461-2484.
 #' @examples
+#' \dontshow{
+#' test<-multimarkClosed(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0,bin=5)}
 #' \donttest{
 #' #Run two parallel chains using the default model for bobcat data
 #' bobcat.dot<-multimarkClosed(bobcat,nchains=2)
@@ -559,6 +561,8 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
 #' @author Brett T. McClintock
 #' @seealso \code{\link{multimarkClosed}}
 #' @examples
+#' \dontshow{
+#' test<-getprobsClosed(multimarkClosed(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0,bin=5))}
 #' \donttest{
 #' #Run behavior model for bobcat data with constant detection probability (i.e., mod.p=~c)
 #' bobcat.c <- multimarkClosed(bobcat,mod.p=~c,nchains=2)
@@ -772,6 +776,11 @@ missingparmnamesClosed<-function(params,M,noccas,zppropsd){
 #' @references
 #' Barker, R. J. and Link. W. A. 2013. Bayesian multimodel inference by RJMCMC: a Gibbs sampling approach. The American Statistician 67: 150-156.
 #' @examples
+#' \dontshow{
+#' setup<-processdata(bobcat)
+#' test.dot<-multimarkClosed(mms=setup,parms="all",iter=10,burnin=0,bin=5)
+#' test<-multimodelClosed(mms=setup,modlist=list(mod1=test.dot,mod2=test.dot))
+#' }
 #' \donttest{
 #' #Generate object of class "multimarksetup"
 #' setup <- processdata(bobcat)

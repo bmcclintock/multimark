@@ -628,6 +628,8 @@ get_known<-function(known,Enc.Mat,histindex,data.type){
 #' 
 #' McClintock, B. T., Conn, P. B., Alonso, R. S., and Crooks, K. R. 2013. Integrated modeling of bilateral photo-identification data in mark-recapture analyses. \emph{Ecology} 94: 1464-1471.
 #' @examples
+#' \dontshow{
+#' test <- processdata(bobcat)}
 #' \donttest{
 #' #Generate object of class "multimarksetup"
 #' setup <- processdata(bobcat)

@@ -116,6 +116,8 @@ This function fits Cormack-Jolly-Seber (CJS) open population models for survival
 The first time \code{multimarkCJS} (or \code{\link{multimarkClosed}}) is called, it will likely produce a firewall warning alerting users that R has requested the ability to accept incoming network connections. Incoming network connections are required to use parallel processing as implemented in \code{multimarkCJS}. Note that setting \code{parms="all"} is required for any \code{multimarkCJS} model output to be used in \code{\link{multimodelCJS}}.
 }
 \examples{
+\dontshow{
+test<-multimarkCJS(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0)}
 \donttest{
 #Simulate open population data using defaults
 data <- simdataCJS()

@@ -95,6 +95,8 @@ This function fits closed population abundance models for capture-mark-recapture
 The first time \code{multimarkClosed} (or \code{\link{multimarkCJS}}) is called, it will likely produce a firewall warning alerting users that R has requested the ability to accept incoming network connections. Incoming network connections are required to use parallel processing as implemented in \code{multimarkClosed}. Note that setting \code{parms="all"} is required for any \code{multimarkClosed} model output to be used in \code{\link{multimodelClosed}}.
 }
 \examples{
+\dontshow{
+test<-multimarkClosed(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0,bin=5)}
 \donttest{
 #Run two parallel chains using the default model for bobcat data
 bobcat.dot<-multimarkClosed(bobcat,nchains=2)

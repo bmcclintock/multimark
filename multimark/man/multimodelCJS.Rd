@@ -51,13 +51,16 @@ This function performs Bayesian multimodel inference for a set of 'multimark' op
 Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkCJS}} models to be included in \code{modlist}.
 }
 \examples{
+\dontshow{
+setup<-processdata(bobcat)
+test.dot<-multimarkCJS(mms=setup,parms="all",iter=10,burnin=0)
+test<-multimodelCJS(mms=setup,modlist=list(mod1=test.dot,mod2=test.dot))
+}
 \donttest{
 #Generate object of class "multimarksetup" from simulated data
-# with declining temporal trend in survival probability
-noccas <- 7
 data_type = "always"
-phibetaTime <- seq(2,0,length=noccas-1)
-data <- simdataCJS(noccas=noccas,phibeta=phibetaTime,data.type=data_type)
+noccas <- 7
+data <- simdataCJS(noccas=noccas,data.type=data_type)
 setup <- processdata(data$Enc.Mat,data.type=data_type)
 
 #Run two parallel chains using the default model. Note parms="all".
