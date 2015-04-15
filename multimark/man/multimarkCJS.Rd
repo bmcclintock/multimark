@@ -119,6 +119,8 @@ The first time \code{multimarkCJS} (or \code{\link{multimarkClosed}}) is called,
 \dontshow{
 test<-multimarkCJS(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0)}
 \donttest{
+# This example is excluded from testing to reduce package check time
+
 #Simulate open population data using defaults
 data <- simdataCJS()
 

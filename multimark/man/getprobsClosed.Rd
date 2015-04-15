@@ -23,6 +23,8 @@ This function calculates posterior capture (p) and recapture (c) probabilities f
 \dontshow{
 test<-getprobsClosed(multimarkClosed(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0,bin=5))}
 \donttest{
+# This example is excluded from testing to reduce package check time
+
 #Run behavior model for bobcat data with constant detection probability (i.e., mod.p=~c)
 bobcat.c <- multimarkClosed(bobcat,mod.p=~c,nchains=2)
 

@@ -57,6 +57,8 @@ test.dot<-multimarkCJS(mms=setup,parms="all",iter=10,burnin=0)
 test<-multimodelCJS(mms=setup,modlist=list(mod1=test.dot,mod2=test.dot))
 }
 \donttest{
+# This example is excluded from testing to reduce package check time
+
 #Generate object of class "multimarksetup" from simulated data
 data_type = "always"
 noccas <- 7

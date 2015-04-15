@@ -23,6 +23,8 @@ This function calculates posterior capture (\eqn{p}) and survival (\eqn{\phi}) p
 \dontshow{
 test<-getprobsCJS(multimarkCJS(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0))}
 \donttest{
+# This example is excluded from testing to reduce package check time
+
 #Simulate open population data with temporal variation in survival
 noccas <- 5
 data <- simdataCJS(noccas=noccas, phibeta=rnorm(noccas-1,1.6,0.1))

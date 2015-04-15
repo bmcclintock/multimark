@@ -1,3 +1,8 @@
+/* ranlib.h is free software, released under the GNU LGPL 
+* Original FORTRAN77 version by Barry Brown, James Lovato; original C version by John Burkardt, Cleve Moler
+* Modified by Brett McClintock (March 2015) for use in the 'multimark' R package.
+*/
+
 /* Prototypes for all user accessible RANLIB routines */
 
 extern void advnst(long k);

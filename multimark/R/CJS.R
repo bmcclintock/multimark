@@ -702,6 +702,8 @@ processCJSchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin){
 #' \dontshow{
 #' test<-multimarkCJS(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0)}
 #' \donttest{
+#' # This example is excluded from testing to reduce package check time
+#' 
 #' #Simulate open population data using defaults
 #' data <- simdataCJS()
 #' 
@@ -808,6 +810,8 @@ multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.
 #' \dontshow{
 #' test<-getprobsCJS(multimarkCJS(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0))}
 #' \donttest{
+#' # This example is excluded from testing to reduce package check time
+#' 
 #' #Simulate open population data with temporal variation in survival
 #' noccas <- 5
 #' data <- simdataCJS(noccas=noccas, phibeta=rnorm(noccas-1,1.6,0.1))
@@ -1073,6 +1077,8 @@ monitorparmsCJS <- function(parms,parmlist,noccas){
 #' test<-multimodelCJS(mms=setup,modlist=list(mod1=test.dot,mod2=test.dot))
 #' }
 #' \donttest{
+#' # This example is excluded from testing to reduce package check time
+#' 
 #' #Generate object of class "multimarksetup" from simulated data
 #' data_type = "always"
 #' noccas <- 7

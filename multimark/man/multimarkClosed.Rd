@@ -98,6 +98,8 @@ The first time \code{multimarkClosed} (or \code{\link{multimarkCJS}}) is called,
 \dontshow{
 test<-multimarkClosed(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0,bin=5)}
 \donttest{
+# This example is excluded from testing to reduce package check time
+
 #Run two parallel chains using the default model for bobcat data
 bobcat.dot<-multimarkClosed(bobcat,nchains=2)
 

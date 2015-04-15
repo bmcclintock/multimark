@@ -32,6 +32,8 @@ This function generates an object of class \code{multimarksetup} that is require
 \dontshow{
 test <- processdata(bobcat)}
 \donttest{
+# This example is excluded from testing to reduce package check time
+
 #Generate object of class "multimarksetup"
 setup <- processdata(bobcat)
 

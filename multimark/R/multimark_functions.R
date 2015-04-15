@@ -631,6 +631,8 @@ get_known<-function(known,Enc.Mat,histindex,data.type){
 #' \dontshow{
 #' test <- processdata(bobcat)}
 #' \donttest{
+#' # This example is excluded from testing to reduce package check time
+#' 
 #' #Generate object of class "multimarksetup"
 #' setup <- processdata(bobcat)
 #' 

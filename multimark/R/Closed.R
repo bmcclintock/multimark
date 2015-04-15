@@ -470,6 +470,8 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
 #' \dontshow{
 #' test<-multimarkClosed(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0,bin=5)}
 #' \donttest{
+#' # This example is excluded from testing to reduce package check time
+#' 
 #' #Run two parallel chains using the default model for bobcat data
 #' bobcat.dot<-multimarkClosed(bobcat,nchains=2)
 #' 
@@ -564,6 +566,8 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
 #' \dontshow{
 #' test<-getprobsClosed(multimarkClosed(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0,bin=5))}
 #' \donttest{
+#' # This example is excluded from testing to reduce package check time
+#' 
 #' #Run behavior model for bobcat data with constant detection probability (i.e., mod.p=~c)
 #' bobcat.c <- multimarkClosed(bobcat,mod.p=~c,nchains=2)
 #'   
@@ -782,6 +786,8 @@ missingparmnamesClosed<-function(params,M,noccas,zppropsd){
 #' test<-multimodelClosed(mms=setup,modlist=list(mod1=test.dot,mod2=test.dot))
 #' }
 #' \donttest{
+#' # This example is excluded from testing to reduce package check time
+#' 
 #' #Generate object of class "multimarksetup"
 #' setup <- processdata(bobcat)
 #'  
