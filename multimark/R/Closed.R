@@ -534,7 +534,7 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
   
   message("Updating...",ifelse(printlog,"","set 'printlog=TRUE' to follow progress of chains(s) in a working directory log file"),"\n",sep="")
   
-  cl <- makeCluster( length(tasks) ,outfile=ifelse(printlog,paste0("multimark_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
+  cl <- makeCluster( length(tasks) ,outfile=ifelse(printlog,paste0("multimark_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""), methods=FALSE)
   clusterExport(cl, list("mcmcClosed","mms","DM","params","inits","iter","adapt","bin","thin","burnin","taccept","tuneadjust","Prop.sd","gq","maxnumbasis","a0delta","a0alpha","b0alpha","a","mu0","sigma2_mu0","printlog"),envir=environment())
   chains <- clusterApply( 
     cl,

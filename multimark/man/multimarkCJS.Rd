@@ -10,7 +10,7 @@ multimarkCJS(Enc.Mat, data.type = "never", covs = data.frame(),
   adapt = 1000, bin = 50, thin = 1, burnin = 2000, taccept = 0.44,
   tuneadjust = 0.95, proppbeta = 0.1, propzp = 1, propsigmap = 1,
   propphibeta = 0.1, propzphi = 1, propsigmaphi = 1, maxnumbasis = 1,
-  pbeta0 = 0, pSigma0 = 100, phibeta0 = 0, phiSigma0 = 100, l0p = 1,
+  pbeta0 = 0, pSigma0 = 1, phibeta0 = 0, phiSigma0 = 1, l0p = 1,
   d0p = 0.01, l0phi = 1, d0phi = 0.01, a0delta = 1, a0alpha = 1,
   b0alpha = 1, initial.values = NULL, known = integer(),
   link = "probit", printlog = FALSE, ...)
@@ -70,11 +70,11 @@ multimarkCJS(Enc.Mat, data.type = "never", covs = data.frame(),
 
 \item{pbeta0}{Scaler or vector (of length k) specifying mean of pbeta ~ multivariateNormal(pbeta0, pSigma0) prior. If \code{pbeta0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{pbeta0 = 0}.}
 
-\item{pSigma0}{Scaler or k x k matrix specifying covariance matrix of pbeta ~ multivariateNormal(pbeta0, pSigma0) prior. If \code{pSigma0} is a scaler, then this value is used for all pSigma0[j,j] for j = 1, ..., k (with pSigma[j,l] = 0 for all \eqn{j \ne l}). Default is \code{pSigma0 = 100}.}
+\item{pSigma0}{Scaler or k x k matrix specifying covariance matrix of pbeta ~ multivariateNormal(pbeta0, pSigma0) prior. If \code{pSigma0} is a scaler, then this value is used for all pSigma0[j,j] for j = 1, ..., k (with pSigma[j,l] = 0 for all \eqn{j \ne l}). Default is \code{pSigma0 = 1}.}
 
 \item{phibeta0}{Scaler or vector (of length k) specifying mean of phibeta ~ multivariateNormal(phibeta0, phiSigma0) prior. If \code{phibeta0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{phibeta0 = 0}.}
 
-\item{phiSigma0}{Scaler or k x k matrix specifying covariance matrix of phibeta ~ multivariateNormal(phibeta0, phiSigma0) prior. If \code{phiSigma0} is a scaler, then this value is used for all phiSigma0[j,j] for j = 1, ..., k (with phiSigma[j,l] = 0 for all \eqn{j \ne l}). Default is \code{phiSigma0 = 100}.}
+\item{phiSigma0}{Scaler or k x k matrix specifying covariance matrix of phibeta ~ multivariateNormal(phibeta0, phiSigma0) prior. If \code{phiSigma0} is a scaler, then this value is used for all phiSigma0[j,j] for j = 1, ..., k (with phiSigma[j,l] = 0 for all \eqn{j \ne l}). Default is \code{phiSigma0 = 1}.}
 
 \item{l0p}{Specifies "shape" parameter for [sigma2_zp] ~ invGamma(l0p,d0p) prior. Default is \code{l0p = 1}.}
 

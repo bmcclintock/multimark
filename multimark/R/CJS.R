@@ -3,8 +3,8 @@
 #' This function generates encounter histories from simulated open population capture-mark-recapture data consisting of multiple non-invasive marks. 
 #' 
 #' 
-#' @param N True population size or abundance.
-#' @param noccas The number of sampling occasions.
+#' @param N Number of individuals.
+#' @param noccas Number of sampling occasions. \code{floor(N/noccas)} individuals are first encountered on each occasion.
 #' @param pbeta Logit- or probit-scale intercept term(s) for capture probability (p). Must be a scaler or vector of length \code{noccas}.
 #' @param sigma2_zp Logit- or probit-scale individual heterogeneity variance term for capture probability (p).
 #' @param phibeta Logit- or probit-scale intercept term(s) for survival probability (\eqn{\phi}). Must be a scaler or vector of length \code{noccas}.
@@ -57,13 +57,15 @@ simdataCJS <- function(N=100,noccas=5,pbeta=-0.25,sigma2_zp=0,phibeta=1.6,sigma2
     stop("'data.type' must be 'never', 'sometimes', or 'always'")
   }
   
-  tEnc.Mat<-matrix(0,nrow=N,ncol=noccas)        #"true" latent histories
-  zp<-rnorm(N,0,sqrt(sigma2_zp))
-  zphi<-rnorm(N,0,sqrt(sigma2_zphi))
-  tmp.phibeta<-c(phibeta,0)
-  for(i in 1:N){
-    ind<-1
-    for(j in 1:noccas){
+  n <- floor(N/noccas)
+  tEnc.Mat <-matrix(0,nrow=N,ncol=noccas)
+  first <- sort(rep(1:noccas,n))
+  zp <- rnorm(N,0,sqrt(sigma2_zp))
+  zphi <- rnorm(N,0,sqrt(sigma2_zphi))
+  tmp.phibeta <- c(phibeta,0)
+  for(i in 1:(n*(noccas-1))){
+    ind <- tEnc.Mat[i,first[i]] <- 1
+    for(j in (first[i]+1):noccas){
       if(link=="probit"){
         p<-pnorm(pbeta[j]+zp[i])
         phi<-pnorm(tmp.phibeta[j]+zphi[i])
@@ -71,11 +73,14 @@ simdataCJS <- function(N=100,noccas=5,pbeta=-0.25,sigma2_zp=0,phibeta=1.6,sigma2
         p<-expit(pbeta[j]+zp[i])      
         phi<-expit(tmp.phibeta[j]+zphi[i])  
       } else {stop("link function must be 'probit' or 'logit'")}
-      tEnc.Mat[i,j] <- rbinom(1,1,p*ind )       #"true" latent histories
+      tEnc.Mat[i,j]<-rbinom(1,1,p*ind)
       if(runif(1)>phi){
         ind<-0
       }
     }
+  }
+  for(i in ((noccas-1)*n + 1):N){
+    tEnc.Mat[i,first[i]]<-1
   }
   Rand.Mat<-matrix(runif(N*noccas,0,1),N,noccas)
   tEnc.Mat[which(tEnc.Mat==1 & Rand.Mat<delta_2)] <- 2      # type 2 encounters
@@ -662,9 +667,9 @@ processCJSchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin){
 #' @param maxnumbasis Maximum number of basis vectors to use when proposing latent history frequency updates. Default is \code{maxnumbasis = 1}, but higher values can potentially improve mixing.
 #' @param a0delta Scaler or vector (of length d) specifying the prior for the conditional (on detection) probability of type 1 (delta_1), type 2 (delta_2), and both type 1 and type 2 encounters (1-delta_1-delta_2). If \code{a0delta} is a scaler, then this value is used for all a0delta[j] for j = 1, ..., d. For \code{mod.delta=~type}, d=3 with [delta_1, delta_2, 1-delta_1-delta_2] ~ Dirichlet(a0delta) prior. For \code{mod.delta=~1}, k=2 with [tau] ~ Beta(a0delta[1],a0delta[2]) prior, where (delta_1,delta_2,1-delta_1-delta_2) = (tau/2,tau/2,1-tau). If See McClintock et al. (2013) for more details.
 #' @param pbeta0 Scaler or vector (of length k) specifying mean of pbeta ~ multivariateNormal(pbeta0, pSigma0) prior. If \code{pbeta0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{pbeta0 = 0}.  
-#' @param pSigma0 Scaler or k x k matrix specifying covariance matrix of pbeta ~ multivariateNormal(pbeta0, pSigma0) prior. If \code{pSigma0} is a scaler, then this value is used for all pSigma0[j,j] for j = 1, ..., k (with pSigma[j,l] = 0 for all \eqn{j \ne l}). Default is \code{pSigma0 = 100}. 
+#' @param pSigma0 Scaler or k x k matrix specifying covariance matrix of pbeta ~ multivariateNormal(pbeta0, pSigma0) prior. If \code{pSigma0} is a scaler, then this value is used for all pSigma0[j,j] for j = 1, ..., k (with pSigma[j,l] = 0 for all \eqn{j \ne l}). Default is \code{pSigma0 = 1}. 
 #' @param phibeta0 Scaler or vector (of length k) specifying mean of phibeta ~ multivariateNormal(phibeta0, phiSigma0) prior. If \code{phibeta0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{phibeta0 = 0}.  
-#' @param phiSigma0 Scaler or k x k matrix specifying covariance matrix of phibeta ~ multivariateNormal(phibeta0, phiSigma0) prior. If \code{phiSigma0} is a scaler, then this value is used for all phiSigma0[j,j] for j = 1, ..., k (with phiSigma[j,l] = 0 for all \eqn{j \ne l}). Default is \code{phiSigma0 = 100}. 
+#' @param phiSigma0 Scaler or k x k matrix specifying covariance matrix of phibeta ~ multivariateNormal(phibeta0, phiSigma0) prior. If \code{phiSigma0} is a scaler, then this value is used for all phiSigma0[j,j] for j = 1, ..., k (with phiSigma[j,l] = 0 for all \eqn{j \ne l}). Default is \code{phiSigma0 = 1}. 
 #' @param l0p Specifies "shape" parameter for [sigma2_zp] ~ invGamma(l0p,d0p) prior. Default is \code{l0p = 1}. 
 #' @param d0p Specifies "scale" parameter for [sigma2_zp] ~ invGamma(l0p,d0p) prior. Default is \code{d0p = 0.01}. 
 #' @param l0phi Specifies "shape" parameter for [sigma2_zphi] ~ invGamma(l0phi,d0phi) prior. Default is \code{l0phi = 1}. 
@@ -706,7 +711,7 @@ processCJSchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin){
 #' #Posterior summary for monitored parameters
 #' summary(sim.dot$mcmc)
 #' plot(sim.dot$mcmc)}
-multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.p=~1,mod.phi=~1,mod.delta=~type,parms=c("pbeta","phibeta","delta"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,propphibeta=0.1,propzphi=1,propsigmaphi=1,maxnumbasis=1,pbeta0=0,pSigma0=100,phibeta0=0,phiSigma0=100,l0p=1,d0p=0.01,l0phi=1,d0phi=0.01,a0delta=1,a0alpha=1,b0alpha=1,initial.values=NULL,known=integer(),link="probit",printlog=FALSE,...){
+multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.p=~1,mod.phi=~1,mod.delta=~type,parms=c("pbeta","phibeta","delta"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,propphibeta=0.1,propzphi=1,propsigmaphi=1,maxnumbasis=1,pbeta0=0,pSigma0=1,phibeta0=0,phiSigma0=1,l0p=1,d0p=0.01,l0phi=1,d0phi=0.01,a0delta=1,a0alpha=1,b0alpha=1,initial.values=NULL,known=integer(),link="probit",printlog=FALSE,...){
   
   if(is.null(mms)) mms <- processdata(Enc.Mat,data.type,covs,known)
   if(class(mms)!="multimarksetup") stop("'mms' must be an object of class 'multimarksetup'")
@@ -773,7 +778,7 @@ multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.
   
   message("Updating...",ifelse(printlog,"","set 'printlog=TRUE' to follow progress of chains(s) in a working directory log file"),"\n",sep="")
   
-  cl <- makeCluster( length(tasks) ,outfile=ifelse(printlog,paste0("multimark_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
+  cl <- makeCluster( length(tasks) ,outfile=ifelse(printlog,paste0("multimark_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""), methods=FALSE)
   clusterExport(cl, list("mcmcCJS","mms","DM","params","inits","iter","adapt","bin","thin","burnin","taccept","tuneadjust","Prop.sdp","Prop.sdphi","maxnumbasis","pbeta0","pprec0","phibeta0","phiprec0","l0p","d0p","l0phi","d0phi","a0delta","a0alpha","b0alpha","link","printlog"),envir=environment())                                                                           
   chains <- clusterApply( 
     cl,

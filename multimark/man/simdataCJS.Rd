@@ -9,9 +9,9 @@ simdataCJS(N = 100, noccas = 5, pbeta = -0.25, sigma2_zp = 0,
   alpha = 0.5, data.type = "never", link = "probit")
 }
 \arguments{
-\item{N}{True population size or abundance.}
+\item{N}{Number of individuals.}
 
-\item{noccas}{The number of sampling occasions.}
+\item{noccas}{Number of sampling occasions. \code{floor(N/noccas)} individuals are first encountered on each occasion.}
 
 \item{pbeta}{Logit- or probit-scale intercept term(s) for capture probability (p). Must be a scaler or vector of length \code{noccas}.}
 

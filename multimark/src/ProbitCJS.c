@@ -528,10 +528,10 @@ void BETAUPDATE(double *beta, double *u, double *z, double *DM, int *zs, int dim
 
   for(i=0; i<dim; i++){
     for(j=0; j<dim; j++){
-      invvbeta->matrix_entry[i][j]=0.;
+      invvbeta->matrix_entry[i][j] = prec0[i*dim+j];
       for(k=0; k<supN; k++){
         for(t=(C[Hs[k]]-1); t<T; t++){
-          invvbeta->matrix_entry[i][j] += DM[(cohortseq[C[Hs[k]]-1]+t-(C[Hs[k]]-1))*dim+i] * DM[(cohortseq[C[Hs[k]]-1]+t-(C[Hs[k]]-1))*dim+j] * zs[k*(T+1)+t+pind] * (1. + prec0[i*dim+j]);
+          invvbeta->matrix_entry[i][j] += DM[(cohortseq[C[Hs[k]]-1]+t-(C[Hs[k]]-1))*dim+i] * DM[(cohortseq[C[Hs[k]]-1]+t-(C[Hs[k]]-1))*dim+j] * zs[k*(T+1)+t+pind];
         }
       }
     }
@@ -544,12 +544,12 @@ void BETAUPDATE(double *beta, double *u, double *z, double *DM, int *zs, int dim
   }
   for(i=0; i<dim; i++){
     tempmbeta[i]=0.;
+    for(j=0; j<dim; j++){
+      tempmbeta[i] = prec0[i*dim+j] * beta0[j];
+    }
     for(k=0; k<supN; k++){
       for(t=(C[Hs[k]]-1); t<T; t++){
         tempmbeta[i] += DM[(cohortseq[C[Hs[k]]-1]+t-(C[Hs[k]]-1))*dim+i] * (u[k*T+t]-z[k])  * zs[k*(T+1)+t+pind];
-        for(j=0; j<dim; j++){
-          tempmbeta[i] +=  DM[(cohortseq[C[Hs[k]]-1]+t-(C[Hs[k]]-1))*dim+i] * DM[(cohortseq[C[Hs[k]]-1]+t-(C[Hs[k]]-1))*dim+j] * zs[k*(T+1)+t+pind] * prec0[i*dim+j] * beta0[j];
-        }
       }
     }
   }
