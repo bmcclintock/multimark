@@ -310,30 +310,30 @@ Sample size per chain = 10000
    plus standard error of the mean:
 
                       Mean      SD  Naive SE Time-series SE
-pbeta[(Intercept)] -1.2373 0.24385 0.0024385       0.018141
-N                  35.2105 5.22998 0.0522998       0.296915
-delta_1             0.4292 0.07544 0.0007544       0.010690
-delta_2             0.4429 0.07562 0.0007562       0.009382
+pbeta[(Intercept)] -1.2590 0.27604 0.0027604        0.02085
+N                  35.3603 5.43211 0.0543211        0.31004
+delta_1             0.4212 0.08117 0.0008117        0.01216
+delta_2             0.4356 0.07996 0.0007996        0.01265
 
 2. Quantiles for each variable:
 
-                      2.5%     25%     50%    75%   97.5%
-pbeta[(Intercept)] -1.7275 -1.3981 -1.2291 -1.075 -0.7755
-N                  28.0000 32.0000 34.0000 38.000 48.0000
-delta_1             0.2715  0.3803  0.4320  0.482  0.5685
-delta_2             0.2842  0.3943  0.4464  0.496  0.5816
+                      2.5%     25%     50%     75%   97.5%
+pbeta[(Intercept)] -1.8326 -1.4465 -1.2487 -1.0620 -0.7535
+N                  27.0000 32.0000 34.0000 38.0000 48.0000
+delta_1             0.2562  0.3673  0.4244  0.4782  0.5703
+delta_2             0.2721  0.3818  0.4399  0.4920  0.5792
 \end{Soutput}
 \begin{Sinput}
 > coda::effectiveSize(bobcat.dot$mcmc)
 \end{Sinput}
 \begin{Soutput}
 pbeta[(Intercept)]                  N            delta_1            delta_2 
-         180.68842          310.26712           49.79658           64.95899 
+         175.26399          306.97405           44.54464           39.95661 
 \end{Soutput}
 \end{Schunk}
 Here we can see posterior summaries for the default monitored parameters $(\beta^p, N, \delta_1, \delta_2)$. Based on the effective sample sizes, it's clear that the default chain length is inadequate for this example; a typical ``rule of thumb'' is effective sample sizes $>4000$ for all quantities of interest.
 
-Other common models for detection probability can be easily specified using formulas for \textit{mod.p}, including shorthands for time variation (\textit{mod.p={\textasciitilde{}}time}), temporal trends (\textit{mod.p={\textasciitilde{}}Time}), behavioural response to first capture (\textit{mod.p={\textasciitilde{}}c}), and individual heterogeneity (\textit{mod.p={\textasciitilde{}}h}). Additive or interaction terms can be included (e.g., \textit{mod.p={\textasciitilde{}}time+c+h}, \textit{mod.p={\textasciitilde{}}time*c}). User-specifed temporal covariates in detection probability can also be used: 
+Other common models for detection probability can be easily specified using formulas for \textit{mod.p}, including shorthands for time variation (\textit{mod.p={\~{}}time}), temporal trends (\textit{mod.p={\~{}}Time}), behavioural response to first capture (\textit{mod.p={\~{}}c}), and individual heterogeneity (\textit{mod.p={\~{}}h}). Additive or interaction terms can be included (e.g., \textit{mod.p={\~{}}time+c+h}, \textit{mod.p=\~{}Time+I(Time\^{}2)}, \textit{mod.p={\~{}}time*c}). User-specifed temporal covariates in detection probability can also be used: 
 \begin{Schunk}
 \begin{Sinput}
 > dummy <- rnorm(ncol(bobcat)) # some fake temporal covariates
@@ -356,7 +356,7 @@ The \textit{covs} argument is a data frame used to enter discrete- or continuous
 %summary(bobcat.dummy_h$mcmc[,c("pbeta[dummy]","sigma2_zp")])
 %@
 
-There are currently two options for specifying models for ${\boldsymbol \delta}$, the default \textit{mod.delta={\textasciitilde{}}type} (i.e., $\delta_1 \ne \delta_2$), and \textit{mod.delta={\textasciitilde{}}1} (i.e., $\delta_1 = \delta_2$). There are many additional arguments for specifying the number (\textit{nchains}) and length (\textit{iter}) of chains, including burn-in and adaptive periods. For potential improvements in mixing, the number of ``moves'' used to  update the feasible set of latent encounter histories at each iteration can be user specified (\textit{maxnumbasis}; see Appendix S1). The default priors are ``uninformative'', but user-specified priors can be used for each parameter. Initial values can be automatically generated or user-specified for each parameter.
+There are currently two options for specifying models for ${\boldsymbol \delta}$, the default \textit{mod.delta={\~{}}type} (i.e., $\delta_1 \ne \delta_2$), and \textit{mod.delta={\~{}}1} (i.e., $\delta_1 = \delta_2$). There are many additional arguments for specifying the number (\textit{nchains}) and length (\textit{iter}) of chains, including burn-in and adaptive periods. For potential improvements in mixing, the number of ``moves'' used to  update the feasible set of latent encounter histories at each iteration can be user specified (\textit{maxnumbasis}; see Appendix S1). The default priors are ``uninformative'', but user-specified priors can be used for each parameter. Initial values can be automatically generated or user-specified for each parameter.
 
 The function \textit{multimarkCJS()} works in exactly the same fashion, with the only notable difference being specification of models for $\phi$ (in addition to $p$ and ${\bf \delta}$). Although CJS-specific data are not included with \verb|multimark|, data can be simulated using the \textit{simdataCJS()} function (or \textit{simdataClosed()} for closed populations):
 
@@ -369,12 +369,12 @@ The function \textit{multimarkCJS()} works in exactly the same fashion, with the
 \end{Sinput}
 \begin{Soutput}
      [,1] [,2] [,3] [,4] [,5] [,6] [,7]
-[1,]    0    1    0    0    0    0    0
-[2,]    4    1    0    1    0    0    0
-[3,]    1    0    0    1    1    0    0
-[4,]    0    0    0    0    1    1    0
+[1,]    2    0    4    0    0    0    0
+[2,]    1    0    0    0    0    0    0
+[3,]    1    0    0    0    0    0    0
+[4,]    4    3    0    0    0    0    0
 [5,]    1    0    0    0    0    0    0
-[6,]    2    0    0    0    0    0    0
+[6,]    3    2    0    0    2    2    4
 \end{Soutput}
 \begin{Sinput}
 > CJSsetup <- processdata(Enc.Mat=Enc.Mat,data.type="sometimes")
@@ -393,26 +393,26 @@ Sample size per chain = 40000
 1. Empirical mean and standard deviation for each variable,
    plus standard error of the mean:
 
-                        Mean      SD  Naive SE Time-series SE
-pbeta[(Intercept)]   -0.3101 0.11498 0.0004065      0.0028133
-phibeta[(Intercept)]  1.2522 0.19615 0.0006935      0.0054497
-alpha                 0.5019 0.10397 0.0003676      0.0018396
-sigma2_zphi           0.1829 0.91687 0.0032416      0.0831746
-delta_1               0.2432 0.04656 0.0001646      0.0009639
-delta_2               0.5195 0.05187 0.0001834      0.0008036
+                         Mean      SD  Naive SE Time-series SE
+pbeta[(Intercept)]   -0.14505 0.13195 0.0004665       0.004521
+phibeta[(Intercept)]  1.39905 0.28513 0.0010081       0.011372
+alpha                 0.40530 0.11295 0.0003993       0.002603
+sigma2_zphi           0.03712 0.09867 0.0003489       0.004207
+delta_1               0.20192 0.04616 0.0001632       0.001583
+delta_2               0.60387 0.05157 0.0001823       0.001129
 
 2. Quantiles for each variable:
 
-                          2.5%       25%      50%      75%    97.5%
-pbeta[(Intercept)]   -0.529286 -0.389366 -0.31131 -0.23345 -0.08007
-phibeta[(Intercept)]  0.899317  1.124203  1.24228  1.37154  1.66477
-alpha                 0.304830  0.429323  0.49990  0.57264  0.70831
-sigma2_zphi           0.002707  0.007249  0.01492  0.03882  1.78635
-delta_1               0.156710  0.210874  0.24146  0.27374  0.33840
-delta_2               0.417687  0.484152  0.51957  0.55488  0.62058
+                          2.5%       25%      50%      75%  97.5%
+pbeta[(Intercept)]   -0.389604 -0.237291 -0.15002 -0.05742 0.1245
+phibeta[(Intercept)]  0.940375  1.200721  1.36546  1.55676 2.0510
+alpha                 0.204653  0.324695  0.39904  0.47879 0.6438
+sigma2_zphi           0.002649  0.007147  0.01393  0.03141 0.2105
+delta_1               0.116826  0.169463  0.20025  0.23221 0.2971
+delta_2               0.501039  0.569305  0.60480  0.63940 0.7023
 \end{Soutput}
 \end{Schunk}
-An additional feature for \textit{multimarkCJS()} is simple specification of cohort effects for $p$ (\textit{mod.p={\textasciitilde{}}age}) and $\phi$ (\textit{mod.phi={\textasciitilde{}}age}), which is useful for investigating structure related to age (or time of first capture).
+An additional feature for \textit{multimarkCJS()} is simple specification of cohort effects for $p$ (\textit{mod.p={\~{}}age}) and $\phi$ (\textit{mod.phi={\~{}}age}), which is useful for investigating structure related to age (or time of first capture).
 
 \subsection{Further analysis}
 While the \verb|coda| package can be used to summarize, plot, and assess convergence of MCMC samples from \textit{multimarkClosed()} and \textit{multimarkCJS()}, several additional functions are available for further analysis. Because link functions are used for $p$ and $\phi$, the functions \textit{getprobsClosed()} and \textit{getprobsCJS()} provide estimates on the real scale:
@@ -432,14 +432,14 @@ Sample size per chain = 10000
    plus standard error of the mean:
 
        Mean      SD  Naive SE Time-series SE
-p[1] 0.1300 0.05510 0.0005510       0.005125
-c[2] 0.2372 0.05191 0.0005191       0.003892
+p[1] 0.1366 0.05521 0.0005521       0.006385
+c[2] 0.2651 0.05115 0.0005115       0.003045
 
 2. Quantiles for each variable:
 
-        2.5%    25%    50%    75%  97.5%
-p[1] 0.04184 0.0887 0.1236 0.1648 0.2552
-c[2] 0.14270 0.2001 0.2351 0.2708 0.3467
+        2.5%     25%    50%    75%  97.5%
+p[1] 0.04261 0.09569 0.1302 0.1716 0.2609
+c[2] 0.17281 0.22827 0.2632 0.2989 0.3705
 \end{Soutput}
 \end{Schunk}
 Here, \verb|p[1]| and \verb|c[2]| refer to the probabilities of capture and recapture at times $t=1$ and $t=2$, respectively.
@@ -478,7 +478,7 @@ With 2 chains each consisting of 2 million iterations (with thinning every 20 it
 
 Models including a positive behavioural response to first capture accounted for 0.51 of the posterior model weight, while models including $\delta_1=\delta_2$ accounted for 0.78 of posterior model weight (Table \ref{tab:modprobs}). Model-averaged posterior modes were $N=34$ (HPDI: 25-99; Fig. \ref{fig:modaveN}) for population abundance, $p=0.15$ (HPDI: 0.04-0.28) for capture probability, and $c=0.21$ (HPDI: 0.07-0.34) for recapture probability. With $\delta_1=\delta_2=0.41$ (HPDI: 0.31-0.5) based on the model with the highest posterior probability, both-sided encounters were relatively infrequent for these data $(1-\delta_1-\delta_2=0.17)$.
 % latex table generated in R 3.0.2 by xtable 1.7-1 package
-% Tue Apr 14 17:41:13 2015
+% Thu Apr 16 13:19:47 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{llllll}

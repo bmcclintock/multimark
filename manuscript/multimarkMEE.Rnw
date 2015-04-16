@@ -273,7 +273,7 @@ coda::effectiveSize(bobcat.dot$mcmc)
 @
 Here we can see posterior summaries for the default monitored parameters $(\beta^p, N, \delta_1, \delta_2)$. Based on the effective sample sizes, it's clear that the default chain length is inadequate for this example; a typical ``rule of thumb'' is effective sample sizes $>4000$ for all quantities of interest.
 
-Other common models for detection probability can be easily specified using formulas for \textit{mod.p}, including shorthands for time variation (\textit{mod.p={\textasciitilde{}}time}), temporal trends (\textit{mod.p={\textasciitilde{}}Time}), behavioural response to first capture (\textit{mod.p={\textasciitilde{}}c}), and individual heterogeneity (\textit{mod.p={\textasciitilde{}}h}). Additive or interaction terms can be included (e.g., \textit{mod.p={\textasciitilde{}}time+c+h}, \textit{mod.p={\textasciitilde{}}time*c}). User-specifed temporal covariates in detection probability can also be used: 
+Other common models for detection probability can be easily specified using formulas for \textit{mod.p}, including shorthands for time variation (\textit{mod.p={\~{}}time}), temporal trends (\textit{mod.p={\~{}}Time}), behavioural response to first capture (\textit{mod.p={\~{}}c}), and individual heterogeneity (\textit{mod.p={\~{}}h}). Additive or interaction terms can be included (e.g., \textit{mod.p={\~{}}time+c+h}, \textit{mod.p=\~{}Time+I(Time\^{}2)}, \textit{mod.p={\~{}}time*c}). User-specifed temporal covariates in detection probability can also be used: 
 <<load-library, echo=TRUE, eval=FALSE>>=
 dummy <- rnorm(ncol(bobcat)) # some fake temporal covariates
 bobcatsetup <- processdata(Enc.Mat=bobcat,data.type="never",
@@ -294,7 +294,7 @@ The \textit{covs} argument is a data frame used to enter discrete- or continuous
 %summary(bobcat.dummy_h$mcmc[,c("pbeta[dummy]","sigma2_zp")])
 %@
 
-There are currently two options for specifying models for ${\boldsymbol \delta}$, the default \textit{mod.delta={\textasciitilde{}}type} (i.e., $\delta_1 \ne \delta_2$), and \textit{mod.delta={\textasciitilde{}}1} (i.e., $\delta_1 = \delta_2$). There are many additional arguments for specifying the number (\textit{nchains}) and length (\textit{iter}) of chains, including burn-in and adaptive periods. For potential improvements in mixing, the number of ``moves'' used to  update the feasible set of latent encounter histories at each iteration can be user specified (\textit{maxnumbasis}; see Appendix S1). The default priors are ``uninformative'', but user-specified priors can be used for each parameter. Initial values can be automatically generated or user-specified for each parameter.
+There are currently two options for specifying models for ${\boldsymbol \delta}$, the default \textit{mod.delta={\~{}}type} (i.e., $\delta_1 \ne \delta_2$), and \textit{mod.delta={\~{}}1} (i.e., $\delta_1 = \delta_2$). There are many additional arguments for specifying the number (\textit{nchains}) and length (\textit{iter}) of chains, including burn-in and adaptive periods. For potential improvements in mixing, the number of ``moves'' used to  update the feasible set of latent encounter histories at each iteration can be user specified (\textit{maxnumbasis}; see Appendix S1). The default priors are ``uninformative'', but user-specified priors can be used for each parameter. Initial values can be automatically generated or user-specified for each parameter.
 
 The function \textit{multimarkCJS()} works in exactly the same fashion, with the only notable difference being specification of models for $\phi$ (in addition to $p$ and ${\bf \delta}$). Although CJS-specific data are not included with \verb|multimark|, data can be simulated using the \textit{simdataCJS()} function (or \textit{simdataClosed()} for closed populations):
 <<load-library, echo=FALSE>>=
@@ -313,7 +313,7 @@ CJS.dot.h <- multimarkCJS(mms=CJSsetup,
               nchains=2,iter=45000,burnin=5000)
 summary(CJS.dot.h$mcmc)
 @
-An additional feature for \textit{multimarkCJS()} is simple specification of cohort effects for $p$ (\textit{mod.p={\textasciitilde{}}age}) and $\phi$ (\textit{mod.phi={\textasciitilde{}}age}), which is useful for investigating structure related to age (or time of first capture).
+An additional feature for \textit{multimarkCJS()} is simple specification of cohort effects for $p$ (\textit{mod.p={\~{}}age}) and $\phi$ (\textit{mod.phi={\~{}}age}), which is useful for investigating structure related to age (or time of first capture).
 
 \subsection{Further analysis}
 While the \verb|coda| package can be used to summarize, plot, and assess convergence of MCMC samples from \textit{multimarkClosed()} and \textit{multimarkCJS()}, several additional functions are available for further analysis. Because link functions are used for $p$ and $\phi$, the functions \textit{getprobsClosed()} and \textit{getprobsCJS()} provide estimates on the real scale:
@@ -375,7 +375,7 @@ etime=proc.time()-stime
 @
 
 <<load-library, echo=FALSE>>=
-load("D:/SkyDrive/Dropbox/Current Projects/multimark/manuscript/bobcat.M.all.RData")
+load("~/SkyDrive/Dropbox/Current Projects/multimark/manuscript/bobcat_results.RData")
 pmodnames <- unlist(lapply(modlist,function(x) x$mod.p)) 
 deltamodnames <- unlist(lapply(modlist,function(x) x$mod.delta)) 
 modnames<-paste0("p(",pmodnames,")delta(",deltamodnames,")")
