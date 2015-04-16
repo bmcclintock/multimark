@@ -249,12 +249,12 @@ get_DMCJS<-function(mod.p,mod.phi,mod.delta,Enc.Mat,covs,type="CJS",...){
   }
   CH<-process.data(data.frame(ch,options(stringsAsFactors = FALSE)),model=type)
   temp<-make.design.data(CH,...)
-  if((noccas-1) %% 2 == 0){
-    temp$Phi$Time <- temp$Phi$Time+1-((noccas-1)/2)-.5
-    temp$p$Time <- temp$p$Time+1-((noccas-1)/2)-.5
+  if((CH$nocc-1) %% 2 == 0){
+    temp$Phi$Time <- temp$Phi$Time+1-((CH$nocc-1)/2)-.5
+    temp$p$Time <- temp$p$Time+1-((CH$nocc-1)/2)-.5
   } else {
-    temp$Phi$Time <- temp$Phi$Time+1-ceiling((noccas-1)/2)
-    temp$p$Time <- temp$p$Time+1-ceiling((noccas-1)/2)
+    temp$Phi$Time <- temp$Phi$Time+1-ceiling((CH$nocc-1)/2)
+    temp$p$Time <- temp$p$Time+1-ceiling((CH$nocc-1)/2)
   }
   
   pmod <- getDMformula(mod.p)
@@ -1079,10 +1079,10 @@ monitorparmsCJS <- function(parms,parmlist,noccas){
 #' Barker, R. J. and Link. W. A. 2013. Bayesian multimodel inference by RJMCMC: a Gibbs sampling approach. The American Statistician 67: 150-156.
 #' @examples
 #' \dontshow{
-#' set.seed(1)
 #' setup<-processdata(bobcat)
 #' test.dot<-multimarkCJS(mms=setup,parms="all",iter=10,burnin=0)
 #' test<-multimodelCJS(mms=setup,modlist=list(mod1=test.dot,mod2=test.dot))
+#' set.seed(1)
 #' }
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
