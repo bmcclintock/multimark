@@ -1,8 +1,8 @@
 Package: multimark
 Type: Package
 Title: Capture-Mark-Recapture Analysis using Multiple Non-Invasive Marks
-Version: 1.1.3
-Date: 2015-04-15
+Version: 1.1.4
+Date: 2015-04-17
 Depends: R (>= 3.0.0)
 Imports: parallel,
          statmod,

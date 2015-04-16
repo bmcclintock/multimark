@@ -30,5 +30,3 @@ modlist<-list(mod1=bobcat.dot.same,mod2=bobcat.time.same,mod3=bobcat.c.same,mod4
 stime=proc.time()
 bobcat.M.all<-multimodelClosed(mms=setup,modlist=modlist,miter=miter,monparms=c("N","p","c"))
 etime=proc.time()-stime
-
-save.image("bobcat.M.all.RData")

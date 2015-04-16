@@ -310,25 +310,25 @@ Sample size per chain = 10000
    plus standard error of the mean:
 
                       Mean      SD  Naive SE Time-series SE
-pbeta[(Intercept)] -1.2590 0.27604 0.0027604        0.02085
-N                  35.3603 5.43211 0.0543211        0.31004
-delta_1             0.4212 0.08117 0.0008117        0.01216
-delta_2             0.4356 0.07996 0.0007996        0.01265
+pbeta[(Intercept)] -1.2258 0.25753 0.0025753       0.023277
+N                  34.8021 5.05930 0.0505930       0.306784
+delta_1             0.4274 0.07613 0.0007613       0.009414
+delta_2             0.4429 0.07513 0.0007513       0.008853
 
 2. Quantiles for each variable:
 
                       2.5%     25%     50%     75%   97.5%
-pbeta[(Intercept)] -1.8326 -1.4465 -1.2487 -1.0620 -0.7535
-N                  27.0000 32.0000 34.0000 38.0000 48.0000
-delta_1             0.2562  0.3673  0.4244  0.4782  0.5703
-delta_2             0.2721  0.3818  0.4399  0.4920  0.5792
+pbeta[(Intercept)] -1.7545 -1.3971 -1.2147 -1.0469 -0.7413
+N                  27.0000 31.0000 34.0000 38.0000 47.0000
+delta_1             0.2748  0.3761  0.4285  0.4805  0.5712
+delta_2             0.2935  0.3917  0.4445  0.4962  0.5826
 \end{Soutput}
 \begin{Sinput}
 > coda::effectiveSize(bobcat.dot$mcmc)
 \end{Sinput}
 \begin{Soutput}
 pbeta[(Intercept)]                  N            delta_1            delta_2 
-         175.26399          306.97405           44.54464           39.95661 
+         122.40954          271.96690           65.38613           72.01589 
 \end{Soutput}
 \end{Schunk}
 Here we can see posterior summaries for the default monitored parameters $(\beta^p, N, \delta_1, \delta_2)$. Based on the effective sample sizes, it's clear that the default chain length is inadequate for this example; a typical ``rule of thumb'' is effective sample sizes $>4000$ for all quantities of interest.
@@ -394,22 +394,22 @@ Sample size per chain = 40000
    plus standard error of the mean:
 
                          Mean      SD  Naive SE Time-series SE
-pbeta[(Intercept)]   -0.14505 0.13195 0.0004665       0.004521
-phibeta[(Intercept)]  1.39905 0.28513 0.0010081       0.011372
-alpha                 0.40530 0.11295 0.0003993       0.002603
-sigma2_zphi           0.03712 0.09867 0.0003489       0.004207
-delta_1               0.20192 0.04616 0.0001632       0.001583
-delta_2               0.60387 0.05157 0.0001823       0.001129
+pbeta[(Intercept)]   -0.15540 0.12931 0.0004572       0.004237
+phibeta[(Intercept)]  1.42967 0.29169 0.0010313       0.011893
+alpha                 0.40619 0.11411 0.0004034       0.002692
+sigma2_zphi           0.04124 0.09232 0.0003264       0.003793
+delta_1               0.20121 0.04727 0.0001671       0.001728
+delta_2               0.60467 0.05147 0.0001820       0.001062
 
 2. Quantiles for each variable:
 
                           2.5%       25%      50%      75%  97.5%
-pbeta[(Intercept)]   -0.389604 -0.237291 -0.15002 -0.05742 0.1245
-phibeta[(Intercept)]  0.940375  1.200721  1.36546  1.55676 2.0510
-alpha                 0.204653  0.324695  0.39904  0.47879 0.6438
-sigma2_zphi           0.002649  0.007147  0.01393  0.03141 0.2105
-delta_1               0.116826  0.169463  0.20025  0.23221 0.2971
-delta_2               0.501039  0.569305  0.60480  0.63940 0.7023
+pbeta[(Intercept)]   -0.395337 -0.245136 -0.16125 -0.07102 0.1128
+phibeta[(Intercept)]  0.958065  1.233088  1.39490  1.58397 2.1099
+alpha                 0.201906  0.324605  0.39980  0.48157 0.6457
+sigma2_zphi           0.002711  0.007252  0.01427  0.03410 0.2760
+delta_1               0.114577  0.167934  0.19948  0.23242 0.2986
+delta_2               0.502078  0.569966  0.60564  0.63985 0.7029
 \end{Soutput}
 \end{Schunk}
 An additional feature for \textit{multimarkCJS()} is simple specification of cohort effects for $p$ (\textit{mod.p={\~{}}age}) and $\phi$ (\textit{mod.phi={\~{}}age}), which is useful for investigating structure related to age (or time of first capture).
@@ -432,14 +432,14 @@ Sample size per chain = 10000
    plus standard error of the mean:
 
        Mean      SD  Naive SE Time-series SE
-p[1] 0.1366 0.05521 0.0005521       0.006385
-c[2] 0.2651 0.05115 0.0005115       0.003045
+p[1] 0.1424 0.05392 0.0005392       0.004660
+c[2] 0.2716 0.05330 0.0005330       0.003299
 
 2. Quantiles for each variable:
 
         2.5%     25%    50%    75%  97.5%
-p[1] 0.04261 0.09569 0.1302 0.1716 0.2609
-c[2] 0.17281 0.22827 0.2632 0.2989 0.3705
+p[1] 0.05355 0.09912 0.1403 0.1790 0.2516
+c[2] 0.17587 0.23303 0.2688 0.3064 0.3811
 \end{Soutput}
 \end{Schunk}
 Here, \verb|p[1]| and \verb|c[2]| refer to the probabilities of capture and recapture at times $t=1$ and $t=2$, respectively.
@@ -474,11 +474,11 @@ Fitting all possible additive combinations yielded 16 models using the default `
   \sigma_{z^p} & \sim & \text{half-Cauchy}(25)\\
   N & \propto & \frac{1}{N}
 \end{eqnarray*}
-With 2 chains each consisting of 2 million iterations (with thinning every 20 iterations to reduce memory requirements), the simplest models required 12 mins on a machine running Windows 7 (3.4GHz Intel Core i7, 16GB RAM), while the more complicated models including time variation required at most 2 hrs. These relatively fast run times are attributable to \verb|multimark|'s parallel processing of MCMC algorithms written in the C programming language \citep{KernighanRitchie1988}. Bayesian multimodel inference was performed with \textit{multimodelClosed()} using the default equal prior model weights, where 300000 iterations for each chain required 10.5 hrs. The longer run time for \textit{multimodelClosed()} owes to the number of models and the RJMCMC algorithm being written in R with no parallel processing.
+With 2 chains each consisting of 2 million iterations (with thinning every 20 iterations to reduce memory requirements), the simplest models required 12 mins on a machine running Windows 7 (3.4GHz Intel Core i7, 16GB RAM), while the more complicated models including time variation required at most 2 hrs. These relatively fast run times are attributable to \verb|multimark|'s parallel processing of MCMC algorithms written in the C programming language \citep{KernighanRitchie1988}. Bayesian multimodel inference was performed with \textit{multimodelClosed()} using the default equal prior model weights, where 300000 iterations for each chain required 3.1 hrs. The longer run time for \textit{multimodelClosed()} owes to the number of models and the RJMCMC algorithm being written entirely in R.
 
-Models including a positive behavioural response to first capture accounted for 0.51 of the posterior model weight, while models including $\delta_1=\delta_2$ accounted for 0.78 of posterior model weight (Table \ref{tab:modprobs}). Model-averaged posterior modes were $N=34$ (HPDI: 25-99; Fig. \ref{fig:modaveN}) for population abundance, $p=0.15$ (HPDI: 0.04-0.28) for capture probability, and $c=0.21$ (HPDI: 0.07-0.34) for recapture probability. With $\delta_1=\delta_2=0.41$ (HPDI: 0.31-0.5) based on the model with the highest posterior probability, both-sided encounters were relatively infrequent for these data $(1-\delta_1-\delta_2=0.17)$.
+Models including a positive behavioural response to first capture accounted for 0.51 of the posterior model weight, while models including $\delta_1=\delta_2$ accounted for 0.77 of posterior model weight (Table \ref{tab:modprobs}). Model-averaged posterior modes were $N=35$ (HPDI: 26-100; Fig. \ref{fig:modaveN}) for population abundance, $p=0.15$ (HPDI: 0.04-0.28) for capture probability, and $c=0.21$ (HPDI: 0.07-0.33) for recapture probability. With $\delta_1=\delta_2=0.41$ (HPDI: 0.31-0.5) based on the model with the highest posterior probability, both-sided encounters were relatively infrequent for these data $(1-\delta_1-\delta_2=0.17)$.
 % latex table generated in R 3.0.2 by xtable 1.7-1 package
-% Thu Apr 16 13:19:47 2015
+% Fri Apr 17 07:53:45 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{llllll}
@@ -487,11 +487,11 @@ Model & PMM & $N$ & HPDI & ESS & GRB \\
   \hline
 p(\~{}c)delta(\~{}1) & 0.30 & 37 & 27-89 & 38769 & 1.00 \\ 
   p(\~{}1)delta(\~{}1) & 0.22 & 33 & 27-46 & 51133 & 1.00 \\ 
-  p(\~{}h)delta(\~{}1) & 0.15 & 48 & 28-113 & 12795 & 1.00 \\ 
+  p(\~{}h)delta(\~{}1) & 0.16 & 48 & 28-113 & 12795 & 1.00 \\ 
   p(\~{}c + h)delta(\~{}1) & 0.09 & 49 & 28-144 & 19192 & 1.00 \\ 
   p(\~{}c)delta(\~{}type) & 0.09 & 38 & 27-89 & 37853 & 1.00 \\ 
-  p(\~{}1)delta(\~{}type) & 0.07 & 33 & 27-46 & 52354 & 1.00 \\ 
-  p(\~{}h)delta(\~{}type) & 0.04 & 46 & 28-113 & 13214 & 1.00 \\ 
+  p(\~{}1)delta(\~{}type) & 0.06 & 33 & 27-46 & 52354 & 1.00 \\ 
+  p(\~{}h)delta(\~{}type) & 0.05 & 46 & 28-113 & 13214 & 1.00 \\ 
   p(\~{}c + h)delta(\~{}type) & 0.03 & 49 & 29-143 & 19525 & 1.00 \\ 
   p(\~{}time + h)delta(\~{}1) & 0.00 & 48 & 28-115 & 14781 & 1.00 \\ 
   p(\~{}c + time + h)delta(\~{}1) & 0.00 & 45 & 27-115 & 20273 & 1.00 \\ 

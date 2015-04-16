@@ -96,7 +96,7 @@ multimarkCJS(Enc.Mat, data.type = "never", covs = data.frame(),
 
 \item{link}{Link function for survival and capture probabilities. Only probit link is currently implemented.}
 
-\item{printlog}{Logical indicating whether to print the progress of chain(s) and any errors to a log file in the working directory. Updates are printed as 1\% increments of \code{iter} of each chain are completed. Setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-based"" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.}
+\item{printlog}{Logical indicating whether to print the progress of chain(s) and any errors to a log file in the working directory. Updates are printed as 1\% increments of \code{iter} of each chain are completed. Setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.}
 
 \item{...}{Additional "\code{parameters}" arguments for specifying \code{mod.p} and \code{mod.phi}. See \code{\link[RMark]{make.design.data}}.}
 }

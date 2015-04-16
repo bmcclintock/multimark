@@ -686,7 +686,7 @@ processCJSchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin){
 #' @param link Link function for survival and capture probabilities. Only probit link is currently implemented.
 #' @param initial.values Optional list of \code{nchain} list(s) specifying intial values for parameters and latent variables. Default is \code{initial.values = NULL}, which causes initial values to be generated automatically. In addition to the parameters ("\code{pbeta}", "\code{phibeta}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_zp}", "\code{sigma2_zphi}", "\code{zp}", "\code{zphi}", and "\code{psi}"), initial values can be specified for the initial latent history frequencies ("\code{x}") and initial individual encounter history indices ("\code{H}").
 #' @param known Optional integer vector indicating whether the encounter history of an individual is known with certainty (i.e., the observed encounter history is the true encounter history). Encounter histories with at least one type 4 encounter are automatically assumed to be known, and \code{known} does not need to be specified unless there exist encounter histories that do not contain a type 4 encounter that happen to be known with certainty (e.g., from independent telemetry studies). If specified, \code{known = c(v_1,v_2,...,v_M)} must be a vector of length \code{M = nrow(Enc.Mat)} where \code{v_i = 1} if the encounter history for individual \code{i} is known (\code{v_i = 0} otherwise). Note that known all-zero encounter histories (e.g., `000') are ignored.
-#' @param printlog Logical indicating whether to print the progress of chain(s) and any errors to a log file in the working directory. Updates are printed as 1\% increments of \code{iter} of each chain are completed. Setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-based"" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.
+#' @param printlog Logical indicating whether to print the progress of chain(s) and any errors to a log file in the working directory. Updates are printed as 1\% increments of \code{iter} of each chain are completed. Setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.
 #' @param ... Additional "\code{parameters}" arguments for specifying \code{mod.p} and \code{mod.phi}. See \code{\link[RMark]{make.design.data}}.
 #'
 #' @details The first time \code{multimarkCJS} (or \code{\link{multimarkClosed}}) is called, it will likely produce a firewall warning alerting users that R has requested the ability to accept incoming network connections. Incoming network connections are required to use parallel processing as implemented in \code{multimarkCJS}. Note that setting \code{parms="all"} is required for any \code{multimarkCJS} model output to be used in \code{\link{multimodelCJS}}.
@@ -1050,6 +1050,80 @@ monitorparmsCJS <- function(parms,parmlist,noccas){
   list(commonparms=commonparms,parms=parms,namesp=namesp,namesphi=namesphi,getprobitp=getprobitp,getprobitphi=getprobitphi)
 }
 
+rjmcmcCJS <- function(ichain,M,noccas,data_type,alpha,C,All.hists,modlist,DMlist,deltalist,priorlist,mod.p.h,mod.phi.h,iter,miter,modprior,M1,monitorparms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale,pmodnames,phimodnames,deltamodnames){
+  
+  multimodel <- matrix(0,nrow=miter,ncol=length(monitorparms$parms)+1,dimnames=list(NULL,c(monitorparms$parms,"M")))
+  
+  nmod <- length(modlist)
+  mod.prob.brob <- as.brob(numeric(nmod))
+  
+  commonparms <- monitorparms$commonparms
+  
+  M.cur<- M1
+  
+  modmissingparms <- drawmissingCJS(M.cur,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale)
+  cur.parms <- c(modlist[[M.cur]][sample(iter,1),],modmissingparms)
+  
+  DM <- DMlist[[M.cur]]
+  DM$mod.delta <- deltalist[[M.cur]]
+  DM$mod.p.h <- mod.p.h[[M.cur]]
+  DM$mod.phi.h <- mod.phi.h[[M.cur]]
+  
+  cur.parms.list <- getcurCJSparmslist(cur.parms,DM,M,noccas,data_type,alpha)  
+  
+  for(iiter in 1:miter){
+    
+    posterior <- cur.parms["loglike"] + priorsCJS(cur.parms.list[[1]],DM,priorlist[[M.cur]],data_type,C,noccas)
+    
+    mod.prob.brob[M.cur] <- getbrobprobCJS(M.cur,modprior,posterior,cur.parms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale)
+    
+    for(imod in (1:nmod)[-M.cur]){ 
+      
+      DM <- DMlist[[imod]]
+      DM$mod.delta <- deltalist[[imod]]
+      DM$mod.p.h <- mod.p.h[imod]
+      DM$mod.phi.h <- mod.phi.h[imod]
+      
+      cur.parms.list[[1]]$pbeta <- cur.parms[paste0("pbeta[",colnames(DM$p),"]")]
+      cur.parms.list[[1]]$phibeta <- cur.parms[paste0("phibeta[",colnames(DM$phi),"]")]
+      
+      loglike <- loglikeCJS(cur.parms.list[[1]],DM,noccas,C,All.hists)
+      
+      posterior <- loglike + priorsCJS(cur.parms.list[[1]],DM,priorlist[[imod]],data_type,C,noccas)
+      
+      mod.prob.brob[imod] <- getbrobprobCJS(imod,modprior,posterior,cur.parms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale)
+    }
+    
+    if(any(is.na(as.numeric(mod.prob.brob)))){
+      warning(paste0("'NA' posterior for model '","p(",pmodnames[is.na(as.numeric(mod.prob.brob))],")phi(",phimodnames[is.na(as.numeric(mod.prob.brob))],")delta(",deltamodnames[is.na(as.numeric(mod.prob.brob))],")' at iteration ",iiter,"; model move rejected."))
+    } else {       
+      mod.prob <- as.numeric(mod.prob.brob/Brobdingnag::sum(mod.prob.brob))
+      M.cur <- (1:nmod)[rmultinom(1, 1, mod.prob)==1]
+    }
+    
+    modmissingparms <- drawmissingCJS(M.cur,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale)
+    cur.parms <- c(modlist[[M.cur]][sample(iter,1),],modmissingparms)
+    
+    multimodel[iiter,"M"] <- M.cur
+    multimodel[iiter,commonparms] <- cur.parms[commonparms]
+    
+    DM <- DMlist[[M.cur]]
+    DM$mod.delta <- deltalist[[M.cur]]
+    DM$mod.p.h <- mod.p.h[[M.cur]]
+    DM$mod.phi.h <- mod.phi.h[[M.cur]]
+    
+    cur.parms.list <- getcurCJSparmslist(cur.parms,DM,M,noccas,data_type,alpha)  
+    
+    multimodel[iiter,monitorparms$namesp] <- monitorparms$getprobitp(DM$mod.p.h,DM$p,cur.parms.list[[1]]$pbeta,cur.parms.list[[1]]$sigma2_zp)
+    multimodel[iiter,monitorparms$namesphi] <- monitorparms$getprobitphi(DM$mod.phi.h,DM$phi,cur.parms.list[[1]]$phibeta,cur.parms.list[[1]]$sigma2_zphi)
+    
+    if(100*(iiter/miter) >= 1 & (100*(iiter/miter))%%1==0) {
+      message("Chain ",ichain," is ",100*(iiter/miter),"% complete ")
+    }
+  }
+  return(multimodel)
+}
+
 #' Multimodel inference for 'multimark' open population survival models
 #' 
 #' This function performs Bayesian multimodel inference for a set of 'multimark' open population survival (i.e., Cormack-Jolly-Seber) models using the reversible jump Markov chain Monte Carlo (RJMCMC) algorithm proposed by Barker & Link (2013).
@@ -1069,6 +1143,7 @@ monitorparmsCJS <- function(parms,parmlist,noccas){
 #' @param sigppropscale Scaler specifying the scale parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma2_zp}". Only applies if at least one (but not all) model(s) include individual hetergeneity in detection probability. Default is \code{sigppropscale=0.01}. See Barker & Link (2013) for more details.
 #' @param sigphipropshape Scaler specifying the shape parameter of the invGamma(shape = sigphipropshape, scale = sigphipropscale) proposal distribution for "\code{sigma2_zphi}". Only applies if at least one (but not all) model(s) include individual hetergeneity in survival probability. Default is \code{sigphipropshape=1}. See Barker & Link (2013) for more details.
 #' @param sigphipropscale Scaler specifying the scale parameter of the invGamma(shape = sigphipropshape, scale = sigphipropscale) proposal distribution for "\code{sigma_zphi}". Only applies if at least one (but not all) model(s) include individual hetergeneity in survival probability. Default is \code{sigphipropscale=0.01}. See Barker & Link (2013) for more details.
+#' @param printlog Logical indicating whether to print the progress of chain(s) and any errors to a log file in the working directory. Updates are printed as 1\% increments of \code{iter} of each chain are completed. Setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.
 #' @details Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkCJS}} models to be included in \code{modlist}.
 #' @return A list containing the following:
 #' \item{rjmcmc}{Reversible jump Markov chain Monte Carlo object of class \code{\link[coda]{mcmc.list}}. Includes RJMCMC output for monitored parameters and the current model at each iteration ("\code{M}").}
@@ -1082,7 +1157,7 @@ monitorparmsCJS <- function(parms,parmlist,noccas){
 #' setup<-processdata(bobcat)
 #' test.dot<-multimarkCJS(mms=setup,parms="all",iter=10,burnin=0)
 #' test<-multimodelCJS(mms=setup,modlist=list(mod1=test.dot,mod2=test.dot))
-#' set.seed(1)
+#' set.seed(10)
 #' }
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
@@ -1109,7 +1184,7 @@ monitorparmsCJS <- function(parms,parmlist,noccas){
 #' 
 #' #multimodel posterior summary for survival (display first cohort only)
 #' summary(sim.M$rjmcmc[,paste0("phi[1,",1:(noccas-1),"]")])}
-multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlist)),monparms="phi",miter=NULL,M1=NULL,pbetapropsd=1,zppropsd=NULL,phibetapropsd=1,zphipropsd=NULL,sigppropshape=1,sigppropscale=0.01,sigphipropshape=1,sigphipropscale=0.01){
+multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlist)),monparms="phi",miter=NULL,M1=NULL,pbetapropsd=1,zppropsd=NULL,phibetapropsd=1,zphipropsd=NULL,sigppropshape=1,sigppropscale=0.01,sigphipropshape=1,sigphipropscale=0.01,printlog=FALSE){
   
   nmod <- length(modlist)
   iter <- unlist(unique(lapply(modlist,function(x) unique(lapply(x$mcmc,nrow)))))
@@ -1124,6 +1199,7 @@ multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlis
   noccas<-ncol(mms@Enc.Mat)
   M<-nrow(mms@Enc.Mat)
   All.hists<-matrix(mms@vAll.hists,byrow=TRUE,ncol=noccas)
+  C<-mms@C
   
   if(is.null(miter)) miter <- iter
   
@@ -1139,15 +1215,12 @@ multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlis
   missing <- missingparmnamesCJS(params,M,noccas,zppropsd,zphipropsd)
   
   monitorparms <- monitorparmsCJS(monparms,c(missing$commonparms,"p","phi"),noccas)
-  
-  commonparms <- monitorparms$commonparms
-  
-  multimodel <- lapply(vector('list',nchains),function(x) x=matrix(0,nrow=miter,ncol=length(monitorparms$parms)+1,dimnames=list(NULL,c(monitorparms$parms,"M"))))
-  
+    
+  DMlist <- lapply(modlist,function(x) x$DM)
+  deltalist <- lapply(modlist,function(x) x$mod.delta)
+  priorlist <- lapply(modlist,function(x) x$priorparms)
   mod.p.h <- unlist(lapply(modlist,function(x) any("h"==attributes(terms(x$mod.p))$term.labels)))
   mod.phi.h <- unlist(lapply(modlist,function(x) any("h"==attributes(terms(x$mod.phi))$term.labels)))
-  
-  mod.prob.brob <- as.brob(numeric(nmod))
   
   data_type <- mms@data.type
   if(data_type=="never"){
@@ -1158,72 +1231,14 @@ multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlis
     alpha <- numeric(0)
   }
   
-  pb <- txtProgressBar(min=1,max=nchains*miter+1,char="+",width=100,style=3)
-  setTxtProgressBar(pb, 1)
-  for(ichain in 1:nchains){
-    
-    M.cur<- M1[ichain]
-    
-    modmissingparms <- drawmissingCJS(M.cur,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale)
-    cur.parms <- c(modlist[[M.cur]]$mcmc[[ichain]][sample(iter,1),],modmissingparms)
-    
-    DM <- modlist[[M.cur]]$DM
-    DM$mod.delta <- modlist[[M.cur]]$mod.delta
-    DM$mod.p.h <- mod.p.h[[M.cur]]
-    DM$mod.phi.h <- mod.phi.h[[M.cur]]
-    
-    cur.parms.list <- getcurCJSparmslist(cur.parms,DM,M,noccas,data_type,alpha)  
-    
-    for(iiter in 1:miter){
-      
-      posterior <- cur.parms["loglike"] + priorsCJS(cur.parms.list[[1]],DM,modlist[[M.cur]]$priorparms,data_type,mms@C,noccas)
-      
-      mod.prob.brob[M.cur] <- getbrobprobCJS(M.cur,modprior,posterior,cur.parms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale)
-      
-      for(imod in (1:nmod)[-M.cur]){ 
-        
-        DM <- modlist[[imod]]$DM
-        DM$mod.delta <- modlist[[imod]]$mod.delta
-        DM$mod.p.h <- mod.p.h[imod]
-        DM$mod.phi.h <- mod.phi.h[imod]
-        
-        cur.parms.list[[1]]$pbeta <- cur.parms[paste0("pbeta[",colnames(DM$p),"]")]
-        cur.parms.list[[1]]$phibeta <- cur.parms[paste0("phibeta[",colnames(DM$phi),"]")]
-        
-        loglike <- loglikeCJS(cur.parms.list[[1]],DM,noccas,mms@C,All.hists)
-        
-        posterior <- loglike + priorsCJS(cur.parms.list[[1]],DM,modlist[[imod]]$priorparms,data_type,mms@C,noccas)
-        
-        mod.prob.brob[imod] <- getbrobprobCJS(imod,modprior,posterior,cur.parms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale)
-      }
-      
-      if(any(is.na(as.numeric(mod.prob.brob)))){
-        warning(paste0("'NA' posterior for model '","p(",pmodnames[is.na(as.numeric(mod.prob.brob))],")phi(",phimodnames[is.na(as.numeric(mod.prob.brob))],")delta(",deltamodnames[is.na(as.numeric(mod.prob.brob))],")' at iteration ",iiter,"; model move rejected."))
-      } else {       
-        mod.prob <- as.numeric(mod.prob.brob/Brobdingnag::sum(mod.prob.brob))
-        M.cur <- (1:nmod)[rmultinom(1, 1, mod.prob)==1]
-      }
-      
-      modmissingparms <- drawmissingCJS(M.cur,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale)
-      cur.parms <- c(modlist[[M.cur]]$mcmc[[ichain]][sample(iter,1),],modmissingparms)
-      
-      multimodel[[ichain]][iiter,"M"] <- M.cur
-      multimodel[[ichain]][iiter,commonparms] <- cur.parms[commonparms]
-      
-      DM <- modlist[[M.cur]]$DM
-      DM$mod.delta <- modlist[[M.cur]]$mod.delta
-      DM$mod.p.h <- mod.p.h[[M.cur]]
-      DM$mod.phi.h <- mod.phi.h[[M.cur]]
-      
-      cur.parms.list <- getcurCJSparmslist(cur.parms,DM,M,noccas,data_type,alpha)  
-      
-      multimodel[[ichain]][iiter,monitorparms$namesp] <- monitorparms$getprobitp(DM$mod.p.h,DM$p,cur.parms.list[[1]]$pbeta,cur.parms.list[[1]]$sigma2_zp)
-      multimodel[[ichain]][iiter,monitorparms$namesphi] <- monitorparms$getprobitphi(DM$mod.phi.h,DM$phi,cur.parms.list[[1]]$phibeta,cur.parms.list[[1]]$sigma2_zphi)
-      
-      setTxtProgressBar(pb, (ichain-1)*miter+iiter+1)
-    }
-  }
-  close(pb)
+  cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimark_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
+  clusterExport(cl,list("rjmcmcCJS"))
+  
+  message("Updating...",ifelse(printlog,"","set 'printlog=TRUE' to follow progress of chains(s) in a working directory log file"),"\n",sep="")
+  
+  multimodel <- parLapply(cl,1:nchains, function(ichain) rjmcmcCJS(ichain,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,priorlist,mod.p.h,mod.phi.h,iter,miter,modprior,M1[ichain],monitorparms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale,pmodnames,phimodnames,deltamodnames))
+  stopCluster(cl)
+  gc()
   
   pos.prob <- vector('list',nchains)
   for(ichain in 1:nchains){

@@ -8,7 +8,7 @@ multimodelCJS(mms, modlist, modprior = rep(1/length(modlist),
   length(modlist)), monparms = "phi", miter = NULL, M1 = NULL,
   pbetapropsd = 1, zppropsd = NULL, phibetapropsd = 1,
   zphipropsd = NULL, sigppropshape = 1, sigppropscale = 0.01,
-  sigphipropshape = 1, sigphipropscale = 0.01)
+  sigphipropshape = 1, sigphipropscale = 0.01, printlog = FALSE)
 }
 \arguments{
 \item{mms}{An object of class \code{multimarksetup}. See \code{\link{multimarksetup-class}}.}
@@ -38,6 +38,8 @@ multimodelCJS(mms, modlist, modprior = rep(1/length(modlist),
 \item{sigphipropshape}{Scaler specifying the shape parameter of the invGamma(shape = sigphipropshape, scale = sigphipropscale) proposal distribution for "\code{sigma2_zphi}". Only applies if at least one (but not all) model(s) include individual hetergeneity in survival probability. Default is \code{sigphipropshape=1}. See Barker & Link (2013) for more details.}
 
 \item{sigphipropscale}{Scaler specifying the scale parameter of the invGamma(shape = sigphipropshape, scale = sigphipropscale) proposal distribution for "\code{sigma_zphi}". Only applies if at least one (but not all) model(s) include individual hetergeneity in survival probability. Default is \code{sigphipropscale=0.01}. See Barker & Link (2013) for more details.}
+
+\item{printlog}{Logical indicating whether to print the progress of chain(s) and any errors to a log file in the working directory. Updates are printed as 1\% increments of \code{iter} of each chain are completed. Setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.}
 }
 \value{
 A list containing the following:
@@ -55,7 +57,7 @@ Note that setting \code{parms="all"} is required when fitting individual \code{\
 setup<-processdata(bobcat)
 test.dot<-multimarkCJS(mms=setup,parms="all",iter=10,burnin=0)
 test<-multimodelCJS(mms=setup,modlist=list(mod1=test.dot,mod2=test.dot))
-set.seed(1)
+set.seed(10)
 }
 \donttest{
 # This example is excluded from testing to reduce package check time
