@@ -249,6 +249,13 @@ get_DMCJS<-function(mod.p,mod.phi,mod.delta,Enc.Mat,covs,type="CJS",...){
   }
   CH<-process.data(data.frame(ch,options(stringsAsFactors = FALSE)),model=type)
   temp<-make.design.data(CH,...)
+  if((noccas-1) %% 2 == 0){
+    temp$Phi$Time <- temp$Phi$Time+1-((noccas-1)/2)-.5
+    temp$p$Time <- temp$p$Time+1-((noccas-1)/2)-.5
+  } else {
+    temp$Phi$Time <- temp$Phi$Time+1-ceiling((noccas-1)/2)
+    temp$p$Time <- temp$p$Time+1-ceiling((noccas-1)/2)
+  }
   
   pmod <- getDMformula(mod.p)
   phimod <- getDMformula(mod.phi)
@@ -1072,6 +1079,7 @@ monitorparmsCJS <- function(parms,parmlist,noccas){
 #' Barker, R. J. and Link. W. A. 2013. Bayesian multimodel inference by RJMCMC: a Gibbs sampling approach. The American Statistician 67: 150-156.
 #' @examples
 #' \dontshow{
+#' set.seed(1)
 #' setup<-processdata(bobcat)
 #' test.dot<-multimarkCJS(mms=setup,parms="all",iter=10,burnin=0)
 #' test<-multimodelCJS(mms=setup,modlist=list(mod1=test.dot,mod2=test.dot))
@@ -1081,8 +1089,9 @@ monitorparmsCJS <- function(parms,parmlist,noccas){
 #' 
 #' #Generate object of class "multimarksetup" from simulated data
 #' data_type = "always"
-#' noccas <- 7
-#' data <- simdataCJS(noccas=noccas,data.type=data_type)
+#' noccas <- 5
+#' phibetaTime <- seq(2,0,length=noccas-1) # declining trend in survival
+#' data <- simdataCJS(noccas=5,phibeta=phibetaTime,data.type=data_type)
 #' setup <- processdata(data$Enc.Mat,data.type=data_type)
 #' 
 #' #Run two parallel chains using the default model. Note parms="all".

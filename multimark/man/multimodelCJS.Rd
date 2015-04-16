@@ -52,6 +52,7 @@ Note that setting \code{parms="all"} is required when fitting individual \code{\
 }
 \examples{
 \dontshow{
+set.seed(1)
 setup<-processdata(bobcat)
 test.dot<-multimarkCJS(mms=setup,parms="all",iter=10,burnin=0)
 test<-multimodelCJS(mms=setup,modlist=list(mod1=test.dot,mod2=test.dot))
@@ -61,8 +62,9 @@ test<-multimodelCJS(mms=setup,modlist=list(mod1=test.dot,mod2=test.dot))
 
 #Generate object of class "multimarksetup" from simulated data
 data_type = "always"
-noccas <- 7
-data <- simdataCJS(noccas=noccas,data.type=data_type)
+noccas <- 5
+phibetaTime <- seq(2,0,length=noccas-1) # declining trend in survival
+data <- simdataCJS(noccas=5,phibeta=phibetaTime,data.type=data_type)
 setup <- processdata(data$Enc.Mat,data.type=data_type)
 
 #Run two parallel chains using the default model. Note parms="all".

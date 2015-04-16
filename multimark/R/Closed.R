@@ -86,6 +86,11 @@ get_DMClosed<-function(mod.p,mod.delta,Enc.Mat,covs,type="Closed",...){
   }
   CH<-process.data(data.frame(ch,options(stringsAsFactors = FALSE)),model=type)
   temp<-make.design.data(CH,...)
+  if(noccas %% 2 == 0){
+    temp$p$Time <- temp$p$Time+1-(noccas/2)-.5
+  } else {
+    temp$p$Time <- temp$p$Time+1-ceiling(noccas/2)
+  }
   temp$c<-temp$p
   temp$c$model.index<-temp$c$model.index+CH$nocc
   temp$c$c<-1
