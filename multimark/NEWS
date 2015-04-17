@@ -8,6 +8,8 @@ CHANGES
 
 * parallel processing now only used with >1 chains in 'multimarkCJS()' and 'multimarkClosed()'
 
+* modified chain progress printing for 'multimarkCJS()', 'multimarkClosed()', 'multimodelCJS()' and 'multimodelClosed()'
+
 * temporal trend (Time) predictors centered around zero
 
 * updated package citation

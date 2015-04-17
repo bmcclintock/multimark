@@ -185,13 +185,7 @@ void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, doub
   }
   double nl;
   
-  if(*printlog){
-    Rprintf("Chain %d initialized \n",*ichain);     
-    if(niter) Rprintf("Chain %d is %.0f%% complete \n",*ichain,(double) 100*g/niter);
-  } else {
-    Rprintf("Chain %d initialized \r",*ichain);     
-    if(niter) Rprintf("Chain %d is %.0f%% complete \r",*ichain,(double) 100*g/niter);
-  }
+  Rprintf("Chain %d initialized \n",*ichain);
   
   /* Begin Markov chain */  
   for (g=1; g < (niter+1); g++)  {
@@ -465,11 +459,7 @@ void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, doub
     }
 
     if(!(g%(niter/ min(niter,100)))){
-      if(*printlog){
-        Rprintf("Chain %d is %.0f%% complete \n",*ichain,(double) 100*g/niter);      
-      } else {
-        Rprintf("Chain %d is %.0f%% complete \r",*ichain,(double) 100*g/niter);
-      }
+      Rprintf("Chain %d is %.0f%% complete \r",*ichain,(double) 100*g/niter);
     }
   }
   /* End Markov chain */

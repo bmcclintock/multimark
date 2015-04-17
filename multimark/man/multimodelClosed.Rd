@@ -30,7 +30,7 @@ multimodelClosed(mms, modlist, modprior = rep(1/length(modlist),
 
 \item{sigppropscale}{Scaler specifying the scale parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_zp=sqrt(sigma2_zp)}". Only applies if at least one (but not all) model(s) include individual hetergeneity in detection probability. Default is \code{sigppropscale=4}. See Barker & Link (2013) for more details.}
 
-\item{printlog}{Logical indicating whether to print the progress of chain(s) and any errors to a log file in the working directory. Updates are printed as 1\% increments of \code{iter} of each chain are completed. Setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.}
+\item{printlog}{Logical indicating whether to print the progress of chains and any errors to a log file in the working directory. Ignored when \code{nchains=1}. Updates are printed to log file as 1\% increments of \code{iter} of each chain are completed. With >1 chains, setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.}
 }
 \value{
 A list containing the following:
