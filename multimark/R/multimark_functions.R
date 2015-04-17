@@ -13,7 +13,7 @@
 #' McClintock, B. T., Conn, P. B., Alonso, R. S., and Crooks, K. R. 2013. Integrated modeling of bilateral photo-identification data in mark-recapture analyses. \emph{Ecology} 94: 1464-1471.
 #' @examples
 #' data(bobcat)
-#' @keywords data datasets
+#' @keywords data
 NULL
 
 #' Class \code{"multimarksetup"}
@@ -24,15 +24,15 @@ NULL
 #' @section Objects from the Class:
 #' Objects can be created by calls of the form \code{processdata(Enc.Mat, ...)} or \code{new("multimarksetup", ...)}.
 #' @slot Enc.Mat Object of class \code{"matrix"}. The observed encounter histories (with rows corresponding to individuals and columns corresponding to sampling occasions).
-#' @slot data.type Object of class \code{"character"}. The encounter history data type ("never", "sometimes", or "always") .
-#' @slot vAll.hists Object of class \code{"integer"}. An ordered vector containing all possible encounter histories in sequence .
-#' @slot Aprime Object of class \code{"sparseMatrix"}. Transpose of the A matrix mapping latent encounter histories to observed histories .
-#' @slot indBasis Object of class \code{"numeric"}.An ordered vector of the indices of the three encounter histories updated by each basis vector .
-#' @slot ncolbasis Object of class \code{"integer"}. The number of needed basis vectors .
-#' @slot knownx Object of class \code{"integer"}. Frequencies of known encounter histories .
-#' @slot C Object of class \code{"integer"}. Sampling occasion of first capture for each encounter history .
-#' @slot L Object of class \code{"integer"}. Sampling occasion of last capture for each encounter history .
-#' @slot naivex Object of class \code{"integer"}. ``Naive'' latent history frequencies assuming a one-to-one mapping with \code{Enc.Mat} .
+#' @slot data.type Object of class \code{"character"}. The encounter history data type ("never", "sometimes", or "always").
+#' @slot vAll.hists Object of class \code{"integer"}. An ordered vector containing all possible encounter histories in sequence.
+#' @slot Aprime Object of class \code{"sparseMatrix"}. Transpose of the A matrix mapping latent encounter histories to observed histories.
+#' @slot indBasis Object of class \code{"numeric"}.An ordered vector of the indices of the three encounter histories updated by each basis vector.
+#' @slot ncolbasis Object of class \code{"integer"}. The number of needed basis vectors.
+#' @slot knownx Object of class \code{"integer"}. Frequencies of known encounter histories.
+#' @slot C Object of class \code{"integer"}. Sampling occasion of first capture for each encounter history.
+#' @slot L Object of class \code{"integer"}. Sampling occasion of last capture for each encounter history.
+#' @slot naivex Object of class \code{"integer"}. ``Naive'' latent history frequencies assuming a one-to-one mapping with \code{Enc.Mat}.
 #' @slot covs Object of class \code{"data.frame"}. Temporal covariates for detection probability (the number of rows in the data frame must equal the number of sampling occasions).
 #' @section Methods:
 #' No methods defined with class "multimarksetup".
@@ -637,10 +637,10 @@ get_known<-function(known,Enc.Mat,histindex,data.type){
 #' setup <- processdata(bobcat)
 #' 
 #' #Run two parallel chains using the default model for bobcat data
-#' bobcat.dot<-multimarkClosed(mms=setup,nchains=2)
+#' bobcat.dot<-multimarkClosed(mms=setup)
 #' 
 #' #Run two parallel chains for bobcat data with temporal effects (i.e., mod.p=~time)
-#' bobcat.time <- multimarkClosed(mms=setup,mod.p=~time,nchains=2)}
+#' bobcat.time <- multimarkClosed(mms=setup,mod.p=~time)}
 processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer()){
   
   if(!is.matrix(Enc.Mat)) stop("'Enc.Mat' must be a matrix")

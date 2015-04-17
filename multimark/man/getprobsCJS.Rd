@@ -14,7 +14,7 @@ getprobsCJS(out, link = "probit")
 \value{
 An object of class \code{\link[coda]{mcmc.list}} containing the following:
 \item{p}{Posterior samples for capture probability (\eqn{p[c,t]}) for each release cohort (\eqn{c=1,\ldots,T-1}) and sampling occasion (\eqn{t=2,\ldots,T}).}
-\item{phi}{Posterior samples for survival probability (\eqn{\phi[c,k]}) for each release cohort (\eqn{c=1,\ldots,T-1}) and interval (\eqn{t=k,\ldots,T-1}).}
+\item{phi}{Posterior samples for survival probability (\eqn{\phi[c,k]}) for each release cohort (\eqn{c=1,\ldots,T-1}) and interval (\eqn{k=1,\ldots,T-1}).}
 }
 \description{
 This function calculates posterior capture (\eqn{p}) and survival (\eqn{\phi}) probabilities for each sampling occasion from \code{\link{multimarkCJS}} output.

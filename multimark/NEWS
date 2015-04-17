@@ -2,7 +2,7 @@ multimark 1.1.4 2015-04-17
 -----------------
 NEW FEATURES
 
-* parallel processing used in 'multimodelCJS()' and 'multimodelClosed()' for >1 chains
+* parallel processing now used in 'multimodelCJS()' and 'multimodelClosed()' for >1 chains
 
 CHANGES
 

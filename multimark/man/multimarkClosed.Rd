@@ -28,51 +28,51 @@ multimarkClosed(Enc.Mat, data.type = "never", covs = data.frame(),
 
 \item{mms}{An optional object of class \code{multimarksetup-class}; if \code{NULL} it is created. See \code{\link{processdata}}.}
 
-\item{mod.p}{Model formula for detection probability. For example, \code{mod.p=~1} specifies no effects (i.e., intercept only), \code{mod.p~time} specifies temporal effects, \code{mod.p~c} specifies behavioral reponse (i.e., trap "happy" or "shy"), \code{mod.p~h} specifies individual heterogeneity, and \code{mod.p~time+c} specifies additive temporal and behavioral effects .}
+\item{mod.p}{Model formula for detection probability. For example, \code{mod.p=~1} specifies no effects (i.e., intercept only), \code{mod.p~time} specifies temporal effects, \code{mod.p~c} specifies behavioral reponse (i.e., trap "happy" or "shy"), \code{mod.p~h} specifies individual heterogeneity, and \code{mod.p~time+c} specifies additive temporal and behavioral effects.}
 
-\item{mod.delta}{Model formula for conditional probabilities of type 1 (delta_1) and type 2 (delta_2) encounters, given detection. Currently only \code{mod.delta=~1} (i.e., \eqn{delta_1 = delta_2}) and \code{mod.delta=~type} (i.e., \eqn{delta_1 \ne delta_2}) are implemented.}
+\item{mod.delta}{Model formula for conditional probabilities of type 1 (delta_1) and type 2 (delta_2) encounters, given detection. Currently only \code{mod.delta=~1} (i.e., \eqn{\delta_1 = \delta_2}) and \code{mod.delta=~type} (i.e., \eqn{\delta_1 \ne \delta_2}) are implemented.}
 
-\item{parms}{A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are logit-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), conditional probability of type 1 or type 2 encounter, given detection ("\code{delta})", probability of simultaneous type 1 and type 2 detection, given both types encountered ("\code{alpha}"), logit-scale individual heterogeneity variance term ("\code{sigma2_zp}"), logit-scale individual effects ("\code{zp}"), and the probability that any given observed history corresponds to a legitmate individual ("\code{psi}"). Individual encounter history indices ("\code{H}") and the log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables .}
+\item{parms}{A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are logit-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), conditional probability of type 1 or type 2 encounter, given detection ("\code{delta})", probability of simultaneous type 1 and type 2 detection, given both types encountered ("\code{alpha}"), logit-scale individual heterogeneity variance term ("\code{sigma2_zp}"), logit-scale individual effects ("\code{zp}"), and the probability that any given observed history corresponds to a legitmate individual ("\code{psi}"). Individual encounter history indices ("\code{H}") and the log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.}
 
-\item{nchains}{The number of parallel MCMC chains for the model .}
+\item{nchains}{The number of parallel MCMC chains for the model.}
 
-\item{iter}{The number of MCMC iterations .}
+\item{iter}{The number of MCMC iterations.}
 
-\item{adapt}{The number of iterations for proposal distribution adaptation. If \code{adapt = 0} then no adaptation occurs .}
+\item{adapt}{The number of iterations for proposal distribution adaptation. If \code{adapt = 0} then no adaptation occurs.}
 
-\item{bin}{Bin length for calculating acceptance rates during adaptive phase (\code{0 < bin <= iter}) .}
+\item{bin}{Bin length for calculating acceptance rates during adaptive phase (\code{0 < bin <= iter}).}
 
-\item{thin}{Thinning interval for monitored parameters (\code{0 < thin <= max(1,floor((iter-burnin)/2))}) .}
+\item{thin}{Thinning interval for monitored parameters.}
 
-\item{burnin}{Number of burn-in iterations (\code{0 <= burnin < iter}) .}
+\item{burnin}{Number of burn-in iterations (\code{0 <= burnin < iter}).}
 
-\item{taccept}{Target acceptance rate during adaptive phase (\code{0 < taccept <= 1}). Acceptance rate is monitored every \code{bin} iterations. Default is \code{taccept = 0.44} .}
+\item{taccept}{Target acceptance rate during adaptive phase (\code{0 < taccept <= 1}). Acceptance rate is monitored every \code{bin} iterations. Default is \code{taccept = 0.44}.}
 
-\item{tuneadjust}{Adjustment term during adaptive phase (\code{0 < tuneadjust <= 1}). If acceptance rate is less than \code{taccept}, then proposal term (\code{proppbeta}, \code{propzp}, or \code{propsigmap}) is multiplied by \code{tuneadjust}. If acceptance rate is greater than or equal to \code{taccept}, then proposal term is divided by \code{tuneadjust}. Default is \code{tuneadjust = 0.95} .}
+\item{tuneadjust}{Adjustment term during adaptive phase (\code{0 < tuneadjust <= 1}). If acceptance rate is less than \code{taccept}, then proposal term (\code{proppbeta}, \code{propzp}, or \code{propsigmap}) is multiplied by \code{tuneadjust}. If acceptance rate is greater than or equal to \code{taccept}, then proposal term is divided by \code{tuneadjust}. Default is \code{tuneadjust = 0.95}.}
 
-\item{proppbeta}{Scaler or vector (of length k) specifying the initial standard deviation of the Normal(pbeta[j], proppbeta[j]) proposal distribution. If \code{proppbeta} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{proppbeta = 0.1} .}
+\item{proppbeta}{Scaler or vector (of length k) specifying the initial standard deviation of the Normal(pbeta[j], proppbeta[j]) proposal distribution. If \code{proppbeta} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{proppbeta = 0.1}.}
 
-\item{propzp}{Scaler or vector (of length M) specifying the initial standard deviation of the Normal(zp[i], propzp[i]) proposal distribution. If \code{propzp} is a scaler, then this value is used for all i = 1, ..., M individuals. Default is \code{propzp = 1} .}
+\item{propzp}{Scaler or vector (of length M) specifying the initial standard deviation of the Normal(zp[i], propzp[i]) proposal distribution. If \code{propzp} is a scaler, then this value is used for all i = 1, ..., M individuals. Default is \code{propzp = 1}.}
 
-\item{propsigmap}{Scaler specifying the initial Gamma(shape = 1/\code{propsigmap}, scale = sigma_zp*\code{propsigmap}) proposal distribution for sigma_zp = sqrt(sigma2_zp). Default is \code{propsigmap=1} .}
+\item{propsigmap}{Scaler specifying the initial Gamma(shape = 1/\code{propsigmap}, scale = sigma_zp * \code{propsigmap}) proposal distribution for sigma_zp = sqrt(sigma2_zp). Default is \code{propsigmap=1}.}
 
-\item{npoints}{Number of Gauss-Hermite quadrature points to use for numerical integration. Accuracy increases with number of points, but so does computation time .}
+\item{npoints}{Number of Gauss-Hermite quadrature points to use for numerical integration. Accuracy increases with number of points, but so does computation time.}
 
-\item{maxnumbasis}{Maximum number of basis vectors to use when proposing latent history frequency updates. Default is \code{maxnumbasis = 1}, but higher values can potentially improve mixing .}
+\item{maxnumbasis}{Maximum number of basis vectors to use when proposing latent history frequency updates. Default is \code{maxnumbasis = 1}, but higher values can potentially improve mixing.}
 
 \item{a0delta}{Scaler or vector (of length d) specifying the prior for the conditional (on detection) probability of type 1 (delta_1), type 2 (delta_2), and both type 1 and type 2 encounters (1-delta_1-delta_2). If \code{a0delta} is a scaler, then this value is used for all a0delta[j] for j = 1, ..., d. For \code{mod.delta=~type}, d=3 with [delta_1, delta_2, 1-delta_1-delta_2] ~ Dirichlet(a0delta) prior. For \code{mod.delta=~1}, k=2 with [tau] ~ Beta(a0delta[1],a0delta[2]) prior, where (delta_1,delta_2,1-delta_1-delta_2) = (tau/2,tau/2,1-tau). If See McClintock et al. (2013) for more details.}
 
-\item{a0alpha}{Specifies "shape1" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{a0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1) .}
+\item{a0alpha}{Specifies "shape1" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{a0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1).}
 
-\item{b0alpha}{Specifies "shape2" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{b0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1) .}
+\item{b0alpha}{Specifies "shape2" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{b0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1).}
 
-\item{a}{Scale parameter for [sigma_z] ~ half-Cauchy(a) prior for the individual hetegeneity term sigma_zp = sqrt(sigma2_zp). Default is ``uninformative'' \code{a = 25} .}
+\item{a}{Scale parameter for [sigma_z] ~ half-Cauchy(a) prior for the individual hetegeneity term sigma_zp = sqrt(sigma2_zp). Default is ``uninformative'' \code{a = 25}.}
 
-\item{mu0}{Scaler or vector (of length k) specifying mean of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{mu0 = 0} .}
+\item{mu0}{Scaler or vector (of length k) specifying mean of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{mu0 = 0}.}
 
-\item{sigma2_mu0}{Scaler or vector (of length k) specifying variance of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{sigma2_mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{sigma2_mu0 = 1.75} .}
+\item{sigma2_mu0}{Scaler or vector (of length k) specifying variance of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{sigma2_mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{sigma2_mu0 = 1.75}.}
 
-\item{initial.values}{Optional list of \code{nchain} list(s) specifying intial values for parameters and latent variables. Default is \code{initial.values = NULL}, which causes initial values to be generated automatically. In addition to the parameters ("\code{pbeta}", "\code{N}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_zp}", "\code{zp}", and "\code{psi}"), initial values can be specified for the initial latent history frequencies ("\code{x}") and initial individual encounter history indices ("\code{H}") .}
+\item{initial.values}{Optional list of \code{nchain} list(s) specifying intial values for parameters and latent variables. Default is \code{initial.values = NULL}, which causes initial values to be generated automatically. In addition to the parameters ("\code{pbeta}", "\code{N}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_zp}", "\code{zp}", and "\code{psi}"), initial values can be specified for the initial latent history frequencies ("\code{x}") and initial individual encounter history indices ("\code{H}").}
 
 \item{known}{Optional integer vector indicating whether the encounter history of an individual is known with certainty (i.e., the observed encounter history is the true encounter history). Encounter histories with at least one type 4 encounter are automatically assumed to be known, and \code{known} does not need to be specified unless there exist encounter histories that do not contain a type 4 encounter that happen to be known with certainty (e.g., from independent telemetry studies). If specified, \code{known = c(v_1,v_2,...,v_M)} must be a vector of length \code{M = nrow(Enc.Mat)} where \code{v_i = 1} if the encounter history for individual \code{i} is known (\code{v_i = 0} otherwise). Note that known all-zero encounter histories (e.g., `000') are ignored.}
 

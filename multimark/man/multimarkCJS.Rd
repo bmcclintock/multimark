@@ -28,13 +28,13 @@ multimarkCJS(Enc.Mat, data.type = "never", covs = data.frame(),
 
 \item{covs}{A data frame of temporal covariates for detection probabilities (ignored unless \code{mms=NULL}). The number of rows in the data frame must equal the number of sampling occasions. Covariate names cannot be "time", "age", or "h"; these names are reserved for temporal, behavioral, and individual effects when specifying \code{mod.p} and \code{mod.phi}.}
 
-\item{mms}{An optional object of class \code{multimarksetup}; if \code{NULL} it is created. See \code{\link{processdata}}.}
+\item{mms}{An optional object of class \code{multimarksetup-class}; if \code{NULL} it is created. See \code{\link{processdata}}.}
 
 \item{mod.p}{Model formula for detection probability (\eqn{p}). For example, \code{mod.p=~1} specifies no effects (i.e., intercept only), \code{mod.p~time} specifies temporal effects, \code{mod.p~age} specifies age effects, \code{mod.p~h} specifies individual heterogeneity, and \code{mod.p~time+age} specifies additive temporal and age effects.}
 
 \item{mod.phi}{Model formula for survival probability (\eqn{\phi}). For example, \code{mod.phi=~1} specifies no effects (i.e., intercept only), \code{mod.phi~time} specifies temporal effects, \code{mod.phi~age} specifies age effects, \code{mod.phi~h} specifies individual heterogeneity, and \code{mod.phi~time+age} specifies additive temporal and age effects.}
 
-\item{mod.delta}{Model formula for conditional probabilities of type 1 (delta_1) and type 2 (delta_2) encounters, given detection. Currently only \code{mod.delta=~1} (i.e., \eqn{delta_1 = delta_2}) and \code{mod.delta=~type} (i.e., \eqn{delta_1 \ne delta_2}) are implemented.}
+\item{mod.delta}{Model formula for conditional probabilities of type 1 (delta_1) and type 2 (delta_2) encounters, given detection. Currently only \code{mod.delta=~1} (i.e., \eqn{\delta_1 = \delta_2}) and \code{mod.delta=~type} (i.e., \eqn{\delta_1 \ne \delta_2}) are implemented.}
 
 \item{parms}{A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are probit-scale detection probability parameters ("\code{pbeta}" for \eqn{p} and "\code{phibeta}" for \eqn{\phi}), conditional probability of type 1 or type 2 encounter, given detection ("\code{delta})", probability of simultaneous type 1 and type 2 detection, given both types encountered ("\code{alpha}"), probit-scale individual heterogeneity variance terms ("\code{sigma2_zp}" for \eqn{p} and "\code{sigma2_zphi}" for \eqn{\phi}), probit-scale individual effects ("\code{zp}" and "\code{zphi}"), and the probability that any given observed history corresponds to a legitmate individual ("\code{psi}"). Individual encounter history indices ("\code{H}") and the log likelihood ("\code{loglike}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.}
 
@@ -46,7 +46,7 @@ multimarkCJS(Enc.Mat, data.type = "never", covs = data.frame(),
 
 \item{bin}{Ignored; no adaptive phase is needed for "probit" link.}
 
-\item{thin}{Thinning interval for monitored parameters (\code{0 < thin <= max(1,floor((iter-burnin)/2))}).}
+\item{thin}{Thinning interval for monitored parameters.}
 
 \item{burnin}{Number of burn-in iterations (\code{0 <= burnin < iter}).}
 
@@ -98,7 +98,7 @@ multimarkCJS(Enc.Mat, data.type = "never", covs = data.frame(),
 
 \item{printlog}{Logical indicating whether to print the progress of chains and any errors to a log file in the working directory. Ignored when \code{nchains=1}. Updates are printed to log file as 1\% increments of \code{iter} of each chain are completed. With >1 chains, setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.}
 
-\item{...}{Additional "\code{parameters}" arguments for specifying \code{mod.p} and \code{mod.phi}. See \code{\link[RMark]{make.design.data}}.}
+\item{...}{Additional "\code{parameters}" arguments for specifying \code{mod.p} and \code{mod.phi}. See \code{RMark::\link[RMark]{make.design.data}}.}
 }
 \value{
 A list containing the following:

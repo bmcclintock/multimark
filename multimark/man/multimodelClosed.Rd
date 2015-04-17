@@ -24,7 +24,7 @@ multimodelClosed(mms, modlist, modprior = rep(1/length(modlist),
 
 \item{pbetapropsd}{Scaler specifying the standard deviation of the Normal(0, pbetapropsd) proposal distribution for "\code{pbeta}"  parameters. Default is \code{pbetapropsd=1}. See Barker & Link (2013) for more details.}
 
-\item{zppropsd}{Scaler specifying the standard deviation of the Normal(0, zppropsd) proposal distribution for "\code{zp}"  parameters. Only applies if at least one (but not all) model(s) include individual hetergeneity in detection probability. If \code{NULL}, "\code{zppropsd=sqrt(sigma2_zp)}" is used. Default is \code{zppropsd=NULL}. See Barker & Link (2013) for more details.}
+\item{zppropsd}{Scaler specifying the standard deviation of the Normal(0, zppropsd) proposal distribution for "\code{zp}"  parameters. Only applies if at least one (but not all) model(s) include individual hetergeneity in detection probability. If \code{NULL}, zppropsd = sqrt(sigma2_zp) is used. Default is \code{zppropsd=NULL}. See Barker & Link (2013) for more details.}
 
 \item{sigppropshape}{Scaler specifying the shape parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_zp=sqrt(sigma2_zp)}". Only applies if at least one (but not all) model(s) include individual hetergeneity in detection probability. Default is \code{sigppropshape=6}. See Barker & Link (2013) for more details.}
 
