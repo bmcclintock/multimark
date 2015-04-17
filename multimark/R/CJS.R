@@ -778,24 +778,20 @@ multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.
   Prop.sdp <- c(propzp,proppbeta,propsigmap)
   Prop.sdphi <- c(propzphi,propphibeta,propsigmaphi)
   
-  tasks <- vector("list",nchains)
-  
-  if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
-  taskexpr <- paste0("tasks[[",1:nchains,"]]","<-function() mcmcCJS(",1:nchains,",mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sdp,Prop.sdphi,maxnumbasis,pbeta0,pprec0,phibeta0,phiprec0,l0p,d0p,l0phi,d0phi,a0delta,a0alpha,b0alpha,link,printlog)")
-  eval(parse(text=taskexpr))
-  names(tasks) <- paste("job", 1:length(tasks), sep = "")
-  
   message("Updating...",ifelse(printlog,"","set 'printlog=TRUE' to follow progress of chains(s) in a working directory log file"),"\n",sep="")
   
-  cl <- makeCluster( length(tasks) ,outfile=ifelse(printlog,paste0("multimark_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""), methods=FALSE)
-  clusterExport(cl, list("mcmcCJS","mms","DM","params","inits","iter","adapt","bin","thin","burnin","taccept","tuneadjust","Prop.sdp","Prop.sdphi","maxnumbasis","pbeta0","pprec0","phibeta0","phiprec0","l0p","d0p","l0phi","d0phi","a0delta","a0alpha","b0alpha","link","printlog"),envir=environment())                                                                           
-  chains <- clusterApply( 
-    cl,
-    tasks,
-    function(f) f()
-  )
-  stopCluster(cl)
-  gc()
+  if(nchains>1){
+    if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
+    cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimarkCJS_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
+    clusterExport(cl,list("mcmcCJS"),envir=environment())  
+    chains <- parLapply(cl,1:nchains, function(ichain) mcmcCJS(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sdp,Prop.sdphi,maxnumbasis,pbeta0,pprec0,phibeta0,phiprec0,l0p,d0p,l0phi,d0phi,a0delta,a0alpha,b0alpha,link,printlog))
+    stopCluster(cl)
+    gc()
+  } else {
+    chains <- vector('list',nchains)
+    chains[[nchains]] <- mcmcCJS(nchains,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sdp,Prop.sdphi,maxnumbasis,pbeta0,pprec0,phibeta0,phiprec0,l0p,d0p,l0phi,d0phi,a0delta,a0alpha,b0alpha,link,printlog)
+    gc()
+  }
   
   chains <- processCJSchains(chains,params,DM,M,noccas,nchains,iter,burnin,thin)
   return(list(mcmc=chains$chains,mod.p=mod.p,mod.phi=mod.phi,mod.delta=mod.delta,DM=list(p=DM$p,phi=DM$phi),initial.values=chains$initial.values,priorparms=priorparms))
@@ -1231,14 +1227,20 @@ multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlis
     alpha <- numeric(0)
   }
   
-  cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimark_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
-  clusterExport(cl,list("rjmcmcCJS"))
-  
   message("Updating...",ifelse(printlog,"","set 'printlog=TRUE' to follow progress of chains(s) in a working directory log file"),"\n",sep="")
   
-  multimodel <- parLapply(cl,1:nchains, function(ichain) rjmcmcCJS(ichain,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,priorlist,mod.p.h,mod.phi.h,iter,miter,modprior,M1[ichain],monitorparms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale,pmodnames,phimodnames,deltamodnames))
-  stopCluster(cl)
-  gc()
+  if(nchains>1){
+    if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
+    cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimodelCJS_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
+    clusterExport(cl,list("rjmcmcCJS"),envir=environment())  
+    multimodel <- parLapply(cl,1:nchains, function(ichain) rjmcmcCJS(ichain,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,priorlist,mod.p.h,mod.phi.h,iter,miter,modprior,M1[ichain],monitorparms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale,pmodnames,phimodnames,deltamodnames))
+    stopCluster(cl)
+    gc()
+  } else {
+    multimodel <- vector('list',nchains)
+    multimodel[[nchains]] <- rjmcmcCJS(nchains,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[nchains]]),DMlist,deltalist,priorlist,mod.p.h,mod.phi.h,iter,miter,modprior,M1,monitorparms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale,pmodnames,phimodnames,deltamodnames)
+    gc()
+  }
   
   pos.prob <- vector('list',nchains)
   for(ichain in 1:nchains){

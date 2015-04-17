@@ -532,24 +532,20 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
   
   Prop.sd <- c(propzp,proppbeta,propsigmap)
   
-  tasks <- vector("list",nchains)
-  
-  if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
-  taskexpr <- paste0("tasks[[",1:nchains,"]]","<-function() mcmcClosed(",1:nchains,",mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,gq,maxnumbasis,a0delta,a0alpha,b0alpha,a,mu0,sigma2_mu0,printlog)")
-  eval(parse(text=taskexpr))
-  names(tasks) <- paste("job", 1:length(tasks), sep = "")
-  
   message("Updating...",ifelse(printlog,"","set 'printlog=TRUE' to follow progress of chains(s) in a working directory log file"),"\n",sep="")
   
-  cl <- makeCluster( length(tasks) ,outfile=ifelse(printlog,paste0("multimark_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""), methods=FALSE)
-  clusterExport(cl, list("mcmcClosed","mms","DM","params","inits","iter","adapt","bin","thin","burnin","taccept","tuneadjust","Prop.sd","gq","maxnumbasis","a0delta","a0alpha","b0alpha","a","mu0","sigma2_mu0","printlog"),envir=environment())
-  chains <- clusterApply( 
-    cl,
-    tasks,
-    function(f) f()
-  )
-  stopCluster(cl)
-  gc()
+  if(nchains>1){
+    if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
+    cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimarkClosed_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
+    clusterExport(cl,list("mcmcClosed"),envir=environment())  
+    chains <- parLapply(cl,1:nchains, function(ichain) mcmcClosed(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,gq,maxnumbasis,a0delta,a0alpha,b0alpha,a,mu0,sigma2_mu0,printlog))
+    stopCluster(cl)
+    gc()
+  } else {
+    chains <- vector('list',nchains)
+    chains[[nchains]] <- mcmcClosed(nchains,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,gq,maxnumbasis,a0delta,a0alpha,b0alpha,a,mu0,sigma2_mu0,printlog)
+    gc()
+  }
   
   chains <- processClosedchains(chains,params,DM,M,noccas,nchains,iter,burnin,thin)
   return(list(mcmc=chains$chains,mod.p=mod.p,mod.delta=mod.delta,DM=list(p=DM$p,c=DM$c),initial.values=chains$initial.values,priorparms=priorparms))
@@ -925,15 +921,21 @@ multimodelClosed<-function(mms,modlist,modprior=rep(1/length(modlist),length(mod
   } else {
     alpha <- numeric(0)
   }
-  
-  cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimark_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
-  clusterExport(cl,list("rjmcmcClosed"))
-  
+ 
   message("Updating...",ifelse(printlog,"","set 'printlog=TRUE' to follow progress of chains(s) in a working directory log file"),"\n",sep="")
   
-  multimodel <- parLapply(cl,1:nchains, function(ichain) rjmcmcClosed(ichain,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,priorlist,mod.p.h,iter,miter,modprior,M1[ichain],monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,gq))
-  stopCluster(cl)
-  gc()
+  if(nchains>1){
+    if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
+    cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimodelClosed_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
+    clusterExport(cl,list("rjmcmcClosed"),envir=environment())
+    multimodel <- parLapply(cl,1:nchains, function(ichain) rjmcmcClosed(ichain,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,priorlist,mod.p.h,iter,miter,modprior,M1[ichain],monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,gq))
+    stopCluster(cl)
+    gc()
+  } else {
+    multimodel <- vector('list',nchains)
+    multimodel[[nchains]] <- rjmcmcClosed(nchains,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[nchains]]),DMlist,deltalist,priorlist,mod.p.h,iter,miter,modprior,M1,monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,gq)
+    gc()
+  }
   
   pos.prob <- vector('list',nchains)
   for(ichain in 1:nchains){
