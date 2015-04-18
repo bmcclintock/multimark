@@ -780,6 +780,7 @@ multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.
   Prop.sdphi <- c(propzphi,propphibeta,propsigmaphi)
   
   message("Updating...",ifelse(printlog | nchains==1,"","set 'printlog=TRUE' to follow progress of chains in a working directory log file"),"\n",sep="")
+  if(printlog & nchains==1) printlog<-FALSE
   
   if(nchains>1){
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
@@ -1117,7 +1118,11 @@ rjmcmcCJS <- function(ichain,M,noccas,data_type,alpha,C,All.hists,modlist,DMlist
     multimodel[iiter,monitorparms$namesphi] <- monitorparms$getprobitphi(DM$mod.phi.h,DM$phi,cur.parms.list[[1]]$phibeta,cur.parms.list[[1]]$sigma2_zphi)
     
     if(!(iiter%%(miter/ min(miter,100)))) {
-      cat("\rChain ",ichain," is ",100*(iiter/miter),"% complete",sep="")
+      if(printlog){
+        cat("Chain ",ichain," is ",100*(iiter/miter),"% complete \n",sep="")        
+      } else{
+        cat("\rChain ",ichain," is ",100*(iiter/miter),"% complete",sep="")
+      }
     }
   }
   return(multimodel)
@@ -1210,7 +1215,7 @@ multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlis
   checkparmsCJS(mms,modlist,params,parmlist=c("pbeta[(Intercept)]","phibeta[(Intercept)]","psi",paste0("H[",1:M,"]"),paste0("z[",rep(1:M,each=noccas),",",1:noccas,"]"),"loglike"),M)
   
   message("\nPerforming open population Bayesian multimodel inference by RJMCMC \n")
-  cat(paste0("mod",1:nmod,": ","p(",pmodnames,")phi(",phimodnames,")delta(",deltamodnames,")"),"",sep="\n")
+  message(paste0("mod",1:nmod,": ","p(",pmodnames,")phi(",phimodnames,")delta(",deltamodnames,")\n"))  
   
   missing <- missingparmnamesCJS(params,M,noccas,zppropsd,zphipropsd)
   
@@ -1232,6 +1237,7 @@ multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlis
   }
   
   message("Updating...",ifelse(printlog | nchains==1,"","set 'printlog=TRUE' to follow progress of chains in a working directory log file"),"\n",sep="")
+  if(printlog & nchains==1) printlog<-FALSE
   
   if(nchains>1){
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
