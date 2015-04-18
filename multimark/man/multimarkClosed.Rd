@@ -99,9 +99,10 @@ The first time \code{multimarkClosed} (or \code{\link{multimarkCJS}}) is called,
 test<-multimarkClosed(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0,bin=5)}
 \donttest{
 # This example is excluded from testing to reduce package check time
+# Example uses unrealistically low values for nchain, iter, and burnin
 
 #Run two parallel chains using the default model for bobcat data
-bobcat.dot<-multimarkClosed(bobcat,nchains=2)
+bobcat.dot<-multimarkClosed(bobcat)
 
 #Posterior summary for monitored parameters
 summary(bobcat.dot$mcmc)

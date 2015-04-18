@@ -61,6 +61,7 @@ set.seed(10)
 }
 \donttest{
 # This example is excluded from testing to reduce package check time
+# Example uses unrealistically low values for nchain, iter, and burnin
 
 #Generate object of class "multimarksetup" from simulated data
 data_type = "always"
@@ -70,10 +71,10 @@ data <- simdataCJS(noccas=5,phibeta=phibetaTime,data.type=data_type)
 setup <- processdata(data$Enc.Mat,data.type=data_type)
 
 #Run two parallel chains using the default model. Note parms="all".
-sim.pdot.phidot <- multimarkCJS(mms=setup,parms="all",nchains=2)
+sim.pdot.phidot <- multimarkCJS(mms=setup,parms="all")
 
 #Run two parallel chains with temporal trend for phi. Note parms="all".
-sim.pdot.phiTime <- multimarkCJS(mms=setup,mod.phi=~Time,parms="all",nchains=2)
+sim.pdot.phiTime <- multimarkCJS(mms=setup,mod.phi=~Time,parms="all")
 
 #Perform RJMCMC using defaults
 modlist <- list(mod1=sim.pdot.phidot,mod2=sim.pdot.phiTime)

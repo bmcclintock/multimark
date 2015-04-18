@@ -51,15 +51,16 @@ test<-multimodelClosed(mms=setup,modlist=list(mod1=test.dot,mod2=test.dot))
 }
 \donttest{
 # This example is excluded from testing to reduce package check time
+# Example uses unrealistically low values for nchain, iter, and burnin
 
 #Generate object of class "multimarksetup"
 setup <- processdata(bobcat)
 
 #Run two parallel chains using the default model for bobcat data. Note parms="all".
-bobcat.dot <- multimarkClosed(mms=setup,parms="all",nchains=2)
+bobcat.dot <- multimarkClosed(mms=setup,parms="all")
 
 #Run two parallel chains for bobcat data with time effects. Note parms="all".
-bobcat.time <- multimarkClosed(mms=setup,mod.p=~time,parms="all",nchains=2)
+bobcat.time <- multimarkClosed(mms=setup,mod.p=~time,parms="all")
 
 #Perform RJMCMC using defaults
 modlist <- list(mod1=bobcat.dot,mod2=bobcat.time)

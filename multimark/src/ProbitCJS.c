@@ -459,7 +459,7 @@ void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, doub
     }
 
     if(!(g%(niter/ min(niter,100)))){
-      Rprintf("Chain %d is %.0f%% complete \r",*ichain,(double) 100*g/niter);
+      Rprintf("\rChain %d is %.0f%% complete",*ichain,(double) 100*g/niter);
     }
   }
   /* End Markov chain */

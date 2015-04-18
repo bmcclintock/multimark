@@ -33,6 +33,7 @@ This function generates an object of class \code{multimarksetup} that is require
 test <- processdata(bobcat)}
 \donttest{
 # This example is excluded from testing to reduce package check time
+# Example uses unrealistically low values for nchain, iter, and burnin
 
 #Generate object of class "multimarksetup"
 setup <- processdata(bobcat)

@@ -476,9 +476,10 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
 #' test<-multimarkClosed(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0,bin=5)}
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
+#' # Example uses unrealistically low values for nchain, iter, and burnin
 #' 
 #' #Run two parallel chains using the default model for bobcat data
-#' bobcat.dot<-multimarkClosed(bobcat,nchains=2)
+#' bobcat.dot<-multimarkClosed(bobcat)
 #' 
 #' #Posterior summary for monitored parameters
 #' summary(bobcat.dot$mcmc)
@@ -568,9 +569,10 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
 #' test<-getprobsClosed(multimarkClosed(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0,bin=5))}
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
+#' # Example uses unrealistically low values for nchain, iter, and burnin
 #' 
 #' #Run behavior model for bobcat data with constant detection probability (i.e., mod.p=~c)
-#' bobcat.c <- multimarkClosed(bobcat,mod.p=~c,nchains=2)
+#' bobcat.c <- multimarkClosed(bobcat,mod.p=~c)
 #'   
 #' #Calculate capture and recapture probabilities
 #' pc <- getprobsClosed(bobcat.c)
@@ -858,15 +860,16 @@ rjmcmcClosed <- function(ichain,M,noccas,data_type,alpha,C,All.hists,modlist,DMl
 #' }
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
+#' # Example uses unrealistically low values for nchain, iter, and burnin
 #' 
 #' #Generate object of class "multimarksetup"
 #' setup <- processdata(bobcat)
 #'  
 #' #Run two parallel chains using the default model for bobcat data. Note parms="all".
-#' bobcat.dot <- multimarkClosed(mms=setup,parms="all",nchains=2)
+#' bobcat.dot <- multimarkClosed(mms=setup,parms="all")
 #' 
 #' #Run two parallel chains for bobcat data with time effects. Note parms="all".
-#' bobcat.time <- multimarkClosed(mms=setup,mod.p=~time,parms="all",nchains=2)
+#' bobcat.time <- multimarkClosed(mms=setup,mod.p=~time,parms="all")
 #' 
 #' #Perform RJMCMC using defaults
 #' modlist <- list(mod1=bobcat.dot,mod2=bobcat.time)

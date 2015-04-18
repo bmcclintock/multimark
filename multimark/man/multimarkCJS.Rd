@@ -120,12 +120,13 @@ The first time \code{multimarkCJS} (or \code{\link{multimarkClosed}}) is called,
 test<-multimarkCJS(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0)}
 \donttest{
 # This example is excluded from testing to reduce package check time
+# Example uses unrealistically low values for nchain, iter, and burnin
 
 #Simulate open population data using defaults
 data <- simdataCJS()
 
 #Fit default open population model
-sim.dot <- multimarkCJS(data$Enc.Mat,nchains=2)
+sim.dot <- multimarkCJS(data$Enc.Mat)
 
 #Posterior summary for monitored parameters
 summary(sim.dot$mcmc)

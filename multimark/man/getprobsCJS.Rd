@@ -24,6 +24,7 @@ This function calculates posterior capture (\eqn{p}) and survival (\eqn{\phi}) p
 test<-getprobsCJS(multimarkCJS(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0))}
 \donttest{
 # This example is excluded from testing to reduce package check time
+# Example uses unrealistically low values for nchain, iter, and burnin
 
 #Simulate open population data with temporal variation in survival
 noccas <- 5

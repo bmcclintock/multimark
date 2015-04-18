@@ -710,12 +710,13 @@ processCJSchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin){
 #' test<-multimarkCJS(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0)}
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
+#' # Example uses unrealistically low values for nchain, iter, and burnin
 #' 
 #' #Simulate open population data using defaults
 #' data <- simdataCJS()
 #' 
 #' #Fit default open population model
-#' sim.dot <- multimarkCJS(data$Enc.Mat,nchains=2)
+#' sim.dot <- multimarkCJS(data$Enc.Mat)
 #' 
 #' #Posterior summary for monitored parameters
 #' summary(sim.dot$mcmc)
@@ -814,6 +815,7 @@ multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.
 #' test<-getprobsCJS(multimarkCJS(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0))}
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
+#' # Example uses unrealistically low values for nchain, iter, and burnin
 #' 
 #' #Simulate open population data with temporal variation in survival
 #' noccas <- 5
@@ -1158,6 +1160,7 @@ rjmcmcCJS <- function(ichain,M,noccas,data_type,alpha,C,All.hists,modlist,DMlist
 #' }
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
+#' # Example uses unrealistically low values for nchain, iter, and burnin
 #' 
 #' #Generate object of class "multimarksetup" from simulated data
 #' data_type = "always"
@@ -1167,10 +1170,10 @@ rjmcmcCJS <- function(ichain,M,noccas,data_type,alpha,C,All.hists,modlist,DMlist
 #' setup <- processdata(data$Enc.Mat,data.type=data_type)
 #' 
 #' #Run two parallel chains using the default model. Note parms="all".
-#' sim.pdot.phidot <- multimarkCJS(mms=setup,parms="all",nchains=2)
+#' sim.pdot.phidot <- multimarkCJS(mms=setup,parms="all")
 #' 
 #' #Run two parallel chains with temporal trend for phi. Note parms="all".
-#' sim.pdot.phiTime <- multimarkCJS(mms=setup,mod.phi=~Time,parms="all",nchains=2)
+#' sim.pdot.phiTime <- multimarkCJS(mms=setup,mod.phi=~Time,parms="all")
 #' 
 #' #Perform RJMCMC using defaults
 #' modlist <- list(mod1=sim.pdot.phidot,mod2=sim.pdot.phiTime)
