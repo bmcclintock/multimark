@@ -294,7 +294,7 @@ posteriorClosed<-function(parms,DM,mms,priorparms,gq){
   }
 }
 
-checkClosed<-function(parms,parmlist,mms,DM,iter,bin,thin,burnin,taccept,tuneadjust,npoints,maxnumbasis,a0delta,a0alpha,b0alpha,a,sigma2_mu0){
+checkClosed<-function(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccept,tuneadjust,npoints,maxnumbasis,a0delta,a0alpha,b0alpha,a,sigma2_mu0){
   
   if(mms@data.type!="sometimes" & any(parms=="alpha")) stop("Parameter 'alpha' only applies to models for the 'sometimes' data type")
   
@@ -309,12 +309,13 @@ checkClosed<-function(parms,parmlist,mms,DM,iter,bin,thin,burnin,taccept,tuneadj
     if(!all(match(params,parmlist,nomatch=0))) stop(paste0("'",params[match(params,parmlist,nomatch=0)==0],"' is not a valid parameter"))
   }  
   
-  if((bin<1 | bin>iter) & iter>0) stop(paste("'bin' must be >0 and <",iter))
-  if(thin>max(1,floor((iter-burnin)/2)) | thin<1) stop(paste("'thin' must be >0 and <=",max(1,floor((iter-burnin)/2))))
+  if(adapt<0) stop("'adapt' must be >=0")
+  if((bin<1 | bin>iter) & iter>0) stop("'bin' must be >0 and <",iter)
+  if(thin>max(1,floor((iter-burnin)/2)) | thin<1) stop("'thin' must be >0 and <=",max(1,floor((iter-burnin)/2)))
   if(taccept<=0 | taccept>1) stop ("'taccept' must be >0 and <=1")
   if(tuneadjust<=0 | tuneadjust>1) stop ("'tuneadjust' must be >0 and <=1")
   if(npoints<1) stop("'npoints' must be greater than 0")
-  if(maxnumbasis<1 | maxnumbasis>mms@ncolbasis) stop(paste("'maxnumbasis' must be between 1 and ",mms@ncolbasis))
+  if(maxnumbasis<1 | maxnumbasis>mms@ncolbasis) stop("'maxnumbasis' must be between 1 and ",mms@ncolbasis)
   if(!all(c(a0delta,a0alpha,b0alpha,a,sigma2_mu0)>0)) stop("'a0delta', 'a0alpha', 'b0alpha', 'a', and 'sigma2_mu0' must be >0")
   
   mod.p.h<-DM$mod.p.h
@@ -501,7 +502,7 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
   }
   
   parmlist<-c("pbeta","delta","N","sigma2_zp","zp","alpha","psi","H","logPosterior")
-  params <- checkClosed(parms,parmlist,mms,DM,iter,bin,thin,burnin,taccept,tuneadjust,npoints,maxnumbasis,a0delta,a0alpha,b0alpha,a,sigma2_mu0)
+  params <- checkClosed(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccept,tuneadjust,npoints,maxnumbasis,a0delta,a0alpha,b0alpha,a,sigma2_mu0)
   
   data.type<-mms@data.type
   Enc.Mat<-mms@Enc.Mat

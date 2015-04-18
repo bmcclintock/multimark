@@ -492,13 +492,13 @@ checkCJS<-function(parms,parmlist,mms,DM,iter,bin,thin,burnin,taccept,tuneadjust
   }
   
   if(link=="logit"){
-    if((bin<1 | bin>iter) & iter>0) stop(paste("'bin' must be >0 and <",iter))
+    if((bin<1 | bin>iter) & iter>0) stop("'bin' must be >0 and <",iter)
     if(taccept<=0 | taccept>1) stop ("'taccept' must be >0 and <=1")
     if(tuneadjust<=0 | tuneadjust>1) stop ("'tuneadjust' must be >0 and <=1")
   }
   
-  if(thin>max(1,floor((iter-burnin)/2)) | thin<1) stop(paste("'thin' must be >0 and <=",max(1,floor((iter-burnin)/2))))
-  if(mms@ncolbasis & (maxnumbasis<1 | maxnumbasis>mms@ncolbasis)) stop(paste("'maxnumbasis' must be between 1 and ",mms@ncolbasis))
+  if(thin>max(1,floor((iter-burnin)/2)) | thin<1) stop("'thin' must be >0 and <=",max(1,floor((iter-burnin)/2)))
+  if(mms@ncolbasis & (maxnumbasis<1 | maxnumbasis>mms@ncolbasis)) stop("'maxnumbasis' must be between 1 and ",mms@ncolbasis)
   if(!all(c(a0delta,a0alpha,b0alpha,l0p,d0p,l0phi,d0phi,diag(as.matrix(pSigma0)),diag(as.matrix(phiSigma0)))>0)) stop("'a0delta', 'a0alpha', 'b0alpha', 'l0p', 'd0p', 'l0phi', 'd0phi', and diagonal elements of 'pSigma0' and 'phiSigma0' must be >0")
   
   
