@@ -445,7 +445,11 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
       } 
     }
     if(!(g%(niter/ min(niter,100)))){
-      Rprintf("\rChain %d is %.0f%% complete",*ichain,(double) 100*g/niter);
+      if(*printlog){
+        Rprintf("Chain %d is %.0f%% complete\n",*ichain,(double) 100*g/niter);
+      } else {
+        Rprintf("\rChain %d is %.0f%% complete",*ichain,(double) 100*g/niter);
+      }
     }
   }
   /* End Markov chain */

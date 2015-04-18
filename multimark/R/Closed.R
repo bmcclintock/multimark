@@ -535,6 +535,7 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
   Prop.sd <- c(propzp,proppbeta,propsigmap)
   
   message("Updating...",ifelse(printlog | nchains==1,"","set 'printlog=TRUE' to follow progress of chains in a working directory log file"),"\n",sep="")
+  if(printlog & nchains==1) printlog<-FALSE
   
   if(nchains>1){
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
@@ -823,7 +824,11 @@ rjmcmcClosed <- function(ichain,M,noccas,data_type,alpha,C,All.hists,modlist,DMl
     multimodel[iiter,monitorparms$namesc] <- monitorparms$getlogitc(DM$mod.p.h,DM$c,cur.parms.list[[1]]$pbeta,cur.parms.list[[1]]$sigma2_zp)[-1]
     
     if(!(iiter%%(miter/ min(miter,100)))) {
-      cat("\rChain ",ichain," is ",100*(iiter/miter),"% complete",sep="")
+      if(printlog){
+        cat("Chain ",ichain," is ",100*(iiter/miter),"% complete \n",sep="")        
+      } else{
+        cat("\rChain ",ichain," is ",100*(iiter/miter),"% complete",sep="")
+      }
     }
   }
   return(multimodel)
@@ -927,7 +932,9 @@ multimodelClosed<-function(mms,modlist,modprior=rep(1/length(modlist),length(mod
     alpha <- numeric(0)
   }
  
+
   message("Updating...",ifelse(printlog | nchains==1,"","set 'printlog=TRUE' to follow progress of chains in a working directory log file"),"\n",sep="")
+  if(printlog & nchains==1) printlog<-FALSE
   
   if(nchains>1){
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
