@@ -9,22 +9,6 @@
 
 \makeatletter
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
-%% Because html converters don't know tabularnewline
-\providecommand{\tabularnewline}{\\}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Textclass specific LaTeX commands.
-\newenvironment{lyxcode}
-{\par\begin{list}{}{
-\setlength{\rightmargin}{\leftmargin}
-\setlength{\listparindent}{0pt}% needed for AMS classes
-\raggedright
-\setlength{\itemsep}{0pt}
-\setlength{\parsep}{0pt}
-\normalfont\ttfamily}%
- \item[]}
-{\end{list}}
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
 
 \usepackage{amsthm}\usepackage{epsfig}\usepackage{psfrag}\usepackage{lineno}
@@ -256,7 +240,11 @@ This creates an object of class \textit{multimarksetup} that includes everything
 
 \subsection{Model fitting}
 The package currently includes functions \textit{multimarkCJS()} and \textit{multimarkClosed()} for fitting CJS and closed population models, respectively. Use of these functions is perhaps best explained by example. To fit a simple closed population model assuming constant detection probability using the default settings:
-<<load-library, echo=TRUE>>=
+<<load-library, echo=TRUE, eval=FALSE>>=
+bobcat.dot <- multimarkClosed(mms=bobcatsetup,
+                              mod.p=~1)
+@
+<<load-library, echo=FALSE, eval=TRUE, include=FALSE, results=hide, warning=FALSE, message=FALSE>>=
 bobcat.dot <- multimarkClosed(mms=bobcatsetup,
                               mod.p=~1)
 @
@@ -294,7 +282,7 @@ The \textit{covs} argument is a data frame used to enter discrete- or continuous
 %summary(bobcat.dummy_h$mcmc[,c("pbeta[dummy]","sigma2_zp")])
 %@
 
-There are currently two options for specifying models for ${\boldsymbol \delta}$, the default \textit{mod.delta={\~{}}type} (i.e., $\delta_1 \ne \delta_2$), and \textit{mod.delta={\~{}}1} (i.e., $\delta_1 = \delta_2$). There are many additional arguments for specifying the number (\textit{nchains}) and length (\textit{iter}) of chains, including burn-in and adaptive periods. For potential improvements in mixing, the number of ``moves'' used to  update the feasible set of latent encounter histories at each iteration can be user specified (\textit{maxnumbasis}; see Appendix S1). The default priors are ``uninformative'', but user-specified priors can be used for each parameter. Initial values can be automatically generated or user-specified for each parameter.
+There are currently two options for specifying models for ${\boldsymbol \delta}$, the default \textit{mod.delta={\~{}}type} (i.e., $\delta_1 \ne \delta_2$), and \textit{mod.delta={\~{}}1} (i.e., $\delta_1 = \delta_2$). There are many additional arguments for specifying the number (\textit{nchains}) and length (\textit{iter}) of chains, including burn-in and adaptive periods. For potential improvements in mixing, the number of ``moves'' used to  update the feasible set of latent encounter histories at each iteration can be user specified (\textit{maxnumbasis}; see Appendix S1). The default priors are ``uninformative'', but user-specified priors can be used for each parameter. Initial values can be automatically generated or user specified for each parameter.
 
 The function \textit{multimarkCJS()} works in exactly the same fashion, with the only notable difference being specification of models for $\phi$ (in addition to $p$ and ${\bf \delta}$). Although CJS-specific data are not included with \verb|multimark|, data can be simulated using the \textit{simdataCJS()} function (or \textit{simdataClosed()} for closed populations):
 <<load-library, echo=FALSE>>=
@@ -317,9 +305,16 @@ An additional feature for \textit{multimarkCJS()} is simple specification of coh
 
 \subsection{Further analysis}
 While the \verb|coda| package can be used to summarize, plot, and assess convergence of MCMC samples from \textit{multimarkClosed()} and \textit{multimarkCJS()}, several additional functions are available for further analysis. Because link functions are used for $p$ and $\phi$, the functions \textit{getprobsClosed()} and \textit{getprobsCJS()} provide estimates on the real scale:
-<<load-library, echo=TRUE>>=
+<<load-library, echo=TRUE, eval=FALSE>>=
 bobcat.c <- multimarkClosed(mms=bobcatsetup,mod.p=~c)
 pc <- getprobsClosed(bobcat.c)
+summary(pc[,c("p[1]","c[2]")])
+@
+<<load-library, echo=FALSE, eval=TRUE, include=FALSE, results=hide, warning=FALSE, message=FALSE>>=
+bobcat.c <- multimarkClosed(mms=bobcatsetup,mod.p=~c)
+pc <- getprobsClosed(bobcat.c)
+@
+<<load-library, echo=FALSE>>=
 summary(pc[,c("p[1]","c[2]")])
 @
 Here, \verb|p[1]| and \verb|c[2]| refer to the probabilities of capture and recapture at times $t=1$ and $t=2$, respectively.
@@ -375,7 +370,7 @@ etime=proc.time()-stime
 @
 
 <<load-library, echo=FALSE>>=
-load("~/SkyDrive/Dropbox/Current Projects/multimark/manuscript/bobcat_results_new.RData")
+load("~/SkyDrive/Dropbox/Current Projects/multimark/manuscript/bobcat_results.RData")
 pmodnames <- unlist(lapply(modlist,function(x) x$mod.p)) 
 deltamodnames <- unlist(lapply(modlist,function(x) x$mod.delta)) 
 modnames<-paste0("p(",pmodnames,")delta(",deltamodnames,")")

@@ -9,22 +9,6 @@
 
 \makeatletter
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
-%% Because html converters don't know tabularnewline
-\providecommand{\tabularnewline}{\\}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Textclass specific LaTeX commands.
-\newenvironment{lyxcode}
-{\par\begin{list}{}{
-\setlength{\rightmargin}{\leftmargin}
-\setlength{\listparindent}{0pt}% needed for AMS classes
-\raggedright
-\setlength{\itemsep}{0pt}
-\setlength{\parsep}{0pt}
-\normalfont\ttfamily}%
- \item[]}
-{\end{list}}
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
 
 \usepackage{amsthm}\usepackage{epsfig}\usepackage{psfrag}\usepackage{lineno}
@@ -310,25 +294,25 @@ Sample size per chain = 10000
    plus standard error of the mean:
 
                       Mean      SD  Naive SE Time-series SE
-pbeta[(Intercept)] -1.2258 0.25753 0.0025753       0.023277
-N                  34.8021 5.05930 0.0505930       0.306784
-delta_1             0.4274 0.07613 0.0007613       0.009414
-delta_2             0.4429 0.07513 0.0007513       0.008853
+pbeta[(Intercept)] -1.2793 0.26948 0.0026948        0.02193
+N                  35.1485 5.14683 0.0514683        0.27348
+delta_1             0.4102 0.07910 0.0007910        0.01149
+delta_2             0.4261 0.07891 0.0007891        0.01122
 
 2. Quantiles for each variable:
 
                       2.5%     25%     50%     75%   97.5%
-pbeta[(Intercept)] -1.7545 -1.3971 -1.2147 -1.0469 -0.7413
-N                  27.0000 31.0000 34.0000 38.0000 47.0000
-delta_1             0.2748  0.3761  0.4285  0.4805  0.5712
-delta_2             0.2935  0.3917  0.4445  0.4962  0.5826
+pbeta[(Intercept)] -1.8585 -1.4524 -1.2606 -1.0907 -0.7953
+N                  27.0000 32.0000 34.0000 38.0000 48.0000
+delta_1             0.2544  0.3560  0.4117  0.4650  0.5601
+delta_2             0.2652  0.3742  0.4284  0.4809  0.5743
 \end{Soutput}
 \begin{Sinput}
 > coda::effectiveSize(bobcat.dot$mcmc)
 \end{Sinput}
 \begin{Soutput}
 pbeta[(Intercept)]                  N            delta_1            delta_2 
-         122.40954          271.96690           65.38613           72.01589 
+         150.96569          354.17673           47.41198           49.48658 
 \end{Soutput}
 \end{Schunk}
 Here we can see posterior summaries for the default monitored parameters $(\beta^p, N, \delta_1, \delta_2)$. Based on the effective sample sizes, it's clear that the default chain length is inadequate for this example; a typical ``rule of thumb'' is effective sample sizes $>4000$ for all quantities of interest.
@@ -356,7 +340,7 @@ The \textit{covs} argument is a data frame used to enter discrete- or continuous
 %summary(bobcat.dummy_h$mcmc[,c("pbeta[dummy]","sigma2_zp")])
 %@
 
-There are currently two options for specifying models for ${\boldsymbol \delta}$, the default \textit{mod.delta={\~{}}type} (i.e., $\delta_1 \ne \delta_2$), and \textit{mod.delta={\~{}}1} (i.e., $\delta_1 = \delta_2$). There are many additional arguments for specifying the number (\textit{nchains}) and length (\textit{iter}) of chains, including burn-in and adaptive periods. For potential improvements in mixing, the number of ``moves'' used to  update the feasible set of latent encounter histories at each iteration can be user specified (\textit{maxnumbasis}; see Appendix S1). The default priors are ``uninformative'', but user-specified priors can be used for each parameter. Initial values can be automatically generated or user-specified for each parameter.
+There are currently two options for specifying models for ${\boldsymbol \delta}$, the default \textit{mod.delta={\~{}}type} (i.e., $\delta_1 \ne \delta_2$), and \textit{mod.delta={\~{}}1} (i.e., $\delta_1 = \delta_2$). There are many additional arguments for specifying the number (\textit{nchains}) and length (\textit{iter}) of chains, including burn-in and adaptive periods. For potential improvements in mixing, the number of ``moves'' used to  update the feasible set of latent encounter histories at each iteration can be user specified (\textit{maxnumbasis}; see Appendix S1). The default priors are ``uninformative'', but user-specified priors can be used for each parameter. Initial values can be automatically generated or user specified for each parameter.
 
 The function \textit{multimarkCJS()} works in exactly the same fashion, with the only notable difference being specification of models for $\phi$ (in addition to $p$ and ${\bf \delta}$). Although CJS-specific data are not included with \verb|multimark|, data can be simulated using the \textit{simdataCJS()} function (or \textit{simdataClosed()} for closed populations):
 
@@ -394,22 +378,22 @@ Sample size per chain = 40000
    plus standard error of the mean:
 
                          Mean      SD  Naive SE Time-series SE
-pbeta[(Intercept)]   -0.15540 0.12931 0.0004572       0.004237
-phibeta[(Intercept)]  1.42967 0.29169 0.0010313       0.011893
-alpha                 0.40619 0.11411 0.0004034       0.002692
-sigma2_zphi           0.04124 0.09232 0.0003264       0.003793
-delta_1               0.20121 0.04727 0.0001671       0.001728
-delta_2               0.60467 0.05147 0.0001820       0.001062
+pbeta[(Intercept)]   -0.15989 0.12806 0.0004528       0.004183
+phibeta[(Intercept)]  1.44677 0.29639 0.0010479       0.011809
+alpha                 0.40691 0.11481 0.0004059       0.002905
+sigma2_zphi           0.04751 0.13587 0.0004804       0.005960
+delta_1               0.20389 0.04690 0.0001658       0.001649
+delta_2               0.60267 0.05182 0.0001832       0.001128
 
 2. Quantiles for each variable:
 
                           2.5%       25%      50%      75%  97.5%
-pbeta[(Intercept)]   -0.395337 -0.245136 -0.16125 -0.07102 0.1128
-phibeta[(Intercept)]  0.958065  1.233088  1.39490  1.58397 2.1099
-alpha                 0.201906  0.324605  0.39980  0.48157 0.6457
-sigma2_zphi           0.002711  0.007252  0.01427  0.03410 0.2760
-delta_1               0.114577  0.167934  0.19948  0.23242 0.2986
-delta_2               0.502078  0.569966  0.60564  0.63985 0.7029
+pbeta[(Intercept)]   -0.398143 -0.248625 -0.16442 -0.07551 0.1012
+phibeta[(Intercept)]  0.966633  1.238122  1.41077  1.61359 2.1393
+alpha                 0.202396  0.324432  0.40017  0.48264 0.6476
+sigma2_zphi           0.002719  0.007172  0.01403  0.03344 0.3400
+delta_1               0.117915  0.171199  0.20196  0.23486 0.3007
+delta_2               0.498198  0.568442  0.60366  0.63820 0.7015
 \end{Soutput}
 \end{Schunk}
 An additional feature for \textit{multimarkCJS()} is simple specification of cohort effects for $p$ (\textit{mod.p={\~{}}age}) and $\phi$ (\textit{mod.phi={\~{}}age}), which is useful for investigating structure related to age (or time of first capture).
@@ -422,6 +406,8 @@ While the \verb|coda| package can be used to summarize, plot, and assess converg
 > pc <- getprobsClosed(bobcat.c)
 > summary(pc[,c("p[1]","c[2]")])
 \end{Sinput}
+\end{Schunk}
+\begin{Schunk}
 \begin{Soutput}
 Iterations = 2001:12000
 Thinning interval = 1 
@@ -432,14 +418,14 @@ Sample size per chain = 10000
    plus standard error of the mean:
 
        Mean      SD  Naive SE Time-series SE
-p[1] 0.1424 0.05392 0.0005392       0.004660
-c[2] 0.2716 0.05330 0.0005330       0.003299
+p[1] 0.1305 0.05733 0.0005733       0.005744
+c[2] 0.2580 0.05093 0.0005093       0.003880
 
 2. Quantiles for each variable:
 
         2.5%     25%    50%    75%  97.5%
-p[1] 0.05355 0.09912 0.1403 0.1790 0.2516
-c[2] 0.17587 0.23303 0.2688 0.3064 0.3811
+p[1] 0.03566 0.08663 0.1280 0.1703 0.2473
+c[2] 0.16554 0.22227 0.2557 0.2914 0.3647
 \end{Soutput}
 \end{Schunk}
 Here, \verb|p[1]| and \verb|c[2]| refer to the probabilities of capture and recapture at times $t=1$ and $t=2$, respectively.
@@ -474,11 +460,11 @@ Fitting all possible additive combinations yielded 16 models using the default `
   \sigma_{z^p} & \sim & \text{half-Cauchy}(25)\\
   N & \propto & \frac{1}{N}
 \end{eqnarray*}
-With 2 chains each consisting of 2 million iterations (with thinning every 20 iterations to reduce memory requirements), the simplest models required 12 mins on a machine running Windows 7 (3.4GHz Intel Core i7, 16GB RAM), while the more complicated models including time variation required at most 2 hrs. These relatively fast run times are attributable to \verb|multimark|'s parallel processing of MCMC algorithms written in the C programming language \citep{KernighanRitchie1988}. Bayesian multimodel inference was performed with \textit{multimodelClosed()} using the default equal prior model weights, where 300000 iterations for each chain required 3.1 hrs. The longer run time for \textit{multimodelClosed()} owes to the number of models and the RJMCMC algorithm being written entirely in R.
+With 2 chains each consisting of 2 million iterations (with thinning every 20 iterations to reduce memory requirements), the simplest models required 12 mins on a machine running Windows 7 (3.4GHz Intel Core i7, 16GB RAM), while the more complicated models including time variation required at most 2 hrs. These relatively fast run times are attributable to \verb|multimark|'s parallel processing of MCMC algorithms written in the C programming language \citep{KernighanRitchie1988}. Bayesian multimodel inference was performed with \textit{multimodelClosed()} using the default equal prior model weights, where 300000 iterations for each chain required 3 hrs. The longer run time for \textit{multimodelClosed()} owes to the number of models and the RJMCMC algorithm being written entirely in R.
 
-Models including a positive behavioural response to first capture accounted for 0.51 of the posterior model weight, while models including $\delta_1=\delta_2$ accounted for 0.77 of posterior model weight (Table \ref{tab:modprobs}). Model-averaged posterior modes were $N=35$ (HPDI: 26-100; Fig. \ref{fig:modaveN}) for population abundance, $p=0.15$ (HPDI: 0.04-0.28) for capture probability, and $c=0.21$ (HPDI: 0.07-0.33) for recapture probability. With $\delta_1=\delta_2=0.41$ (HPDI: 0.31-0.5) based on the model with the highest posterior probability, both-sided encounters were relatively infrequent for these data $(1-\delta_1-\delta_2=0.17)$.
+Models including a positive behavioural response to first capture accounted for 0.51 of the posterior model weight, while models including $\delta_1=\delta_2$ accounted for 0.78 of posterior model weight (Table \ref{tab:modprobs}). Model-averaged posterior modes were $N=34$ (HPDI: 25-99; Fig. \ref{fig:modaveN}) for population abundance, $p=0.15$ (HPDI: 0.04-0.28) for capture probability, and $c=0.21$ (HPDI: 0.07-0.33) for recapture probability. With $\delta_1=\delta_2=0.41$ (HPDI: 0.31-0.5) based on the model with the highest posterior probability, both-sided encounters were relatively infrequent for these data $(1-\delta_1-\delta_2=0.17)$.
 % latex table generated in R 3.0.2 by xtable 1.7-1 package
-% Fri Apr 17 07:53:45 2015
+% Mon Apr 20 13:13:10 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{llllll}
@@ -486,20 +472,20 @@ Models including a positive behavioural response to first capture accounted for 
 Model & PMM & $N$ & HPDI & ESS & GRB \\ 
   \hline
 p(\~{}c)delta(\~{}1) & 0.30 & 37 & 27-89 & 38769 & 1.00 \\ 
-  p(\~{}1)delta(\~{}1) & 0.22 & 33 & 27-46 & 51133 & 1.00 \\ 
-  p(\~{}h)delta(\~{}1) & 0.16 & 48 & 28-113 & 12795 & 1.00 \\ 
+  p(\~{}1)delta(\~{}1) & 0.23 & 33 & 27-46 & 51133 & 1.00 \\ 
+  p(\~{}h)delta(\~{}1) & 0.15 & 48 & 28-113 & 12795 & 1.00 \\ 
   p(\~{}c + h)delta(\~{}1) & 0.09 & 49 & 28-144 & 19192 & 1.00 \\ 
   p(\~{}c)delta(\~{}type) & 0.09 & 38 & 27-89 & 37853 & 1.00 \\ 
-  p(\~{}1)delta(\~{}type) & 0.06 & 33 & 27-46 & 52354 & 1.00 \\ 
-  p(\~{}h)delta(\~{}type) & 0.05 & 46 & 28-113 & 13214 & 1.00 \\ 
+  p(\~{}1)delta(\~{}type) & 0.07 & 33 & 27-46 & 52354 & 1.00 \\ 
+  p(\~{}h)delta(\~{}type) & 0.04 & 46 & 28-113 & 13214 & 1.00 \\ 
   p(\~{}c + h)delta(\~{}type) & 0.03 & 49 & 29-143 & 19525 & 1.00 \\ 
   p(\~{}time + h)delta(\~{}1) & 0.00 & 48 & 28-115 & 14781 & 1.00 \\ 
-  p(\~{}c + time + h)delta(\~{}1) & 0.00 & 45 & 27-115 & 20273 & 1.00 \\ 
   p(\~{}time)delta(\~{}1) & 0.00 & 32 & 25-44 & 42386 & 1.00 \\ 
+  p(\~{}c + time + h)delta(\~{}1) & 0.00 & 45 & 27-115 & 20273 & 1.00 \\ 
   p(\~{}c + time)delta(\~{}1) & 0.00 & 33 & 24-76 & 36202 & 1.00 \\ 
   p(\~{}time + h)delta(\~{}type) & 0.00 & 47 & 28-115 & 12824 & 1.00 \\ 
-  p(\~{}time)delta(\~{}type) & 0.00 & 33 & 26-44 & 42781 & 1.00 \\ 
   p(\~{}c + time + h)delta(\~{}type) & 0.00 & 44 & 28-115 & 20761 & 1.00 \\ 
+  p(\~{}time)delta(\~{}type) & 0.00 & 33 & 26-44 & 42781 & 1.00 \\ 
   p(\~{}c + time)delta(\~{}type) & 0.00 & 33 & 24-76 & 35808 & 1.00 \\ 
    \hline
 \end{tabular}
