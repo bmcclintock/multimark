@@ -30,7 +30,7 @@
 
 
 \begin{center}
-\texttt{\LARGE multimark}{\LARGE : an R package for analysis of capture-recapture data consisting of multiple non-invasive marks}\vspace{0.5in}
+\texttt{\LARGE multimark}{\LARGE : an R package for analysis of capture-recapture data consisting of multiple ``non-invasive'' marks}\vspace{0.5in}
 
 \par\end{center}
 
@@ -83,7 +83,7 @@ March 27, 2015
 \newpage{}
 
 \noindent \textbf{Summary}\\
-\textbf{1.} I describe an open source R package, \verb|multimark|, for estimation of survival and abundance from capture-mark-recapture data consisting of multiple non-invasive marks. Non-invasive marks include natural pelt or skin patterns, scars, and genetic markers, and thus apply to any species that can be individually identified from visual or genetic sampling surveys. \verb|multimark| provides a means for combining and jointly analyzing encounter histories from multiple non-invasive sources that otherwise cannot be reliably matched (e.g., left- and right-sided photos of bilaterally asymmetrical individuals). \\
+\textbf{1.} I describe an open source R package, \verb|multimark|, for estimation of survival and abundance from capture-mark-recapture data consisting of multiple ``non-invasive'' marks. Non-invasive marks include natural pelt or skin patterns, scars, and genetic markers that enable individual identification in lieu of physical capture, and thus apply to any species that can be individually identified from visual or genetic sampling surveys. \verb|multimark| provides a means for combining and jointly analyzing encounter histories from multiple non-invasive sources that otherwise cannot be reliably matched (e.g., left- and right-sided photos of bilaterally asymmetrical individuals). \\
 \textbf{2.} \verb|multimark| is currently capable of fitting open population Cormack-Jolly-Seber
 (CJS) and closed population abundance models with two mark types using Bayesian Markov chain Monte Carlo (MCMC) methods. \\
 \textbf{3.} Some package features include: (i) general model specification using formulas already familiar to most R users, (ii) ability to include temporal, behavioural, cohort, and individual heterogeneity effects in detection and survival probabilities, (iii) Bayesian multimodel inference using reversible jump MCMC, and (iv) data simulation capabilities for power analyses and assessing model performance. \\
@@ -103,7 +103,7 @@ March 27, 2015
 
 \section{Introduction}
 
-``Non-invasive'' capture-recapture sampling techniques are becoming standard practice for monitoring animal populations \citep[e.g.,][]{Hammond1990,LukacsBurnham2005a,OConnellEtAl2010}. Examples of non-invasive marks enabling individual identification include natural pelt or skin patterns, scars, and genetic markers. Capture-recapture based on non-invasive marks has been applied to diverse taxa, including sharks \citep[e.g.,][]{HolmbergEtAl2008}, reptiles \citep[e.g.,][]{NairEtAl2012}, ursids \citep[e.g.,][]{DreherEtAl2007}, felids \citep[e.g.,][]{KaranthNichols1998,RuellEtAl2009}, and marine mammals \citep[e.g.,][]{Hammond1990,WilsonEtAl1999,MadonEtAl2011}. While non-invasive capture-recapture has many advantages related to financial cost and animal welfare, it also poses new difficulties such as animal misidentification \citep{WrightEtAl2009,YoshizakiEtAl2009,LinkEtAl2010,MorrisonEtAl2011} and the potential for multiple types of marks \citep{CorkreyEtAl2008,MadonEtAl2011,BonnerHolmberg2013,McClintockEtAl2013a}. 
+``Non-invasive'' capture-recapture sampling techniques are becoming commonplace for monitoring animal populations \citep[e.g.,][]{Hammond1990,LukacsBurnham2005a,OConnellEtAl2010}. Examples of non-invasive marks include natural pelt or skin patterns, scars, and genetic markers that enable individual identification in the absence of physical capture. Capture-recapture methods based on non-invasive marks have been applied to diverse taxa, including sharks \citep[e.g.,][]{HolmbergEtAl2008}, reptiles \citep[e.g.,][]{NairEtAl2012}, ursids \citep[e.g.,][]{DreherEtAl2007}, felids \citep[e.g.,][]{KaranthNichols1998,RuellEtAl2009}, and marine mammals \citep[e.g.,][]{Hammond1990,WilsonEtAl1999,MadonEtAl2011}. While non-invasive capture-recapture methods have many advantages related to financial cost and animal welfare, they also pose new difficulties such as animal misidentification \citep{WrightEtAl2009,YoshizakiEtAl2009,LinkEtAl2010,MorrisonEtAl2011} and the complexity of multiple types of marks \citep{CorkreyEtAl2008,MadonEtAl2011,BonnerHolmberg2013,McClintockEtAl2013a}. 
 
 Multiple marks can arise from sighting or camera surveys of species with natural mark patterns that are bilaterally asymmetrical (e.g., cetaceans, felids) or from multiple sources of non-invasive capture-recapture data being collected concurrently (e.g., faecal DNA sampling and visual surveys). With multiple marks, an encounter history is produced for each individual and mark type, but there is typically no reliable means to match them (unless each mark type is simultaneously observed at least once for every encountered individual). Because the number of unique individuals encountered must be known for standard capture-recapture analyses of population abundance (or related demographic parameters), the typical approach is to conduct separate analyses for each mark type and compare the results \citep[e.g.,][]{WilsonEtAl1999,BerrowEtAl2012,NairEtAl2012}. However, given that sample sizes (and precision) may be considerably reduced, this is not as efficient as conducting an integrated analysis utlizing encounter histories arising from all mark types \citep{McClintockEtAl2013a}. Additional costs of conducting separate analyses for each mark type include a limited ability to explore models with behavioural or cohort effects, and, for capture-recapture models that condition on first encounter, a forfeiting of information from histories with the (apparent) first encounter occurring on the last sampling occasion. These limitations can be particularly important for the sparse datasets typical of rare and elusive populations for which non-invasive sampling techniques are most commonly employed. 
 
@@ -290,7 +290,7 @@ set.seed(10)
 @
 
 <<load-library, echo=TRUE>>=
-CJSdata <- simdataCJS(noccas=7,pbeta=-0.25,phibeta=1,delta_1=0.2,
+CJSdata <- simdataCJS(N=100,noccas=7,pbeta=-0.25,phibeta=1,delta_1=0.2,
             delta_2=0.5,alpha=0.5,sigma2_zphi=0.25,data.type="sometimes")
 Enc.Mat <- CJSdata$Enc.Mat
 head(Enc.Mat)
@@ -370,7 +370,7 @@ etime=proc.time()-stime
 @
 
 <<load-library, echo=FALSE>>=
-load("~/SkyDrive/Dropbox/Current Projects/multimark/manuscript/bobcat_results.RData")
+load("bobcat_results.RData")
 pmodnames <- unlist(lapply(modlist,function(x) x$mod.p)) 
 deltamodnames <- unlist(lapply(modlist,function(x) x$mod.delta)) 
 modnames<-paste0("p(",pmodnames,")delta(",deltamodnames,")")
@@ -426,7 +426,7 @@ Many potentially desirable extensions to \verb|multimark| are possible. These in
 
 \noindent \textbf{Acknowledgments} 
 
-\noindent P. Conn and J. Laake for helpful comments on earlier drafts. D. Johnson for helpful discussions. The findings and conclusions in the manuscript are those of the author(s) and do not necessarily represent the views of the National Marine Fisheries Service, NOAA. Any use of trade, product, or firm names does not imply an endorsement by the US Government.
+\noindent P. Boveng, P. Conn, and J. Laake for helpful comments on earlier drafts. D. Johnson for helpful discussions. The findings and conclusions in the manuscript are those of the author(s) and do not necessarily represent the views of the National Marine Fisheries Service, NOAA. Any use of trade, product, or firm names does not imply an endorsement by the US Government.
 
 \bibliographystyle{mee}
 \bibliography{master.bib}
