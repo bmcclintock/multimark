@@ -12,3 +12,9 @@ citEntry(entry="Manual",
          paste("McClintock, B. T. (", year,
                "). multimark: capture-mark-recapture analysis using multiple non-invasive marks. ",
                vers, ".", sep="") )
+
+citEntry(entry="Article",
+         title = "multimark: an R package for analysis of capture-recapture data consisting of multiple ``non-invasive'' marks",
+         author = personList(as.person("B. T. McClintock")),
+         year   = {2015},
+         url = {https://github.com/bmcclintock/multimark/},)
