@@ -5,7 +5,8 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{setspace}
-\usepackage[authoryear]{natbib}
+\usepackage{natbib}
+\setcitestyle{aysep={}}
 
 \makeatletter
 
@@ -61,7 +62,7 @@
 \par\end{center}
 
 \begin{center}
-March 27, 2015 
+May 11, 2015 
 \par\end{center}
 
 \setlength{\textheight}{575pt} \global\long\def\baselinestretch{2}
@@ -91,7 +92,7 @@ Starting from a permissible ${\bf f}$ conditional on the observed encounter hist
   \item \label{accept} Apportion ${\bf f^*}$ to individuals following \cite{McClintockEtAl2014}, and accept proposed move based on the Metropolis-Hastings ratio described therein [pp. 2470-2472, steps 9(b)-9(c)].
 \end{enumerate}
 
-Note that because \verb|multimark| uses ``semi-complete'' data likelihoods that condition on the number of unique individuals encountered at least once $(n)$, the dimension of the data-augmented encounter histories $(M)$ described in \cite{McClintockEtAl2014} is determined by the number of observed encounter histories (i.e., $M=n_1+n_2+n_{known}$), such that $f_1=M-n$ and $n=\sum_{j=2}^{5^T} f_j$. Any additional constraints, such as those resulting from encounter histories being designated as known with certainty using the \textit{known} argument in \textit{processdata()}, are accounted for by simple modifications to steps \ref{drawr}-\ref{drawc_r}. 
+Note that because \verb|multimark| uses ``semi-complete'' data likelihoods that condition on the number of unique individuals encountered at least once $(n)$, the dimension of the data-augmented encounter histories $(M)$ described in \cite{McClintockEtAl2014} is determined by the number of observed encounter histories (i.e. $M=n_1+n_2+n_{known}$), such that $f_1=M-n$ and $n=\sum_{j=2}^{5^T} f_j$. Any additional constraints, such as those resulting from encounter histories being designated as known with certainty using the \textit{known} argument in \textit{processdata()}, are accounted for by simple modifications to steps \ref{drawr}-\ref{drawc_r}. 
 
 In terms of mixing, it can sometimes be advantageous to explore more than one move at a time. At each iteration of the chain, the argument \textit{maxnumbasis} specifies how many times to perform steps \ref{drawr}-\ref{propose} in sequence before evaluating step \ref{accept}. The default for \textit{multimarkCJS()} and \textit{multimarkClosed()} is \textit{maxnumbasis=1}.
 
