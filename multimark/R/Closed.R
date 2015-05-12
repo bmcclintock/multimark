@@ -145,7 +145,7 @@ pstarintegrand<-function(beta,sigma,DM,gq){
   1.-min(1.-tol,max(tol,oneminuspstar))
 }
 
-mcmcClosed<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,gq,maxnumbasis,a0delta,a0alpha,b0alpha,a,mu0,sigma2_mu0,printlog){
+mcmcClosed<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,gq,maxnumbasis,a0delta,a0alpha,b0alpha,a,mu0,sigma2_mu0,a0psi,b0psi,printlog){
   
   weights<-gq$weights
   nodes<-gq$nodes
@@ -183,13 +183,13 @@ mcmcClosed<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,tacce
   arate<-numeric(M+pdim+1)
   
   posterior <- .C(ClosedC,as.integer(ichain),as.numeric(mu0), as.numeric(sigma2_mu0), as.numeric(pbeta), as.numeric(zp), as.numeric(sigma2_zp), as.numeric(delta_1),as.numeric(delta_2),as.numeric(alpha), as.integer(inits[[ichain]]$x), as.numeric(N), as.numeric(psi), as.integer(H),
-                  as.integer(noccas), as.integer(M), as.numeric(a0delta), as.numeric(a0alpha), as.numeric(b0alpha), as.numeric(a),
+                  as.integer(noccas), as.integer(M), as.numeric(a0delta), as.numeric(a0alpha), as.numeric(b0alpha), as.numeric(a), as.numeric(a0psi), as.numeric(b0psi),
                   as.numeric(Prop.sd),as.numeric(arate),as.numeric(logPosterior),
                   as.integer(length(mms@vAll.hists)/noccas),as.integer(mms@vAll.hists), as.integer(mms@C), as.integer(mms@indBasis-1), as.integer(mms@ncolbasis), as.integer(mms@knownx), as.numeric(as.vector(t(DMp))), as.numeric(as.vector(t(DMc))),as.integer(pdim),
                   as.integer(iter), as.integer(thin), as.integer(adapt), as.integer(bin), as.numeric(taccept),as.numeric(tuneadjust),as.integer(maxnumbasis),
                   as.integer(npoints),as.numeric(weights),as.numeric(nodes),as.integer(mod.p.h),as.integer(mms@data.type=="sometimes"),as.integer(any(params=="zp")),as.integer(any(params=="H")),as.integer(DM$mod.delta==formula(~type)),as.integer(printlog),NAOK = TRUE) 
   
-  names(posterior) <- c("ichain","mu_0","sigma2_mu","pbeta", "zp", "sigma2_zp", "delta_1","delta_2","alpha", "x", "N", "psi","H", "noccas", "M","a0delta", "a0alpha", "b0alpha","a","Prop.sd","arate","logPosterior","nHists","vAll.hists","C", "indBasis", "ncolBasis","knownx","DMp","DMc","pdim","iter", "thin", "adapt", "bin", "taccept","tuneadjust","maxnumbasis","npoints","weights","nodes","mod.p.h","sometimes?","zp?","H?","type?","printlog?")
+  names(posterior) <- c("ichain","mu_0","sigma2_mu","pbeta", "zp", "sigma2_zp", "delta_1","delta_2","alpha", "x", "N", "psi","H", "noccas", "M","a0delta", "a0alpha", "b0alpha","a","a0psi","b0psi","Prop.sd","arate","logPosterior","nHists","vAll.hists","C", "indBasis", "ncolBasis","knownx","DMp","DMc","pdim","iter", "thin", "adapt", "bin", "taccept","tuneadjust","maxnumbasis","npoints","weights","nodes","mod.p.h","sometimes?","zp?","H?","type?","printlog?")
   
   g <- posterior$iter
   x <- posterior$x
@@ -252,6 +252,7 @@ priorsClosed<-function(parms,DM,priorparms,data_type){
   
   priors <- (base::sum(dnorm(parms$pbeta,priorparms$mu0,sqrt(priorparms$sigma2_mu0),log=TRUE))
              + base::sum(dbinom((parms$H>1),1,parms$psi,log=TRUE))
+             + dbeta(parms$psi,priorparms$a0psi,priorparms$b0psi,log=TRUE)
              + dbeta(parms$alpha,priorparms$a0alpha,priorparms$b0alpha,log=TRUE)
              + -log(parms$N))
   
@@ -294,7 +295,7 @@ posteriorClosed<-function(parms,DM,mms,priorparms,gq){
   }
 }
 
-checkClosed<-function(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccept,tuneadjust,npoints,maxnumbasis,a0delta,a0alpha,b0alpha,a,sigma2_mu0){
+checkClosed<-function(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccept,tuneadjust,npoints,maxnumbasis,a0delta,a0alpha,b0alpha,a,sigma2_mu0,a0psi,b0psi){
   
   if(mms@data.type!="sometimes" & any(parms=="alpha")) stop("Parameter 'alpha' only applies to models for the 'sometimes' data type")
   
@@ -316,7 +317,7 @@ checkClosed<-function(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccept,t
   if(tuneadjust<=0 | tuneadjust>1) stop ("'tuneadjust' must be >0 and <=1")
   if(npoints<1) stop("'npoints' must be greater than 0")
   if(maxnumbasis<1 | maxnumbasis>mms@ncolbasis) stop("'maxnumbasis' must be between 1 and ",mms@ncolbasis)
-  if(!all(c(a0delta,a0alpha,b0alpha,a,sigma2_mu0)>0)) stop("'a0delta', 'a0alpha', 'b0alpha', 'a', and 'sigma2_mu0' must be >0")
+  if(!all(c(a0delta,a0alpha,b0alpha,a,sigma2_mu0,a0psi,b0psi)>0)) stop("'a0delta', 'a0alpha', 'b0alpha', 'a', 'sigma2_mu0', 'a0psi', and 'b0psi' must be >0")
   
   mod.p.h<-DM$mod.p.h
   if(any(parms=="all")){
@@ -432,7 +433,7 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
 #' @param mms An optional object of class \code{multimarksetup-class}; if \code{NULL} it is created. See \code{\link{processdata}}.
 #' @param mod.p Model formula for detection probability. For example, \code{mod.p=~1} specifies no effects (i.e., intercept only), \code{mod.p~time} specifies temporal effects, \code{mod.p~c} specifies behavioral reponse (i.e., trap "happy" or "shy"), \code{mod.p~h} specifies individual heterogeneity, and \code{mod.p~time+c} specifies additive temporal and behavioral effects.
 #' @param mod.delta Model formula for conditional probabilities of type 1 (delta_1) and type 2 (delta_2) encounters, given detection. Currently only \code{mod.delta=~1} (i.e., \eqn{\delta_1 = \delta_2}) and \code{mod.delta=~type} (i.e., \eqn{\delta_1 \ne \delta_2}) are implemented.
-#' @param parms A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are logit-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), conditional probability of type 1 or type 2 encounter, given detection ("\code{delta})", probability of simultaneous type 1 and type 2 detection, given both types encountered ("\code{alpha}"), logit-scale individual heterogeneity variance term ("\code{sigma2_zp}"), logit-scale individual effects ("\code{zp}"), and the probability that any given observed history corresponds to a legitmate individual ("\code{psi}"). Individual encounter history indices ("\code{H}") and the log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.
+#' @param parms A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are logit-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), conditional probability of type 1 or type 2 encounter, given detection ("\code{delta})", probability of simultaneous type 1 and type 2 detection, given both types encountered ("\code{alpha}"), logit-scale individual heterogeneity variance term ("\code{sigma2_zp}"), logit-scale individual effects ("\code{zp}"), and the probability that a randomly selected individual from the \code{M = nrow(Enc.Mat)} observed individuals belongs to the \eqn{n} unique individuals encountered at least once ("\code{psi}"). Individual encounter history indices ("\code{H}") and the log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.
 #' @param nchains The number of parallel MCMC chains for the model.
 #' @param iter The number of MCMC iterations.
 #' @param adapt The number of iterations for proposal distribution adaptation. If \code{adapt = 0} then no adaptation occurs.
@@ -452,6 +453,8 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
 #' @param a Scale parameter for [sigma_z] ~ half-Cauchy(a) prior for the individual hetegeneity term sigma_zp = sqrt(sigma2_zp). Default is ``uninformative'' \code{a = 25}.
 #' @param mu0 Scaler or vector (of length k) specifying mean of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{mu0 = 0}.
 #' @param sigma2_mu0 Scaler or vector (of length k) specifying variance of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{sigma2_mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{sigma2_mu0 = 1.75}.
+#' @param a0psi Specifies "shape1" parameter for [psi] ~ Beta(a0psi,b0psi) prior. Default is \code{a0psi = 1}.
+#' @param b0psi Specifies "shape2" parameter for [psi] ~ Beta(a0psi,b0psi) prior. Default is \code{b0psi = 1}.
 #' @param initial.values Optional list of \code{nchain} list(s) specifying intial values for parameters and latent variables. Default is \code{initial.values = NULL}, which causes initial values to be generated automatically. In addition to the parameters ("\code{pbeta}", "\code{N}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_zp}", "\code{zp}", and "\code{psi}"), initial values can be specified for the initial latent history frequencies ("\code{x}") and initial individual encounter history indices ("\code{H}").
 #' @param known Optional integer vector indicating whether the encounter history of an individual is known with certainty (i.e., the observed encounter history is the true encounter history). Encounter histories with at least one type 4 encounter are automatically assumed to be known, and \code{known} does not need to be specified unless there exist encounter histories that do not contain a type 4 encounter that happen to be known with certainty (e.g., from independent telemetry studies). If specified, \code{known = c(v_1,v_2,...,v_M)} must be a vector of length \code{M = nrow(Enc.Mat)} where \code{v_i = 1} if the encounter history for individual \code{i} is known (\code{v_i = 0} otherwise). Note that known all-zero encounter histories (e.g., `000') are ignored.
 #' @param printlog Logical indicating whether to print the progress of chains and any errors to a log file in the working directory. Ignored when \code{nchains=1}. Updates are printed to log file as 1\% increments of \code{iter} of each chain are completed. With >1 chains, setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.
@@ -485,7 +488,7 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
 #' #Posterior summary for monitored parameters
 #' summary(bobcat.dot$mcmc)
 #' plot(bobcat.dot$mcmc)}
-multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.p=~1,mod.delta=~type,parms=c("pbeta","delta","N"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,npoints=500,maxnumbasis=1,a0delta=1,a0alpha=1,b0alpha=1,a=25,mu0=0,sigma2_mu0=1.75,initial.values=NULL,known=integer(),printlog=FALSE,...){
+multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.p=~1,mod.delta=~type,parms=c("pbeta","delta","N"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,npoints=500,maxnumbasis=1,a0delta=1,a0alpha=1,b0alpha=1,a=25,mu0=0,sigma2_mu0=1.75,a0psi=1,b0psi=1,initial.values=NULL,known=integer(),printlog=FALSE,...){
   
   if(is.null(mms)) mms <- processdata(Enc.Mat,data.type,covs,known)
   if(class(mms)!="multimarksetup") stop("'mms' must be an object of class 'multimarksetup'")
@@ -502,7 +505,7 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
   }
   
   parmlist<-c("pbeta","delta","N","sigma2_zp","zp","alpha","psi","H","logPosterior")
-  params <- checkClosed(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccept,tuneadjust,npoints,maxnumbasis,a0delta,a0alpha,b0alpha,a,sigma2_mu0)
+  params <- checkClosed(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccept,tuneadjust,npoints,maxnumbasis,a0delta,a0alpha,b0alpha,a,sigma2_mu0,a0psi,b0psi)
   
   data.type<-mms@data.type
   Enc.Mat<-mms@Enc.Mat
@@ -517,9 +520,9 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
   
   gq<-gauss.quad(npoints,kind="hermite")
   
-  inits<-get_inits(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0delta,DM,gq)
+  inits<-get_inits(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0delta,a0psi,b0psi,DM,gq)
   
-  priorparms <-list(a0delta=a0delta,a0alpha=a0alpha,b0alpha=b0alpha,a=a,mu0=mu0,sigma2_mu0=sigma2_mu0,npoints=npoints)
+  priorparms <-list(a0delta=a0delta,a0alpha=a0alpha,b0alpha=b0alpha,a=a,mu0=mu0,sigma2_mu0=sigma2_mu0,a0psi=a0psi,b0psi=b0psi,npoints=npoints)
   
   message("\nFitting closed capture model with logit link\n")
   message("data type = \"",data.type,"\"\n")
@@ -541,12 +544,12 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
     cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimarkClosed_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
     clusterExport(cl,list("mcmcClosed"),envir=environment())  
-    chains <- parLapply(cl,1:nchains, function(ichain) mcmcClosed(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,gq,maxnumbasis,a0delta,a0alpha,b0alpha,a,mu0,sigma2_mu0,printlog))
+    chains <- parLapply(cl,1:nchains, function(ichain) mcmcClosed(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,gq,maxnumbasis,a0delta,a0alpha,b0alpha,a,mu0,sigma2_mu0,a0psi,b0psi,printlog))
     stopCluster(cl)
     gc()
   } else {
     chains <- vector('list',nchains)
-    chains[[nchains]] <- mcmcClosed(nchains,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,gq,maxnumbasis,a0delta,a0alpha,b0alpha,a,mu0,sigma2_mu0,printlog)
+    chains[[nchains]] <- mcmcClosed(nchains,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,gq,maxnumbasis,a0delta,a0alpha,b0alpha,a,mu0,sigma2_mu0,a0psi,b0psi,printlog)
     gc()
   }
   

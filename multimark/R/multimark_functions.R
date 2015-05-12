@@ -379,7 +379,7 @@ isValidx<-function(mms,x,M){
          FALSE)
 }
 
-get_inits<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0delta,DM,gq=NULL){
+get_inits<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0delta,a0psi,b0psi,DM,gq=NULL){
   
   inits<-vector("list",nchains)
   
@@ -581,7 +581,7 @@ get_inits<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0del
         stop("initial value for psi must be a scalar between 0 and 1")
       }
     } else {
-      inits[[ichain]]$psi <- rbeta(1,tol+base::sum(inits[[ichain]]$H>1),1+M-base::sum(inits[[ichain]]$H>1))
+      inits[[ichain]]$psi <- rbeta(1,a0psi+base::sum(inits[[ichain]]$H>1),b0psi+M-base::sum(inits[[ichain]]$H>1))
     }
   }
   return(inits)

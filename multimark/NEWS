@@ -1,3 +1,10 @@
+multimark 1.2.0 2015-05-12
+-----------------
+NEW FEATURES
+
+* Beta prior for 'psi' parameter can now be user specified in 'multimarkCJS()' and 'multimodelClosed()' using 'a0psi' and 'b0psi' arguments
+
+
 multimark 1.1.4 2015-04-29
 -----------------
 NEW FEATURES

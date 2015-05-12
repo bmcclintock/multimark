@@ -15,7 +15,7 @@
 // Define function ClosedC to draw samples from the posterior distribution
 
 void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double *z, double *sigma2_z, double *delta_1, double *delta_2, double *alpha, int *x, double *N, double *psi, int *H, 
-              int *noccas, int *M, double *a0delta, double *a0alpha, double *b0alpha, double *A,
+              int *noccas, int *M, double *a0delta, double *a0alpha, double *b0alpha, double *A, double *a0psi, double *b0psi,
               double *Propsd, double *accept, double *posterior,
               int *nHists, int *Allhists, int *C, int *indBasis, int *ncolBasis, int *knownx, double *DMp, double *DMc, int *pdim,
               int *iter, int *thin, int *adapt, int *bin, double *taccept, double *tuneadjust, int *numbasis,
@@ -149,7 +149,7 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
     
   /* Calculate the log-likelihood */  
   double ll=LIKE(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,supN,C,Ns,pstar);
-  posterior[0]=POSTERIOR(ll,betas,qs,zs,deltavect,alphas,sigma_zs,Ns,psis,mu0,sigma2_mu0,a0_delta,*a0alpha,*b0alpha,*A,supN,dimp,*mod_h,datatype,deltatype);
+  posterior[0]=POSTERIOR(ll,betas,qs,zs,deltavect,alphas,sigma_zs,Ns,psis,mu0,sigma2_mu0,a0_delta,*a0alpha,*b0alpha,*A,*a0psi,*b0psi,supN,dimp,*mod_h,datatype,deltatype);
   if(!R_FINITE(ll)) {
     Rprintf("Fatal error in chain %d: initial likelihood is '%f'. \n",*ichain,ll);
     *iter = g;
@@ -378,8 +378,8 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
     Ns=ns+rnbinom((double) ns,pstar);
     
     /* Update psi */
-    sha = (double) 1.e-6 + ns;
-    sca= (double) 1.0 + supN - ns;
+    sha = (double) *a0psi + ns;
+    sca= (double) *b0psi + supN - ns;
     psis = rbeta(sha,sca);
     
     ll=LIKE(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,supN,C,Ns,pstar);   
@@ -422,7 +422,7 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
         x[j]=xs[j];
       }
       
-      posterior[(g/th - 1)]=POSTERIOR(ll,betas,qs,zs,deltavect,alphas,sigma_zs,Ns,psis,mu0,sigma2_mu0,a0_delta,*a0alpha,*b0alpha,*A,supN,dimp,*mod_h,datatype,deltatype); 
+      posterior[(g/th - 1)]=POSTERIOR(ll,betas,qs,zs,deltavect,alphas,sigma_zs,Ns,psis,mu0,sigma2_mu0,a0_delta,*a0alpha,*b0alpha,*A,*a0psi,*b0psi,supN,dimp,*mod_h,datatype,deltatype); 
       if(!R_FINITE(posterior[(g/th - 1)])) {Rprintf("Fatal error in chain %d: please report to <brett.mcclintock@noaa.gov> \n",*ichain); *iter = g; return;}
       
     }
@@ -523,7 +523,7 @@ double DDIRICHLET(double *x, double *alpha, int dim)
   return(logdens);
 }
 
-double POSTERIOR(double ll, double *beta, int *qs, double *z, double *deltavect, double alpha, double sigma_z, double Ns, double psi, double *mu0, double *sigma2_mu0, double *a0_delta, double a0_alpha, double b0_alpha, double A, int supN, int pdim, int modh, int datatype, int deltatype)
+double POSTERIOR(double ll, double *beta, int *qs, double *z, double *deltavect, double alpha, double sigma_z, double Ns, double psi, double *mu0, double *sigma2_mu0, double *a0_delta, double a0_alpha, double b0_alpha, double A, double a0psi, double b0psi, int supN, int pdim, int modh, int datatype, int deltatype)
 {
   double pos=ll;
   int i,j;
@@ -533,6 +533,7 @@ double POSTERIOR(double ll, double *beta, int *qs, double *z, double *deltavect,
   for(i=0; i<supN; i++){
     pos += dbinom((double) qs[i],1.0,psi,1);
   }
+  pos += dbeta(psi,a0psi,b0psi,1);
   if(modh){
     for(i=0; i<supN; i++){
       pos += dnorm(z[i],0.0,sigma_z,1);

@@ -16,7 +16,7 @@
 // Define function ProbitCJSC to draw samples from the posterior distribution
 
 void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, double *phibeta0, double *phiprec0, double *phibeta, double *zp, double *sigma2_zp, double *zphi, double *sigma2_zphi, double *delta_1, double *delta_2, double *alpha, int *x, double *psi, int *H, int *z,
-              int *noccas, int *M, double *a0delta, double *a0alpha, double *b0alpha, double *l0p, double *d0p, double *l0phi, double *d0phi,
+              int *noccas, int *M, double *a0delta, double *a0alpha, double *b0alpha, double *l0p, double *d0p, double *l0phi, double *d0phi, double *a0psi, double *b0psi,
               double *loglike,
               int *nHists, int *Allhists, int *C, int *L, int *indBasis, int *ncolBasis, int *knownx, double *DMp, double *DMphi, int *pdim, int *phidim,
               int *iter, int *thin, int *numbasis,
@@ -383,8 +383,8 @@ void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, doub
     nstar=ns;
     
     /* Update psi */
-    sha = (double) 1.e-6 + ns;
-    sca= (double) 1.0 + supN - ns;
+    sha = (double) *a0psi + ns;
+    sca= (double) *b0psi + supN - ns;
     psis = rbeta(sha,sca);
     
     /* update up and uphi */    

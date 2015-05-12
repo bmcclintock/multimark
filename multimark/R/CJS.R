@@ -285,7 +285,7 @@ get_DMCJS<-function(mod.p,mod.phi,mod.delta,Enc.Mat,covs,type="CJS",...){
   return(list(p=DMp,mod.p.h=pmod$mod.h,phi=DMphi,mod.phi.h=phimod$mod.h,mod.delta=mod.delta))
 }
 
-mcmcCJS<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sdp,Prop.sdphi,maxnumbasis,pbeta0,pprec0,phibeta0,phiprec0,l0p,d0p,l0phi,d0phi,a0delta,a0alpha,b0alpha,link,printlog){
+mcmcCJS<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sdp,Prop.sdphi,maxnumbasis,pbeta0,pprec0,phibeta0,phiprec0,l0p,d0p,l0phi,d0phi,a0delta,a0alpha,b0alpha,a0psi,b0psi,link,printlog){
   
   M<-nrow(mms@Enc.Mat)
   noccas<-ncol(mms@Enc.Mat)
@@ -327,7 +327,7 @@ mcmcCJS<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,
   if(link=="probit"){
     
     posterior <- .C(ProbitCJSC,as.integer(ichain),as.numeric(pbeta0),as.numeric(c(pprec0)),as.numeric(pbeta),as.numeric(phibeta0),as.numeric(c(phiprec0)),as.numeric(phibeta),as.numeric(zp),as.numeric(sigma2_zp),as.numeric(zphi),as.numeric(sigma2_zphi),as.numeric(delta_1),as.numeric(delta_2),as.numeric(alpha),as.integer(inits[[ichain]]$x),as.numeric(psi), as.integer(H), as.integer(z),
-                    as.integer(noccas), as.integer(M), as.numeric(a0delta), as.numeric(a0alpha), as.numeric(b0alpha),as.numeric(l0p),as.numeric(d0p),as.numeric(l0phi),as.numeric(d0phi),
+                    as.integer(noccas), as.integer(M), as.numeric(a0delta), as.numeric(a0alpha), as.numeric(b0alpha),as.numeric(l0p),as.numeric(d0p),as.numeric(l0phi),as.numeric(d0phi),as.numeric(a0psi),as.numeric(b0psi),
                     as.numeric(loglike),
                     as.integer(length(mms@vAll.hists)/noccas),as.integer(mms@vAll.hists),as.integer(mms@C),as.integer(mms@L),as.integer(mms@indBasis-1), as.integer(mms@ncolbasis), as.integer(mms@knownx),as.numeric(as.vector(t(DMp))),as.numeric(as.vector(t(DMphi))),as.integer(dim(DMp)),as.integer(dim(DMphi)),
                     as.integer(iter), as.integer(thin),as.integer(maxnumbasis),
@@ -336,7 +336,7 @@ mcmcCJS<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,
     stop("only 'probit' link is currently implemented for CJS models")
   }
   names(posterior) <- c("ichain","pbeta0","pprec0","pbeta","phibeta0","phiprec0","phibeta", "zp", "sigma2_zp", "zphi", "sigma2_zphi", "delta_1","delta_2","alpha", "x","psi","H","z",
-                        "noccas", "M","a0delta", "a0alpha", "b0alpha","l0p","d0p","l0phi","d0phi",
+                        "noccas", "M","a0delta", "a0alpha", "b0alpha","l0p","d0p","l0phi","d0phi","a0psi","b0psi",
                         "loglike",
                         "nHists","vAll.hists","C","L", "indBasis", "ncolBasis","knownx","DMp","DMphi","pdim","phidim",
                         "iter", "thin", "maxnumbasis",
@@ -430,8 +430,9 @@ priorsCJS<-function(parms,DM,priorparms,data_type,C,noccas){
   
   priors <- (dmvnorm(parms$pbeta,priorparms$pbeta0,priorparms$pSigma0,log=TRUE)
              + dmvnorm(parms$phibeta,priorparms$phibeta0,priorparms$phiSigma0,log=TRUE)
+             + dbeta(parms$psi,priorparms$a0psi,priorparms$b0psi,log=TRUE)
              + base::sum(dbinom((firstcap<noccas),1,parms$psi,log=TRUE)))
-             #+ base::sum(dbinom((parms$H>1),1,parms$psi,log=TRUE))
+             #+ base::sum(dbinom((parms$H>1),1,parms$psi,log=TRUE)))
   
   if(DM$mod.delta==formula(~type)){
     priors <- priors + ddirichlet(c(parms$delta_1,parms$delta_2,1.-parms$delta_1-parms$delta_2),priorparms$a0delta)
@@ -476,7 +477,7 @@ posteriorCJS<-function(parms,DM,mms,priorparms){
   }
 }
 
-checkCJS<-function(parms,parmlist,mms,DM,iter,bin,thin,burnin,taccept,tuneadjust,maxnumbasis,a0delta,a0alpha,b0alpha,pSigma0,phiSigma0,l0p,d0p,l0phi,d0phi,link){
+checkCJS<-function(parms,parmlist,mms,DM,iter,bin,thin,burnin,taccept,tuneadjust,maxnumbasis,a0delta,a0alpha,b0alpha,pSigma0,phiSigma0,l0p,d0p,l0phi,d0phi,a0psi,b0psi,link){
   
   if(mms@data.type!="sometimes" & any(parms=="alpha")) stop("Parameter 'alpha' only applies to models for the 'sometimes' data type")
   
@@ -499,7 +500,7 @@ checkCJS<-function(parms,parmlist,mms,DM,iter,bin,thin,burnin,taccept,tuneadjust
   
   if(thin>max(1,floor((iter-burnin)/2)) | thin<1) stop("'thin' must be >0 and <=",max(1,floor((iter-burnin)/2)))
   if(mms@ncolbasis & (maxnumbasis<1 | maxnumbasis>mms@ncolbasis)) stop("'maxnumbasis' must be between 1 and ",mms@ncolbasis)
-  if(!all(c(a0delta,a0alpha,b0alpha,l0p,d0p,l0phi,d0phi,diag(as.matrix(pSigma0)),diag(as.matrix(phiSigma0)))>0)) stop("'a0delta', 'a0alpha', 'b0alpha', 'l0p', 'd0p', 'l0phi', 'd0phi', and diagonal elements of 'pSigma0' and 'phiSigma0' must be >0")
+  if(!all(c(a0delta,a0alpha,b0alpha,l0p,d0p,l0phi,d0phi,a0psi,b0psi,diag(as.matrix(pSigma0)),diag(as.matrix(phiSigma0)))>0)) stop("'a0delta', 'a0alpha', 'b0alpha', 'l0p', 'd0p', 'l0phi', 'd0phi', 'a0psi', 'b0psi', and diagonal elements of 'pSigma0' and 'phiSigma0' must be >0")
   
   
   mod.p.h<-DM$mod.p.h
@@ -656,7 +657,7 @@ processCJSchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin){
 #' @param mod.p Model formula for detection probability (\eqn{p}). For example, \code{mod.p=~1} specifies no effects (i.e., intercept only), \code{mod.p~time} specifies temporal effects, \code{mod.p~age} specifies age effects, \code{mod.p~h} specifies individual heterogeneity, and \code{mod.p~time+age} specifies additive temporal and age effects.
 #' @param mod.phi Model formula for survival probability (\eqn{\phi}). For example, \code{mod.phi=~1} specifies no effects (i.e., intercept only), \code{mod.phi~time} specifies temporal effects, \code{mod.phi~age} specifies age effects, \code{mod.phi~h} specifies individual heterogeneity, and \code{mod.phi~time+age} specifies additive temporal and age effects.
 #' @param mod.delta Model formula for conditional probabilities of type 1 (delta_1) and type 2 (delta_2) encounters, given detection. Currently only \code{mod.delta=~1} (i.e., \eqn{\delta_1 = \delta_2}) and \code{mod.delta=~type} (i.e., \eqn{\delta_1 \ne \delta_2}) are implemented.
-#' @param parms A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are probit-scale detection probability parameters ("\code{pbeta}" for \eqn{p} and "\code{phibeta}" for \eqn{\phi}), conditional probability of type 1 or type 2 encounter, given detection ("\code{delta})", probability of simultaneous type 1 and type 2 detection, given both types encountered ("\code{alpha}"), probit-scale individual heterogeneity variance terms ("\code{sigma2_zp}" for \eqn{p} and "\code{sigma2_zphi}" for \eqn{\phi}), probit-scale individual effects ("\code{zp}" and "\code{zphi}"), and the probability that any given observed history corresponds to a legitmate individual ("\code{psi}"). Individual encounter history indices ("\code{H}") and the log likelihood ("\code{loglike}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.
+#' @param parms A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are probit-scale detection probability parameters ("\code{pbeta}" for \eqn{p} and "\code{phibeta}" for \eqn{\phi}), conditional probability of type 1 or type 2 encounter, given detection ("\code{delta})", probability of simultaneous type 1 and type 2 detection, given both types encountered ("\code{alpha}"), probit-scale individual heterogeneity variance terms ("\code{sigma2_zp}" for \eqn{p} and "\code{sigma2_zphi}" for \eqn{\phi}), probit-scale individual effects ("\code{zp}" and "\code{zphi}"), and the probability that a randomly selected individual from the \code{M = nrow(Enc.Mat)} observed individuals belongs to the \eqn{n} unique individuals encountered at least once ("\code{psi}"). Individual encounter history indices ("\code{H}") and the log likelihood ("\code{loglike}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.
 #' @param nchains The number of parallel MCMC chains for the model.
 #' @param iter The number of MCMC iterations.
 #' @param adapt Ignored; no adaptive phase is needed for "probit" link.
@@ -683,6 +684,8 @@ processCJSchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin){
 #' @param d0phi Specifies "scale" parameter for [sigma2_zphi] ~ invGamma(l0phi,d0phi) prior. Default is \code{d0phi = 0.01}. 
 #' @param a0alpha Specifies "shape1" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{a0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1).
 #' @param b0alpha Specifies "shape2" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{b0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1).
+#' @param a0psi Specifies "shape1" parameter for [psi] ~ Beta(a0psi,b0psi) prior. Default is \code{a0psi = 1}.
+#' @param b0psi Specifies "shape2" parameter for [psi] ~ Beta(a0psi,b0psi) prior. Default is \code{b0psi = 1}.
 #' @param link Link function for survival and capture probabilities. Only probit link is currently implemented.
 #' @param initial.values Optional list of \code{nchain} list(s) specifying intial values for parameters and latent variables. Default is \code{initial.values = NULL}, which causes initial values to be generated automatically. In addition to the parameters ("\code{pbeta}", "\code{phibeta}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_zp}", "\code{sigma2_zphi}", "\code{zp}", "\code{zphi}", and "\code{psi}"), initial values can be specified for the initial latent history frequencies ("\code{x}") and initial individual encounter history indices ("\code{H}").
 #' @param known Optional integer vector indicating whether the encounter history of an individual is known with certainty (i.e., the observed encounter history is the true encounter history). Encounter histories with at least one type 4 encounter are automatically assumed to be known, and \code{known} does not need to be specified unless there exist encounter histories that do not contain a type 4 encounter that happen to be known with certainty (e.g., from independent telemetry studies). If specified, \code{known = c(v_1,v_2,...,v_M)} must be a vector of length \code{M = nrow(Enc.Mat)} where \code{v_i = 1} if the encounter history for individual \code{i} is known (\code{v_i = 0} otherwise). Note that known all-zero encounter histories (e.g., `000') are ignored.
@@ -721,7 +724,7 @@ processCJSchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin){
 #' #Posterior summary for monitored parameters
 #' summary(sim.dot$mcmc)
 #' plot(sim.dot$mcmc)}
-multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.p=~1,mod.phi=~1,mod.delta=~type,parms=c("pbeta","phibeta","delta"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,propphibeta=0.1,propzphi=1,propsigmaphi=1,maxnumbasis=1,pbeta0=0,pSigma0=1,phibeta0=0,phiSigma0=1,l0p=1,d0p=0.01,l0phi=1,d0phi=0.01,a0delta=1,a0alpha=1,b0alpha=1,initial.values=NULL,known=integer(),link="probit",printlog=FALSE,...){
+multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.p=~1,mod.phi=~1,mod.delta=~type,parms=c("pbeta","phibeta","delta"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,propphibeta=0.1,propzphi=1,propsigmaphi=1,maxnumbasis=1,pbeta0=0,pSigma0=1,phibeta0=0,phiSigma0=1,l0p=1,d0p=0.01,l0phi=1,d0phi=0.01,a0delta=1,a0alpha=1,b0alpha=1,a0psi=1,b0psi=1,initial.values=NULL,known=integer(),link="probit",printlog=FALSE,...){
   
   if(is.null(mms)) mms <- processdata(Enc.Mat,data.type,covs,known)
   if(class(mms)!="multimarksetup") stop("'mms' must be an object of class 'multimarksetup'")
@@ -739,7 +742,7 @@ multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.
   }
   
   parmlist<-c("pbeta","phibeta","delta","sigma2_zp","zp","sigma2_zphi","zphi","alpha","psi","z","H","loglike")
-  params <- checkCJS(parms,parmlist,mms,DM,iter,bin,thin,burnin,taccept,tuneadjust,maxnumbasis,a0delta,a0alpha,b0alpha,pSigma0,phiSigma0,l0p,d0p,l0phi,d0phi,link)
+  params <- checkCJS(parms,parmlist,mms,DM,iter,bin,thin,burnin,taccept,tuneadjust,maxnumbasis,a0delta,a0alpha,b0alpha,pSigma0,phiSigma0,l0p,d0p,l0phi,d0phi,a0psi,b0psi,link)
   
   data.type<-mms@data.type
   Enc.Mat<-mms@Enc.Mat
@@ -757,9 +760,9 @@ multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.
   phiprec0 <- solve(phiSigma0)
   a0delta <- checkvecs(a0delta,ifelse(mod.delta==formula(~type),3,2),"a0delta")
   
-  inits<-get_inits(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0delta,DM)
+  inits<-get_inits(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0delta,a0psi,b0psi,DM)
   
-  priorparms <-list(a0delta=a0delta,a0alpha=a0alpha,b0alpha=b0alpha,pbeta0=pbeta0,pSigma0=pSigma0,phibeta0=phibeta0,phiSigma0=phiSigma0,l0p=l0p,d0p=d0p,l0phi=l0phi,d0phi=d0phi)
+  priorparms <-list(a0delta=a0delta,a0alpha=a0alpha,b0alpha=b0alpha,pbeta0=pbeta0,pSigma0=pSigma0,phibeta0=phibeta0,phiSigma0=phiSigma0,l0p=l0p,d0p=d0p,l0phi=l0phi,d0phi=d0phi,a0psi=a0psi,b0psi=b0psi)
   
   message("\nFitting open population model with ",link," link\n")
   message("data type = \"",data.type,"\"\n")
@@ -786,12 +789,12 @@ multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
     cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimarkCJS_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
     clusterExport(cl,list("mcmcCJS"),envir=environment())  
-    chains <- parLapply(cl,1:nchains, function(ichain) mcmcCJS(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sdp,Prop.sdphi,maxnumbasis,pbeta0,pprec0,phibeta0,phiprec0,l0p,d0p,l0phi,d0phi,a0delta,a0alpha,b0alpha,link,printlog))
+    chains <- parLapply(cl,1:nchains, function(ichain) mcmcCJS(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sdp,Prop.sdphi,maxnumbasis,pbeta0,pprec0,phibeta0,phiprec0,l0p,d0p,l0phi,d0phi,a0delta,a0alpha,b0alpha,a0psi,b0psi,link,printlog))
     stopCluster(cl)
     gc()
   } else {
     chains <- vector('list',nchains)
-    chains[[nchains]] <- mcmcCJS(nchains,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sdp,Prop.sdphi,maxnumbasis,pbeta0,pprec0,phibeta0,phiprec0,l0p,d0p,l0phi,d0phi,a0delta,a0alpha,b0alpha,link,printlog)
+    chains[[nchains]] <- mcmcCJS(nchains,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sdp,Prop.sdphi,maxnumbasis,pbeta0,pprec0,phibeta0,phiprec0,l0p,d0p,l0phi,d0phi,a0delta,a0alpha,b0alpha,a0psi,b0psi,link,printlog)
     gc()
   }
   
