@@ -5,9 +5,9 @@
 \title{Multimodel inference for 'multimark' closed population abundance models}
 \usage{
 multimodelClosed(mms, modlist, modprior = rep(1/length(modlist),
-  length(modlist)), monparms = "N", miter = NULL, M1 = NULL,
-  pbetapropsd = 1, zppropsd = NULL, sigppropshape = 6,
-  sigppropscale = 4, printlog = FALSE)
+  length(modlist)), monparms = "N", miter = NULL, mburnin = 0,
+  mthin = 1, M1 = NULL, pbetapropsd = 1, zppropsd = NULL,
+  sigppropshape = 6, sigppropscale = 4, printlog = FALSE)
 }
 \arguments{
 \item{mms}{An object of class \code{multimarksetup}. See \code{\link{multimarksetup-class}}.}
@@ -19,6 +19,10 @@ multimodelClosed(mms, modlist, modprior = rep(1/length(modlist),
 \item{monparms}{Parameters to monitor. Only parameters common to all models can be monitored (e.g., "\code{pbeta[(Intercept)]}", "\code{N}", "\code{psi}"), but derived capture ("\code{p}") and recapture ("\code{c}") probabilities can also be monitored. Default is \code{monparms = "N"}.}
 
 \item{miter}{The number of RJMCMC iterations per chain. If \code{NULL}, then the number of MCMC iterations for each individual model chain is used.}
+
+\item{mburnin}{Number of burn-in iterations (\code{0 <= mburnin < miter}).}
+
+\item{mthin}{Thinning interval for monitored parameters.}
 
 \item{M1}{Integer vector indicating the initial model for each chain, where \code{M1_j=i} initializes the RJMCMC algorithm for chain j in the model corresponding to \code{modlist[[i]]} for i=1,...,  \code{length(modlist)}. If \code{NULL}, the algorithm for all chains is initialized in the most general model. Default is \code{M1=NULL}.}
 

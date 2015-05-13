@@ -498,7 +498,7 @@ checkCJS<-function(parms,parmlist,mms,DM,iter,bin,thin,burnin,taccept,tuneadjust
     if(tuneadjust<=0 | tuneadjust>1) stop ("'tuneadjust' must be >0 and <=1")
   }
   
-  if(thin>max(1,floor((iter-burnin)/2)) | thin<1) stop("'thin' must be >0 and <=",max(1,floor((iter-burnin)/2)))
+  if(thin>max(1,floor((iter-burnin+1)/2)) | thin<1) stop("'thin' must be >0 and <=",max(1,floor((iter-burnin+1)/2)))
   if(mms@ncolbasis & (maxnumbasis<1 | maxnumbasis>mms@ncolbasis)) stop("'maxnumbasis' must be between 1 and ",mms@ncolbasis)
   if(!all(c(a0delta,a0alpha,b0alpha,l0p,d0p,l0phi,d0phi,a0psi,b0psi,diag(as.matrix(pSigma0)),diag(as.matrix(phiSigma0)))>0)) stop("'a0delta', 'a0alpha', 'b0alpha', 'l0p', 'd0p', 'l0phi', 'd0phi', 'a0psi', 'b0psi', and diagonal elements of 'pSigma0' and 'phiSigma0' must be >0")
   
@@ -895,13 +895,15 @@ checkparmsCJS <- function(mms,modlist,params,parmlist,M){
   }
 }
 
-checkmmCJSinput<-function(mms,modlist,nmod,nchains,iter,modprior,M1){
+checkmmCJSinput<-function(mms,modlist,nmod,nchains,miter,mburnin,mthin,modprior,M1){
   if(class(mms)!="multimarksetup") stop("'mms' must be an object of class 'multimarksetup'")
   if(!all(match(unlist(unique(lapply(modlist,names))),c("mcmc","mod.p","mod.phi","mod.delta","DM","initial.values","priorparms"),nomatch=0))) stop("each object in 'modlist' must be a list returned by multimarkCJS()")
   if(!all(lapply(modlist,function(x) is.mcmc.list(x$mcmc))==TRUE)) stop("each object in 'modlist' must be a list returned by multimarkCJS() output")
   if(nmod<2) stop("'modlist' must contain at least two models")
   if(length(nchains)!=1) stop("all models must have same number of chains")
-  if(length(iter)!=1) stop("all chains must have same number of iterations")
+  if(length(miter)!=1) stop("all chains must have same number of iterations")
+  if(miter<=mburnin) stop("'mburnin' must be less than ",miter) 
+  if(mthin>max(1,floor((miter-mburnin+1)/2)) | mthin<1) stop("'mthin' must be >0 and <=",max(1,floor((miter-mburnin+1)/2)))
   if(length(modprior)!=nmod | base::sum(modprior)!=1) stop(paste("'modprior' must be a vector of length ",nmod," that sums to 1"))
   if(mms@data.type=="sometimes" & !all(lapply(modlist,function(x) any(varnames(x$mcmc)=="alpha"))==TRUE)) stop("'alpha' parameter not found for all models")
   if(length(M1)!=nchains) stop("'M1' must be an integer vector of length ",nchains)
@@ -1052,9 +1054,9 @@ monitorparmsCJS <- function(parms,parmlist,noccas){
   list(commonparms=commonparms,parms=parms,namesp=namesp,namesphi=namesphi,getprobitp=getprobitp,getprobitphi=getprobitphi)
 }
 
-rjmcmcCJS <- function(ichain,M,noccas,data_type,alpha,C,All.hists,modlist,DMlist,deltalist,priorlist,mod.p.h,mod.phi.h,iter,miter,modprior,M1,monitorparms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale,pmodnames,phimodnames,deltamodnames,printlog){
+rjmcmcCJS <- function(ichain,M,noccas,data_type,alpha,C,All.hists,modlist,DMlist,deltalist,priorlist,mod.p.h,mod.phi.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale,pmodnames,phimodnames,deltamodnames,printlog){
   
-  multimodel <- matrix(0,nrow=miter,ncol=length(monitorparms$parms)+1,dimnames=list(NULL,c(monitorparms$parms,"M")))
+  multimodel <- matrix(0,nrow=(max(1,floor(miter/mthin)))-(floor(mburnin/mthin)),ncol=length(monitorparms$parms)+1,dimnames=list(NULL,c(monitorparms$parms,"M")))
   
   nmod <- length(modlist)
   mod.prob.brob <- as.brob(numeric(nmod))
@@ -1107,9 +1109,6 @@ rjmcmcCJS <- function(ichain,M,noccas,data_type,alpha,C,All.hists,modlist,DMlist
     modmissingparms <- drawmissingCJS(M.cur,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale)
     cur.parms <- c(modlist[[M.cur]][sample(iter,1),],modmissingparms)
     
-    multimodel[iiter,"M"] <- M.cur
-    multimodel[iiter,commonparms] <- cur.parms[commonparms]
-    
     DM <- DMlist[[M.cur]]
     DM$mod.delta <- deltalist[[M.cur]]
     DM$mod.p.h <- mod.p.h[[M.cur]]
@@ -1117,8 +1116,12 @@ rjmcmcCJS <- function(ichain,M,noccas,data_type,alpha,C,All.hists,modlist,DMlist
     
     cur.parms.list <- getcurCJSparmslist(cur.parms,DM,M,noccas,data_type,alpha)  
     
-    multimodel[iiter,monitorparms$namesp] <- monitorparms$getprobitp(DM$mod.p.h,DM$p,cur.parms.list[[1]]$pbeta,cur.parms.list[[1]]$sigma2_zp)
-    multimodel[iiter,monitorparms$namesphi] <- monitorparms$getprobitphi(DM$mod.phi.h,DM$phi,cur.parms.list[[1]]$phibeta,cur.parms.list[[1]]$sigma2_zphi)
+    if(iiter>mburnin & !iiter%%mthin){
+      multimodel[iiter/mthin-floor(mburnin/mthin),"M"] <- M.cur
+      multimodel[iiter/mthin-floor(mburnin/mthin),commonparms] <- cur.parms[commonparms]
+      multimodel[iiter/mthin-floor(mburnin/mthin),monitorparms$namesp] <- monitorparms$getprobitp(DM$mod.p.h,DM$p,cur.parms.list[[1]]$pbeta,cur.parms.list[[1]]$sigma2_zp)
+      multimodel[iiter/mthin-floor(mburnin/mthin),monitorparms$namesphi] <- monitorparms$getprobitphi(DM$mod.phi.h,DM$phi,cur.parms.list[[1]]$phibeta,cur.parms.list[[1]]$sigma2_zphi)
+    }
     
     if(!(iiter%%(miter/ min(miter,100)))) {
       if(printlog){
@@ -1141,6 +1144,8 @@ rjmcmcCJS <- function(ichain,M,noccas,data_type,alpha,C,All.hists,modlist,DMlist
 #' @param modprior Vector of length \code{length(modlist)} containing prior model probabilities. Default is \code{modprior = rep(1/length(modlist), length(modlist))}.
 #' @param monparms Parameters to monitor. Only parameters common to all models can be monitored (e.g., "\code{pbeta[(Intercept)]}", "\code{phibeta[(Intercept)]}", "\code{psi}"), but derived survival ("\code{phi}") and capture ("\code{p}") probabilities can also be monitored. Default is \code{monparms = "phi"}.
 #' @param miter The number of RJMCMC iterations per chain. If \code{NULL}, then the number of MCMC iterations for each individual model chain is used.
+#' @param mburnin Number of burn-in iterations (\code{0 <= mburnin < miter}).
+#' @param mthin Thinning interval for monitored parameters.
 #' @param M1 Integer vector indicating the initial model for each chain, where \code{M1_j=i} initializes the RJMCMC algorithm for chain j in the model corresponding to \code{modlist[[i]]} for i=1,...,  \code{length(modlist)}. If \code{NULL}, the algorithm for all chains is initialized in the most general model. Default is \code{M1=NULL}.
 #' @param pbetapropsd Scaler specifying the standard deviation of the Normal(0, pbetapropsd) proposal distribution for "\code{pbeta}"  parameters. Default is \code{pbetapropsd=1}. See Barker & Link (2013) for more details.
 #' @param zppropsd Scaler specifying the standard deviation of the Normal(0, zppropsd) proposal distribution for "\code{zp}"  parameters. Only applies if at least one (but not all) model(s) include individual hetergeneity in detection probability. If \code{NULL}, zppropsd = sqrt(sigma2_zp) is used. Default is \code{zppropsd=NULL}. See Barker & Link (2013) for more details.  
@@ -1192,7 +1197,7 @@ rjmcmcCJS <- function(ichain,M,noccas,data_type,alpha,C,All.hists,modlist,DMlist
 #' 
 #' #multimodel posterior summary for survival (display first cohort only)
 #' summary(sim.M$rjmcmc[,paste0("phi[1,",1:(noccas-1),"]")])}
-multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlist)),monparms="phi",miter=NULL,M1=NULL,pbetapropsd=1,zppropsd=NULL,phibetapropsd=1,zphipropsd=NULL,sigppropshape=1,sigppropscale=0.01,sigphipropshape=1,sigphipropscale=0.01,printlog=FALSE){
+multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlist)),monparms="phi",miter=NULL,mburnin=0,mthin=1,M1=NULL,pbetapropsd=1,zppropsd=NULL,phibetapropsd=1,zphipropsd=NULL,sigppropshape=1,sigppropscale=0.01,sigphipropshape=1,sigphipropscale=0.01,printlog=FALSE){
   
   nmod <- length(modlist)
   iter <- unlist(unique(lapply(modlist,function(x) unique(lapply(x$mcmc,nrow)))))
@@ -1202,14 +1207,14 @@ multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlis
   
   if(is.null(M1)) M1 <- rep(which.max(lapply(params,length))[1],nchains)
   
-  checkmmCJSinput(mms,modlist,nmod,nchains,iter,modprior,M1)
+  if(is.null(miter)) miter <- iter
+  
+  checkmmCJSinput(mms,modlist,nmod,nchains,miter,mburnin,mthin,modprior,M1)
   
   noccas<-ncol(mms@Enc.Mat)
   M<-nrow(mms@Enc.Mat)
   All.hists<-matrix(mms@vAll.hists,byrow=TRUE,ncol=noccas)
   C<-mms@C
-  
-  if(is.null(miter)) miter <- iter
   
   pmodnames <- unlist(lapply(modlist,function(x) x$mod.p)) 
   phimodnames <- unlist(lapply(modlist,function(x) x$mod.phi))
@@ -1246,13 +1251,19 @@ multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlis
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
     cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimodelCJS_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
     clusterExport(cl,list("rjmcmcCJS"),envir=environment())  
-    multimodel <- parLapply(cl,1:nchains, function(ichain) rjmcmcCJS(ichain,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,priorlist,mod.p.h,mod.phi.h,iter,miter,modprior,M1[ichain],monitorparms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale,pmodnames,phimodnames,deltamodnames,printlog))
+    multimodel <- parLapply(cl,1:nchains, function(ichain) rjmcmcCJS(ichain,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,priorlist,mod.p.h,mod.phi.h,iter,miter,mburnin,mthin,modprior,M1[ichain],monitorparms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale,pmodnames,phimodnames,deltamodnames,printlog))
     stopCluster(cl)
     gc()
   } else {
     multimodel <- vector('list',nchains)
-    multimodel[[nchains]] <- rjmcmcCJS(nchains,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[nchains]]),DMlist,deltalist,priorlist,mod.p.h,mod.phi.h,iter,miter,modprior,M1,monitorparms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale,pmodnames,phimodnames,deltamodnames,printlog)
+    multimodel[[nchains]] <- rjmcmcCJS(nchains,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[nchains]]),DMlist,deltalist,priorlist,mod.p.h,mod.phi.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale,pmodnames,phimodnames,deltamodnames,printlog)
     gc()
+  }
+  
+  if(mburnin<mthin){
+    temp=seq(mthin,max(1,miter),mthin)
+  } else {
+    temp=seq(mthin*(floor(mburnin/mthin)+1),miter,mthin)
   }
   
   pos.prob <- vector('list',nchains)
@@ -1260,6 +1271,7 @@ multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlis
     pos.prob[[ichain]] <-hist(multimodel[[ichain]][,"M"],plot=F,breaks=0:nmod)$density
     names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")phi(",phimodnames,")delta(",deltamodnames,")")
     multimodel[[ichain]] <- mcmc(multimodel[[ichain]])
+    attributes(multimodel[[ichain]])$mcpar <- c(head(temp,n=1),tail(temp,n=1),mthin)
   }
   
   multimodel <- as.mcmc.list(multimodel)

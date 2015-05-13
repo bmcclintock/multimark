@@ -5,10 +5,11 @@
 \title{Multimodel inference for 'multimark' open population survival models}
 \usage{
 multimodelCJS(mms, modlist, modprior = rep(1/length(modlist),
-  length(modlist)), monparms = "phi", miter = NULL, M1 = NULL,
-  pbetapropsd = 1, zppropsd = NULL, phibetapropsd = 1,
-  zphipropsd = NULL, sigppropshape = 1, sigppropscale = 0.01,
-  sigphipropshape = 1, sigphipropscale = 0.01, printlog = FALSE)
+  length(modlist)), monparms = "phi", miter = NULL, mburnin = 0,
+  mthin = 1, M1 = NULL, pbetapropsd = 1, zppropsd = NULL,
+  phibetapropsd = 1, zphipropsd = NULL, sigppropshape = 1,
+  sigppropscale = 0.01, sigphipropshape = 1, sigphipropscale = 0.01,
+  printlog = FALSE)
 }
 \arguments{
 \item{mms}{An object of class \code{multimarksetup}. See \code{\link{multimarksetup-class}}.}
@@ -20,6 +21,10 @@ multimodelCJS(mms, modlist, modprior = rep(1/length(modlist),
 \item{monparms}{Parameters to monitor. Only parameters common to all models can be monitored (e.g., "\code{pbeta[(Intercept)]}", "\code{phibeta[(Intercept)]}", "\code{psi}"), but derived survival ("\code{phi}") and capture ("\code{p}") probabilities can also be monitored. Default is \code{monparms = "phi"}.}
 
 \item{miter}{The number of RJMCMC iterations per chain. If \code{NULL}, then the number of MCMC iterations for each individual model chain is used.}
+
+\item{mburnin}{Number of burn-in iterations (\code{0 <= mburnin < miter}).}
+
+\item{mthin}{Thinning interval for monitored parameters.}
 
 \item{M1}{Integer vector indicating the initial model for each chain, where \code{M1_j=i} initializes the RJMCMC algorithm for chain j in the model corresponding to \code{modlist[[i]]} for i=1,...,  \code{length(modlist)}. If \code{NULL}, the algorithm for all chains is initialized in the most general model. Default is \code{M1=NULL}.}
 
