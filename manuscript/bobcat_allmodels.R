@@ -6,7 +6,8 @@ burnin <- 200000
 adapt <- 100000
 thin <- 20
 
-miter <- 300000
+miter <- 310000
+mburnin <- 10000
 
 bobcat.dot.same <- multimarkClosed(mms=setup,mod.p=~1,mod.delta=~1,parms="all",nchains=2,iter=iter,burnin=burnin,adapt=adapt,thin=thin,printlog=TRUE)
 bobcat.time.same <- multimarkClosed(mms=setup,mod.p=~time,mod.delta=~1,parms="all",nchains=2,iter=iter,burnin=burnin,adapt=adapt,thin=thin,printlog=TRUE)
@@ -28,5 +29,5 @@ bobcat.c.time.h <- multimarkClosed(mms=setup,mod.p=~c+time+h,parms="all",nchains
 modlist<-list(mod1=bobcat.dot.same,mod2=bobcat.time.same,mod3=bobcat.c.same,mod4=bobcat.h.same,mod5=bobcat.c.time.same,mod6=bobcat.c.h.same,mod7=bobcat.time.h.same,mod8=bobcat.c.time.h.same,mod9=bobcat.dot,mod10=bobcat.time,mod11=bobcat.c,mod12=bobcat.h,mod13=bobcat.c.time,mod14=bobcat.c.h,mod15=bobcat.time.h,mod16=bobcat.c.time.h)
 
 stime=proc.time()
-bobcat.M.all<-multimodelClosed(mms=setup,modlist=modlist,miter=miter,monparms=c("N","p","c"))
+bobcat.M.all<-multimodelClosed(mms=setup,modlist=modlist,miter=miter,mburnin=mburnin,monparms=c("N","p","c"))
 etime=proc.time()-stime
