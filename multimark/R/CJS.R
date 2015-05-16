@@ -431,8 +431,8 @@ priorsCJS<-function(parms,DM,priorparms,data_type,C,noccas){
   priors <- (dmvnorm(parms$pbeta,priorparms$pbeta0,priorparms$pSigma0,log=TRUE)
              + dmvnorm(parms$phibeta,priorparms$phibeta0,priorparms$phiSigma0,log=TRUE)
              + dbeta(parms$psi,priorparms$a0psi,priorparms$b0psi,log=TRUE)
-             + base::sum(dbinom((firstcap<noccas),1,parms$psi,log=TRUE)))
-             #+ base::sum(dbinom((parms$H>1),1,parms$psi,log=TRUE)))
+             #+ base::sum(dbinom((firstcap<noccas),1,parms$psi,log=TRUE)))
+             + base::sum(dbinom((parms$H>1),1,parms$psi,log=TRUE)))
   
   if(DM$mod.delta==formula(~type)){
     priors <- priors + ddirichlet(c(parms$delta_1,parms$delta_2,1.-parms$delta_1-parms$delta_2),priorparms$a0delta)
