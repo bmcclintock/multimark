@@ -6,6 +6,10 @@ NEW FEATURES
 
 * burn-in and thinning interval can now be user specified in 'multimodelCJS()' and 'multimodelClosed()' using 'mburnin' and 'mthin' arguments
 
+CHANGES
+
+* Minor bug fixes in updates for 'psi', 'sigma2_zp', and 'sigma2_zphi' in 'multimarkCJS()'
+
 
 multimark 1.1.4 2015-04-29
 -----------------

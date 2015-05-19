@@ -25,7 +25,7 @@
 
 \usepackage{Sweave}
 \begin{document}
-\input{multimarkMEE_S1-concordance}
+\input{multimark_S1-concordance}
 %\SweaveOpts{concordance=TRUE}
 %% TITLE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \global\long\def\baselinestretch{1.8}
@@ -93,9 +93,9 @@ Starting from a permissible ${\bf f}$ conditional on the observed encounter hist
   \item \label{accept} Apportion ${\bf f^*}$ to individuals following \cite{McClintockEtAl2014}, and accept proposed move based on the Metropolis-Hastings ratio described therein [pp. 2470-2472, steps 9(b)-9(c)].
 \end{enumerate}
 
-Note that because \verb|multimark| uses ``semi-complete'' data likelihoods that condition on the number of unique individuals encountered at least once $(n)$, the dimension of the data-augmented encounter histories $(M)$ described in \cite{McClintockEtAl2014} is determined by the number of observed encounter histories (i.e. $M=n_1+n_2+n_{known}$), such that $f_1=M-n$ and $n=\sum_{j=2}^{5^T} f_j$. Any additional constraints, such as those resulting from encounter histories being designated as known with certainty using the \textit{known} argument in \textit{processdata()}, are accounted for by simple modifications to steps \ref{drawr}-\ref{drawc_r}. 
+Any additional constraints, such as those resulting from encounter histories being designated as known with certainty using the \textit{known} argument in \textit{processdata()}, are accounted for by simple modifications to steps \ref{drawr}-\ref{drawc_r}. In terms of mixing, it can sometimes be advantageous to explore more than one move at a time. At each iteration of the chain, the argument \textit{maxnumbasis} specifies how many times to perform steps \ref{drawr}-\ref{propose} in sequence before evaluating step \ref{accept}. The default for \textit{multimarkCJS()} and \textit{multimarkClosed()} is \textit{maxnumbasis=1}.
 
-In terms of mixing, it can sometimes be advantageous to explore more than one move at a time. At each iteration of the chain, the argument \textit{maxnumbasis} specifies how many times to perform steps \ref{drawr}-\ref{propose} in sequence before evaluating step \ref{accept}. The default for \textit{multimarkCJS()} and \textit{multimarkClosed()} is \textit{maxnumbasis=1}.
+Note that because \verb|multimark| uses ``semi-complete'' data likelihoods that condition on the number of unique individuals encountered at least once $(n)$, the dimension of the data-augmented encounter histories $(M)$ described in \cite{McClintockEtAl2014} is determined by the number of observed encounter histories (i.e. $M=n_1+n_2+n_{known}$) such that $f_1=M-n$. Letting $q_i \sim \text{Bernoulli} \left(\psi\right)$ be an indicator for whether or not individual $i$ belongs to the $n$ unique individuals encountered at least once (i.e. $\sum_{i=1}^M q_i = n$), then $q_i=1$ if $H_i>1$ (otherwise $q_i=0$), where $H_i$ is the latent encounter history index for individual $i$ $\left(\sum_{i=1}^M I(H_i=j) = f_j\right)$, and $\psi \sim \text{Beta}\left(a^0_\psi,b^0_\psi\right)$ is the probability that a randomly selected individual from the $M$ observed individuals belongs to the $n$ unique individuals encountered at least once. The defaults in \textit{multimarkCJS()} and \textit{multimarkClosed()} are $a^0_\psi=b^0_\psi=1$.
 
 \bibliographystyle{mee}
 \bibliography{master.bib}

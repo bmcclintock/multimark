@@ -23,8 +23,9 @@
 
 \makeatother
 
+\usepackage{Sweave}
 \begin{document}
-\SweaveOpts{concordance=TRUE}
+\input{multimark-concordance}
 %\SweaveOpts{concordance=TRUE}
 %% TITLE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \global\long\def\baselinestretch{1.8}
@@ -225,52 +226,109 @@ There are three types of multiple-mark data that can be analyzed with \verb|mult
 \end{table}
 
 \verb|multimark| expects observed encounter history data to be a matrix with rows corresponding to individuals and columns corresponding to sampling occasions. Because the bobcat data were collected from single-camera stations, simultaneous left- and right-sided encounters were not possible; hence $\alpha=0$ and the rows consist of either 0's and 1's or 0's and 2's:
-<<load-library, echo=TRUE>>=
-library(multimark)
-data(bobcat)
-head(bobcat)
-tail(bobcat)
-@
+\begin{Schunk}
+\begin{Sinput}
+> library(multimark)
+> data(bobcat)
+> head(bobcat)
+\end{Sinput}
+\begin{Soutput}
+    occ1 occ2 occ3 occ4 occ5 occ6 occ7 occ8
+ID2    0    0    0    0    0    1    1    0
+ID3    0    0    1    0    1    0    0    0
+ID4    0    0    0    0    1    0    0    0
+ID6    1    0    0    0    0    0    0    0
+ID7    0    0    1    0    0    0    0    1
+ID8    0    1    0    0    0    0    0    0
+\end{Soutput}
+\begin{Sinput}
+> tail(bobcat)
+\end{Sinput}
+\begin{Soutput}
+     occ1 occ2 occ3 occ4 occ5 occ6 occ7 occ8
+ID49    0    0    2    0    0    0    0    0
+ID50    0    0    2    0    0    0    0    0
+ID51    0    0    0    2    0    0    0    0
+ID52    0    0    0    0    2    0    0    0
+ID53    0    0    0    0    0    2    0    0
+ID54    0    0    0    0    0    0    2    0
+\end{Soutput}
+\end{Schunk}
 The ordering of the rows is unimportant; the package automatically recognizes which histories belong to ${\bf {\tilde Y}}_1$, ${\bf {\tilde Y}}_2$, and, if applicable, ${\bf {\tilde Y}}_{known}$.
 
 The \verb|multimark| function \textit{processdata()} performs all additional data formatting. The basic inputs are the matrix of observed encounter histories (\textit{Enc.Mat}) and the data type (\textit{data.type}):
-<<load-library, echo=TRUE>>=
-bobcatsetup <- processdata(Enc.Mat=bobcat,data.type="never")
-@
+\begin{Schunk}
+\begin{Sinput}
+> bobcatsetup <- processdata(Enc.Mat=bobcat,data.type="never")
+\end{Sinput}
+\end{Schunk}
 This creates an object of class \textit{multimarksetup} that includes everything needed for model fitting and further analysis. In particular, \textit{processdata()} calculates all of the necessary ingredients for identifying the feasible set of latent encounter histories \citep[for technical details see][]{BonnerHolmberg2013,McClintockEtAl2013a}. There is also a feature enabling designation of individual encounter histories as known with certainty despite no simultaneous type 1 and type 2 detections (i.e. $y_{i,t} \ne 4$ $\forall$ $t$), a situation that can arise from a previous physical capture or concurrent telemetry study \citep[e.g.][]{McClintockEtAl2013a}. This feature can also be used to ``trick'' the package to perform analyses with traditional capture-recapture data with a single mark type.
 
 \subsection{Model fitting}
 The package currently includes functions \textit{multimarkCJS()} and \textit{multimarkClosed()} for fitting CJS and closed population models, respectively. Use of these functions is perhaps best explained by example. To fit a simple closed population model assuming constant detection probability using the default settings:
-<<load-library, echo=TRUE, eval=FALSE>>=
-bobcat.dot <- multimarkClosed(mms=bobcatsetup,
-                              mod.p=~1)
-@
-<<load-library, echo=FALSE, eval=TRUE, include=FALSE, results=hide, warning=FALSE, message=FALSE>>=
-bobcat.dot <- multimarkClosed(mms=bobcatsetup,
-                              mod.p=~1)
-@
+\begin{Schunk}
+\begin{Sinput}
+> bobcat.dot <- multimarkClosed(mms=bobcatsetup,
++                               mod.p=~1)
+\end{Sinput}
+\end{Schunk}
 Equivalently, \textit{Enc.Mat} and \textit{data.type} can be provided in lieu of the \textit{mms} argument. In this case, \textit{processdata()} is called from within \textit{multimarkClosed()}:
-<<load-library, echo=TRUE, eval=FALSE>>=
-bobcat.dot <- multimarkClosed(Enc.Mat=bobcat,data.type="never",
-                              mod.p=~1)
-@
+\begin{Schunk}
+\begin{Sinput}
+> bobcat.dot <- multimarkClosed(Enc.Mat=bobcat,data.type="never",
++                               mod.p=~1)
+\end{Sinput}
+\end{Schunk}
 This creates a list, \verb|bobcat.dot|, containing the MCMC output for the model \\ 
 (\verb|bobcat.dot$mcmc|). The MCMC output is of class \textit{mcmc}, which should be familiar to users of the R package \verb|coda| \citep{PlummerEtAl2006}:
-<<load-library, echo=TRUE>>=
-summary(bobcat.dot$mcmc)
-coda::effectiveSize(bobcat.dot$mcmc)
-@
+\begin{Schunk}
+\begin{Sinput}
+> summary(bobcat.dot$mcmc)
+\end{Sinput}
+\begin{Soutput}
+Iterations = 2001:12000
+Thinning interval = 1 
+Number of chains = 1 
+Sample size per chain = 10000 
+
+1. Empirical mean and standard deviation for each variable,
+   plus standard error of the mean:
+
+                      Mean      SD  Naive SE Time-series SE
+pbeta[(Intercept)] -1.4607 0.24430 0.0024430       0.011345
+N                  36.7901 6.00502 0.0600502       0.308523
+delta_1             0.3512 0.06969 0.0006969       0.003857
+delta_2             0.3703 0.07016 0.0007016       0.003403
+
+2. Quantiles for each variable:
+
+                      2.5%     25%     50%     75%   97.5%
+pbeta[(Intercept)] -1.9684 -1.6154 -1.4524 -1.2990 -0.9968
+N                  28.0000 33.0000 36.0000 40.0000 51.0000
+delta_1             0.2173  0.3041  0.3495  0.3983  0.4911
+delta_2             0.2329  0.3226  0.3697  0.4173  0.5097
+\end{Soutput}
+\begin{Sinput}
+> coda::effectiveSize(bobcat.dot$mcmc)
+\end{Sinput}
+\begin{Soutput}
+pbeta[(Intercept)]                  N            delta_1            delta_2 
+          463.7188           378.8376           326.4041           425.0732 
+\end{Soutput}
+\end{Schunk}
 Here we can see posterior summaries for the default monitored parameters $(\beta^p, N, \delta_1, \delta_2)$. Based on the effective sample sizes, it's clear that the default chain length is inadequate for this example; a typical ``rule of thumb'' is effective sample sizes $>4000$ for all quantities of interest.
 
 Other common models for detection probability can be easily specified using formulas for \textit{mod.p}, including shorthands for time variation (\textit{mod.p={\~{}}time}), temporal trends (\textit{mod.p={\~{}}Time}), behavioural response to first capture (\textit{mod.p={\~{}}c}), and individual heterogeneity (\textit{mod.p={\~{}}h}). Additive or interaction terms can be included (e.g. \textit{mod.p={\~{}}time+c+h}, \textit{mod.p=\~{}Time+I(Time\^{}2)}, \textit{mod.p={\~{}}time*c}). User-specifed temporal covariates in detection probability can also be used: 
-<<load-library, echo=TRUE, eval=FALSE>>=
-dummy <- rnorm(ncol(bobcat)) # some fake temporal covariates
-bobcatsetup <- processdata(Enc.Mat=bobcat,data.type="never",
-                    covs=data.frame(cov1=dummy))
-bobcat.dummy_h <- multimarkClosed(mms=bobcatsetup,
-                    mod.p=~cov1+h,
-                    parms=c("pbeta","N","delta","sigma2_zp"))
-@
+\begin{Schunk}
+\begin{Sinput}
+> dummy <- rnorm(ncol(bobcat)) # some fake temporal covariates
+> bobcatsetup <- processdata(Enc.Mat=bobcat,data.type="never",
++                     covs=data.frame(cov1=dummy))
+> bobcat.dummy_h <- multimarkClosed(mms=bobcatsetup,
++                     mod.p=~cov1+h,
++                     parms=c("pbeta","N","delta","sigma2_zp"))
+\end{Sinput}
+\end{Schunk}
 The \textit{covs} argument is a data frame used to enter discrete- or continuous-valued temporal covariates, and \textit{parms} specifies the parameters to monitor. 
 %As another example, \textit{mod.p=~time} is equivalent to:
 %<<load-library, echo=TRUE>>=
@@ -286,108 +344,111 @@ The \textit{covs} argument is a data frame used to enter discrete- or continuous
 There are currently two options for specifying models for ${\boldsymbol \delta}$, the default \textit{mod.delta={\~{}}type} (i.e. $\delta_1 \ne \delta_2$), and \textit{mod.delta={\~{}}1} (i.e. $\delta_1 = \delta_2$). There are many additional arguments for specifying the number (\textit{nchains}) and length (\textit{iter}) of chains, including burn-in and adaptive periods. For potential improvements in mixing, the number of ``moves'' used to  update the feasible set of latent encounter histories at each iteration can be user specified (\textit{maxnumbasis}; see Appendix S1). The default priors are ``uninformative'', but user-specified priors can be used for each parameter. Initial values can be automatically generated or user specified for each parameter.
 
 The function \textit{multimarkCJS()} works in exactly the same fashion, with the only notable difference being specification of models for $\phi$ (in addition to $p$ and ${\bf \delta}$). Although CJS-specific data are not included with \verb|multimark|, data can be simulated using the \textit{simdataCJS()} function (or \textit{simdataClosed()} for closed populations):
-<<load-library, echo=FALSE>>=
-set.seed(10)
-@
 
-<<load-library, echo=TRUE>>=
-CJSdata <- simdataCJS(N=100,noccas=7,pbeta=-0.25,phibeta=1,delta_1=0.2,
-            delta_2=0.5,alpha=0.5,sigma2_zphi=0.25,data.type="sometimes")
-Enc.Mat <- CJSdata$Enc.Mat
-head(Enc.Mat)
-CJSsetup <- processdata(Enc.Mat=Enc.Mat,data.type="sometimes")
-CJS.dot.h <- multimarkCJS(mms=CJSsetup,
-              mod.p=~1,mod.delta=~type,mod.phi=~h,
-              parms=c("pbeta","delta","alpha","phibeta","sigma2_zphi"),
-              nchains=2,iter=45000,burnin=5000)
-summary(CJS.dot.h$mcmc)
-@
+\begin{Schunk}
+\begin{Sinput}
+> CJSdata <- simdataCJS(N=100,noccas=7,pbeta=-0.25,phibeta=1,delta_1=0.2,
++             delta_2=0.5,alpha=0.5,sigma2_zphi=0.25,data.type="sometimes")
+> Enc.Mat <- CJSdata$Enc.Mat
+> head(Enc.Mat)
+\end{Sinput}
+\begin{Soutput}
+     [,1] [,2] [,3] [,4] [,5] [,6] [,7]
+[1,]    2    0    4    0    0    0    0
+[2,]    1    0    0    0    0    0    0
+[3,]    1    0    0    0    0    0    0
+[4,]    4    3    0    0    0    0    0
+[5,]    1    0    0    0    0    0    0
+[6,]    3    2    0    0    2    2    4
+\end{Soutput}
+\begin{Sinput}
+> CJSsetup <- processdata(Enc.Mat=Enc.Mat,data.type="sometimes")
+> CJS.dot.h <- multimarkCJS(mms=CJSsetup,
++               mod.p=~1,mod.delta=~type,mod.phi=~h,
++               parms=c("pbeta","delta","alpha","phibeta","sigma2_zphi"),
++               nchains=2,iter=45000,burnin=5000)
+> summary(CJS.dot.h$mcmc)
+\end{Sinput}
+\begin{Soutput}
+Iterations = 5001:45000
+Thinning interval = 1 
+Number of chains = 2 
+Sample size per chain = 40000 
+
+1. Empirical mean and standard deviation for each variable,
+   plus standard error of the mean:
+
+                        Mean      SD  Naive SE Time-series SE
+pbeta[(Intercept)]   -0.1506 0.13261 0.0004688       0.004015
+phibeta[(Intercept)]  1.3628 0.28253 0.0009989       0.011343
+alpha                 0.4120 0.11487 0.0004061       0.002768
+sigma2_zphi           0.0358 0.08388 0.0002965       0.004013
+delta_1               0.1966 0.04696 0.0001660       0.001721
+delta_2               0.6094 0.05155 0.0001823       0.001148
+
+2. Quantiles for each variable:
+
+                          2.5%       25%      50%      75%  97.5%
+pbeta[(Intercept)]   -0.399585 -0.242602 -0.15405 -0.06165 0.1178
+phibeta[(Intercept)]  0.910577  1.165018  1.32782  1.52288 2.0049
+alpha                 0.206888  0.329362  0.40570  0.48827 0.6517
+sigma2_zphi           0.002717  0.006915  0.01313  0.02964 0.2260
+delta_1               0.110136  0.163964  0.19486  0.22763 0.2930
+delta_2               0.506525  0.574743  0.61029  0.64484 0.7074
+\end{Soutput}
+\end{Schunk}
 An additional feature for \textit{multimarkCJS()} is simple specification of cohort effects for $p$ (\textit{mod.p={\~{}}age}) and $\phi$ (\textit{mod.phi={\~{}}age}), which is useful for investigating structure related to age (or time of first capture).
 
 \subsection{Further analysis}
 While the \verb|coda| package can be used to summarize, plot, and assess convergence of MCMC samples from \textit{multimarkClosed()} and \textit{multimarkCJS()}, several additional functions are available for further analysis. Because link functions are used for $p$ and $\phi$, the functions \textit{getprobsClosed()} and \textit{getprobsCJS()} provide estimates on the real scale:
-<<load-library, echo=TRUE, eval=FALSE>>=
-bobcat.c <- multimarkClosed(mms=bobcatsetup,mod.p=~c)
-pc <- getprobsClosed(bobcat.c)
-summary(pc[,c("p[1]","c[2]")])
-@
-<<load-library, echo=FALSE, eval=TRUE, include=FALSE, results=hide, warning=FALSE, message=FALSE>>=
-bobcat.c <- multimarkClosed(mms=bobcatsetup,mod.p=~c)
-pc <- getprobsClosed(bobcat.c)
-@
-<<load-library, echo=FALSE>>=
-summary(pc[,c("p[1]","c[2]")])
-@
+\begin{Schunk}
+\begin{Sinput}
+> bobcat.c <- multimarkClosed(mms=bobcatsetup,mod.p=~c)
+> pc <- getprobsClosed(bobcat.c)
+> summary(pc[,c("p[1]","c[2]")])
+\end{Sinput}
+\end{Schunk}
+\begin{Schunk}
+\begin{Soutput}
+Iterations = 2001:12000
+Thinning interval = 1 
+Number of chains = 1 
+Sample size per chain = 10000 
+
+1. Empirical mean and standard deviation for each variable,
+   plus standard error of the mean:
+
+       Mean      SD  Naive SE Time-series SE
+p[1] 0.1408 0.05535 0.0005535       0.005415
+c[2] 0.2586 0.05406 0.0005406       0.003720
+
+2. Quantiles for each variable:
+
+       2.5%     25%    50%    75%  97.5%
+p[1] 0.0473 0.09948 0.1379 0.1749 0.2630
+c[2] 0.1587 0.22002 0.2568 0.2941 0.3705
+\end{Soutput}
+\end{Schunk}
 Here, \verb|p[1]| and \verb|c[2]| refer to the probabilities of capture and recapture at times $t=1$ and $t=2$, respectively.
 
 Based on \cite{BarkerLink2013}, Bayesian multimodel inference using reversible jump MCMC is implemented through the functions \textit{multimodelClosed()} and \textit{multimodelCJS()}. Using this approach, models are first run individually and a Gibbs sampler explores the model space using the individual model MCMC output. All that must be provided to the multimodel inference functions is an object of class \textit{multimarksetup} and a list containing the output from at least two models. The models must have the same number and length of MCMC chains, and all model parameters must be monitored (this is accomplished by setting \textit{parms=``all''}):
-<<load-library, echo=TRUE, eval=FALSE, include=FALSE, results=hide, warning=FALSE, message=FALSE>>=
-bobcat.dot <- multimarkClosed(mms=bobcatsetup,mod.p=~1,parms="all")
-bobcat.c <- multimarkClosed(mms=bobcatsetup,mod.p=~c,parms="all")
-bobcat.time <- multimarkClosed(mms=bobcatsetup,mod.p=~time,parms="all")
-bobcat.h <- multimarkClosed(mms=bobcatsetup,mod.p=~h,parms="all")
-
-modlist <- list(mod1=bobcat.dot,mod2=bobcat.c,
-                mod3=bobcat.time,mod4=bobcat.h)
-bobcat.M <- multimodelClosed(mms=bobcatsetup,modlist=modlist)
-@
+\begin{Schunk}
+\begin{Sinput}
+> bobcat.dot <- multimarkClosed(mms=bobcatsetup,mod.p=~1,parms="all")
+> bobcat.c <- multimarkClosed(mms=bobcatsetup,mod.p=~c,parms="all")
+> bobcat.time <- multimarkClosed(mms=bobcatsetup,mod.p=~time,parms="all")
+> bobcat.h <- multimarkClosed(mms=bobcatsetup,mod.p=~h,parms="all")
+> modlist <- list(mod1=bobcat.dot,mod2=bobcat.c,
++                 mod3=bobcat.time,mod4=bobcat.h)
+> bobcat.M <- multimodelClosed(mms=bobcatsetup,modlist=modlist)
+\end{Sinput}
+\end{Schunk}
 The list \verb|bobcat.M| includes RJMCMC output (\verb|bobcat.M$rjmcmc|) for parameters common to all models (which can be specified using the argument \textit{monparms}) and posterior model probabilities (\verb|bobcat.M$pos.prob|). Other arguments for \textit{multimodelClosed()} and \textit{multimodelCJS()} include prior model probabilities (\textit{modprior}) and user-specified proposal distributions for moving between models.
 
 \section{Example}
 I will now provide results from a new closed population analysis of the bobcat data performed in \verb|multimark|. Previous analyses of these data include \cite{McClintockEtAl2013a}, who performed an integrated analysis but for a limited model set that did not include behavioural or individual effects, and \cite{AlonsoEtAl2015}, who performed standard single-sided analyses that could not investigate behavioural effects to first capture. Using \verb|multimark|, it is possible to conduct a more complete analysis using both left- and right-sided encounter histories that includes no effects, temporal effects, behavioural effects, and indivdual effects in detection probability. I also investigated two models for ${\boldsymbol \delta}$ ($\delta_1 \ne \delta_2$ and $\delta_1 = \delta_2$) because it is reasonable to suspect that the conditional probabilities of left- and right-sided encounters are similar. 
 
-<<load-library, echo=FALSE, eval=FALSE, include=FALSE, results=hide, warning=FALSE, message=FALSE>>=
-setup <- processdata(bobcat)
 
-iter <- 2200000
-burnin <- 200000
-adapt <- 100000
-thin <- 20
-
-miter <- 300000
-
-bobcat.dot.same <- multimarkClosed(mms=setup,mod.p=~1,mod.delta=~1,parms="all",nchains=2,iter=iter,burnin=burnin,adapt=adapt,thin=thin,printlog=TRUE)
-bobcat.time.same <- multimarkClosed(mms=setup,mod.p=~time,mod.delta=~1,parms="all",nchains=2,iter=iter,burnin=burnin,adapt=adapt,thin=thin,printlog=TRUE)
-bobcat.c.same <- multimarkClosed(mms=setup,mod.p=~c,mod.delta=~1,parms="all",nchains=2,iter=iter,burnin=burnin,adapt=adapt,thin=thin,printlog=TRUE)
-bobcat.h.same <- multimarkClosed(mms=setup,mod.p=~h,mod.delta=~1,parms="all",nchains=2,iter=iter,burnin=burnin,adapt=adapt,thin=thin,printlog=TRUE)
-bobcat.c.time.same <- multimarkClosed(mms=setup,mod.p=~c+time,mod.delta=~1,parms="all",nchains=2,iter=iter,burnin=burnin,adapt=adapt,thin=thin,printlog=TRUE)
-bobcat.c.h.same <- multimarkClosed(mms=setup,mod.p=~c+h,mod.delta=~1,parms="all",nchains=2,iter=iter,burnin=burnin,adapt=adapt,thin=thin,printlog=TRUE)
-bobcat.time.h.same <- multimarkClosed(mms=setup,mod.p=~time+h,mod.delta=~1,parms="all",nchains=2,iter=iter,burnin=burnin,adapt=adapt,thin=thin,printlog=TRUE)
-bobcat.c.time.h.same <- multimarkClosed(mms=setup,mod.p=~c+time+h,mod.delta=~1,parms="all",nchains=2,iter=iter,burnin=burnin,adapt=adapt,thin=thin,printlog=TRUE)
-bobcat.dot <- multimarkClosed(mms=setup,mod.p=~1,parms="all",nchains=2,iter=iter,burnin=burnin,adapt=adapt,thin=thin,printlog=TRUE)
-bobcat.time <- multimarkClosed(mms=setup,mod.p=~time,parms="all",nchains=2,iter=iter,burnin=burnin,adapt=adapt,thin=thin,printlog=TRUE)
-bobcat.c <- multimarkClosed(mms=setup,mod.p=~c,parms="all",nchains=2,iter=iter,burnin=burnin,adapt=adapt,thin=thin,printlog=TRUE)
-bobcat.h <- multimarkClosed(mms=setup,mod.p=~h,parms="all",nchains=2,iter=iter,burnin=burnin,adapt=adapt,thin=thin,printlog=TRUE)
-bobcat.c.time <- multimarkClosed(mms=setup,mod.p=~c+time,parms="all",nchains=2,iter=iter,burnin=burnin,adapt=adapt,thin=thin,printlog=TRUE)
-bobcat.c.h <- multimarkClosed(mms=setup,mod.p=~c+h,parms="all",nchains=2,iter=iter,burnin=burnin,adapt=adapt,thin=thin,printlog=TRUE)
-bobcat.time.h <- multimarkClosed(mms=setup,mod.p=~time+h,parms="all",nchains=2,iter=iter,burnin=burnin,adapt=adapt,thin=thin,printlog=TRUE)
-bobcat.c.time.h <- multimarkClosed(mms=setup,mod.p=~c+time+h,parms="all",nchains=2,iter=iter,burnin=burnin,adapt=adapt,thin=thin,printlog=TRUE)
-
-modlist<-list(mod1=bobcat.dot.same,mod2=bobcat.time.same,mod3=bobcat.c.same,mod4=bobcat.h.same,mod5=bobcat.c.time.same,mod6=bobcat.c.h.same,mod7=bobcat.time.h.same,mod8=bobcat.c.time.h.same,mod9=bobcat.dot,mod10=bobcat.time,mod11=bobcat.c,mod12=bobcat.h,mod13=bobcat.c.time,mod14=bobcat.c.h,mod15=bobcat.time.h,mod16=bobcat.c.time.h)
-
-stime=proc.time()
-bobcat.M.<-multimodelClosed(mms=setup,modlist=modlist,miter=miter,monparms=c("N","p","c"))
-etime=proc.time()-stime
-@
-
-<<load-library, echo=FALSE>>=
-load("bobcat_results.RData")
-pmodnames <- unlist(lapply(modlist,function(x) x$mod.p)) 
-deltamodnames <- unlist(lapply(modlist,function(x) x$mod.delta)) 
-modnames<-paste0("p(",pmodnames,")delta(",deltamodnames,")")
-modprobs <- unlist(bobcat.M.all$pos.prob$overall,use.names=FALSE)
-library(xtable)
-modorder<- order(modprobs,decreasing=TRUE)
-library(modeest)
-Nmode <- lapply(modlist,function(x) mlv(unlist(x$mcmc[,"N"]),method="mfv")$M)
-Nhpdi <- lapply(modlist,function(x) paste0(coda::HPDinterval(coda::mcmc(unlist(x$mcmc[,"N"])))[1:2],collapse="-"))
-Ness <- lapply(modlist,function(x) as.integer(coda::effectiveSize(coda::mcmc(unlist(x$mcmc[,"N"])))))
-grb <- lapply(modlist,function(x) coda::gelman.diag(x$mcmc[,"N"],transform=TRUE,autoburnin=FALSE)$psrf[1])
-modprobstab <- cbind(modnames[modorder],formatC(modprobs[modorder],format="f",digits=2),unlist(Nmode[modorder],use.names=FALSE),unlist(Nhpdi[modorder],use.names=FALSE),formatC(unlist(Ness[modorder],use.names=FALSE),format="f",digits=0),formatC(unlist(grb[modorder],use.names=FALSE),format="f",digits=2))
-colnames(modprobstab) <- c("Model","PMM","$N$","HPDI","ESS","GRB")
-modprobc <- sum(modprobs[unlist(lapply(modlist,function(x) any(attributes(terms(x$mod.p))$term.labels=="c")))])
-modprobnotype <- sum(modprobs[!unlist(lapply(modlist,function(x) any(attributes(terms(x$mod.delta))$term.labels=="type")))])
-@
 
 Fitting all possible additive combinations yielded 16 models using the default ``non-informative'' priors for \textit{multimarkClosed()}:
 \begin{eqnarray*}
@@ -400,18 +461,38 @@ Fitting all possible additive combinations yielded 16 models using the default `
   \sigma_{z^p} & \sim & \text{half-Cauchy}(25)\\
   N & \propto & \frac{1}{N}
 \end{eqnarray*}
-With 2 chains each consisting of 2 million iterations (with thinning every 20 iterations to reduce memory requirements), the simplest models required 12 mins on a computer running Windows 7 (3.4GHz Intel Core i7, 16GB RAM), while the more complicated models including time variation required at most 2 hrs. These relatively fast run times are attributable to \verb|multimark|'s parallel processing of MCMC algorithms written in the C programming language \citep{KernighanRitchie1988}. Bayesian multimodel inference was performed with \textit{multimodelClosed()} using the default equal prior model weights, where 300000 iterations for each chain required \Sexpr{round(etime[3]/(60*60),1)} hrs. The longer run time for \textit{multimodelClosed()} owes to the number of models and the RJMCMC algorithm being written entirely in R.
+With 2 chains each consisting of 2 million iterations (with thinning every 20 iterations to reduce memory requirements), the simplest models required 12 mins on a computer running Windows 7 (3.4GHz Intel Core i7, 16GB RAM), while the more complicated models including time variation required at most 2 hrs. These relatively fast run times are attributable to \verb|multimark|'s parallel processing of MCMC algorithms written in the C programming language \citep{KernighanRitchie1988}. Bayesian multimodel inference was performed with \textit{multimodelClosed()} using the default equal prior model weights, where 300000 iterations for each chain required 2.6 hrs. The longer run time for \textit{multimodelClosed()} owes to the number of models and the RJMCMC algorithm being written entirely in R.
 
-Models including a positive behavioural response to first capture accounted for \Sexpr{round(modprobc,2)} of the posterior model weight, while models including $\delta_1=\delta_2$ accounted for \Sexpr{round(modprobnotype,2)} of posterior model weight (Table \ref{tab:modprobs}). Model-averaged posterior modes were $N=\Sexpr{mlv(unlist(bobcat.M.all$rjmcmc[,"N"]),method="mfv")$M}$ (HPDI: \Sexpr{paste0(coda::HPDinterval(coda::mcmc(unlist(bobcat.M.all$rjmcmc[,"N"])))[1:2],collapse="-")}; Fig. \ref{fig:modaveN}) for population abundance, $p=\Sexpr{round(mlv(unlist(bobcat.M.all$rjmcmc[,"p[1]"]),method="kernel",boot=TRUE,R=miter/1000,B=1000)$M,2)}$ (HPDI: \Sexpr{paste0(round(coda::HPDinterval(coda::mcmc(unlist(bobcat.M.all$rjmcmc[,"p[1]"])))[1:2],2),collapse="-")}) for capture probability, and $c=\Sexpr{round(mlv(unlist(bobcat.M.all$rjmcmc[,"c[2]"]),method="kernel",boot=TRUE,R=miter/1000,B=1000)$M,2)}$ (HPDI: \Sexpr{paste0(round(coda::HPDinterval(coda::mcmc(unlist(bobcat.M.all$rjmcmc[,"c[2]"])))[1:2],2),collapse="-")}) for recapture probability. With $\delta_1=\delta_2=\Sexpr{round(mlv(unlist(modlist[[modorder[1]]]$mcmc[,"delta"]),method="mfv")$M,2)}$ (HPDI: \Sexpr{paste0(round(coda::HPDinterval(coda::mcmc(unlist(modlist[[modorder[1]]]$mcmc[,"delta"])))[1:2],2),collapse="-")}) based on the model with the highest posterior probability, both-sided encounters were relatively infrequent for these data $(1-\delta_1-\delta_2=\Sexpr{round(1-2*mlv(unlist(modlist[[modorder[1]]]$mcmc[,"delta"]),method="mfv")$M,2)})$.
-<<tab:modprobs,results=tex,echo=FALSE>>=
-print(xtable(modprobstab,caption="Posterior model probabilities (PMM) and abundance estimates for the bobcat data. Summaries include posterior modes $(N)$, 95\\% highest posterior density intervals (HPDI), effective sample sizes (ESS), and Gelman-Rubin-Brooks diagnostics (GRB) for $N$. Models for detection probability (p) included no effects (\\~{}1), behavioural effects (\\~{}c), time effects (\\~{}time), and individual effects (\\~{}h). Models for the conditional probability of a left- or right-sided encounter (delta) included $\\delta_1=\\delta_2$ (\\~{}1) and $\\delta_1 \\ne \\delta_2$ (\\~{}type)." ,label ="tab:modprobs"),include.rownames=FALSE,sanitize.colnames.function=function(x){x})
-@
-<<fig:modaveN,results=tex,echo=FALSE,include=FALSE, results=hide, warning=FALSE, message=FALSE>>=
-pdf("modaveN.pdf")
-hist(unlist(bobcat.M.all$rjmcmc[,"N"]),main=NA,xlab=bquote(italic(N)),freq=FALSE,xlim=c(0,250),breaks=300)
-dev.off()
-@
-\begin{figure}
+Models including a positive behavioural response to first capture accounted for 0.51 of the posterior model weight, while models including $\delta_1=\delta_2$ accounted for 0.78 of posterior model weight (Table \ref{tab:modprobs}). Model-averaged posterior modes were $N=35$ (HPDI: 26-101; Fig. \ref{fig:modaveN}) for population abundance, $p=0.15$ (HPDI: 0.04-0.27) for capture probability, and $c=0.21$ (HPDI: 0.07-0.33) for recapture probability. With $\delta_1=\delta_2=0.41$ (HPDI: 0.30-0.50) based on the model with the highest posterior probability, both-sided encounters were relatively infrequent for these data ($1-\delta_1-\delta_2=0.18$; HPDI: 0.00-0.39).
+% latex table generated in R 3.2.0 by xtable 1.7-4 package
+% Tue May 19 11:19:15 2015
+\begin{table}[ht]
+\centering
+\begin{tabular}{llllll}
+  \hline
+Model & PMM & $N$ & HPDI & ESS & GRB \\ 
+  \hline
+p(\~{}c)delta(\~{}1) & 0.30 & 38 & 27-91 & 38944 & 1.00 \\ 
+  p(\~{}1)delta(\~{}1) & 0.22 & 33 & 26-46 & 54696 & 1.00 \\ 
+  p(\~{}h)delta(\~{}1) & 0.16 & 46 & 29-114 & 11685 & 1.00 \\ 
+  p(\~{}c + h)delta(\~{}1) & 0.09 & 50 & 29-145 & 18544 & 1.00 \\ 
+  p(\~{}c)delta(\~{}type) & 0.09 & 38 & 27-90 & 35054 & 1.00 \\ 
+  p(\~{}1)delta(\~{}type) & 0.06 & 33 & 26-46 & 53961 & 1.00 \\ 
+  p(\~{}h)delta(\~{}type) & 0.05 & 48 & 29-113 & 12099 & 1.00 \\ 
+  p(\~{}c + h)delta(\~{}type) & 0.03 & 51 & 29-146 & 17276 & 1.00 \\ 
+  p(\~{}time + h)delta(\~{}1) & 0.00 & 47 & 28-115 & 14414 & 1.00 \\ 
+  p(\~{}c + time + h)delta(\~{}1) & 0.00 & 45 & 28-116 & 21473 & 1.00 \\ 
+  p(\~{}time)delta(\~{}1) & 0.00 & 33 & 26-45 & 47781 & 1.00 \\ 
+  p(\~{}c + time)delta(\~{}1) & 0.00 & 33 & 25-78 & 35169 & 1.00 \\ 
+  p(\~{}time + h)delta(\~{}type) & 0.00 & 50 & 29-118 & 13882 & 1.00 \\ 
+  p(\~{}c + time + h)delta(\~{}type) & 0.00 & 46 & 27-115 & 21337 & 1.00 \\ 
+  p(\~{}time)delta(\~{}type) & 0.00 & 33 & 26-45 & 49425 & 1.00 \\ 
+  p(\~{}c + time)delta(\~{}type) & 0.00 & 32 & 25-78 & 35360 & 1.00 \\ 
+   \hline
+\end{tabular}
+\caption{Posterior model probabilities (PMM) and abundance estimates for the bobcat data. Summaries include posterior modes $(N)$, 95\% highest posterior density intervals (HPDI), effective sample sizes (ESS), and Gelman-Rubin-Brooks diagnostics (GRB) for $N$. Models for detection probability (p) included no effects (\~{}1), behavioural effects (\~{}c), time effects (\~{}time), and individual effects (\~{}h). Models for the conditional probability of a left- or right-sided encounter (delta) included $\delta_1=\delta_2$ (\~{}1) and $\delta_1 \ne \delta_2$ (\~{}type).} 
+\label{tab:modprobs}
+\end{table}\begin{figure}
   \includegraphics[width=6in,height=4in]{modaveN.pdf}
   \begin{doublespace}
     \caption{\label{fig:modaveN}Model-averaged posterior distribution of population abundance $(N)$ for the bobcat data.}
