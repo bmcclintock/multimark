@@ -1,4 +1,4 @@
-multimark 1.2.0 2015-05-12
+multimark 1.2.0 2015-06-23
 -----------------
 NEW FEATURES
 
@@ -9,6 +9,8 @@ NEW FEATURES
 CHANGES
 
 * Minor bug fixes in updates for 'psi', 'sigma2_zp', and 'sigma2_zphi' in 'multimarkCJS()'
+
+* developed using R version 3.2.1 (2005-06-18); 'multimark' now requires R >=3.2.1 for compatibility with changes to base function 'nchar()'
 
 
 multimark 1.1.4 2015-04-29
