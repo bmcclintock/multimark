@@ -316,7 +316,7 @@ checkClosed<-function(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccept,t
   if(taccept<=0 | taccept>1) stop ("'taccept' must be >0 and <=1")
   if(tuneadjust<=0 | tuneadjust>1) stop ("'tuneadjust' must be >0 and <=1")
   if(npoints<1) stop("'npoints' must be greater than 0")
-  if(maxnumbasis<1 | maxnumbasis>mms@ncolbasis) stop("'maxnumbasis' must be between 1 and ",mms@ncolbasis)
+  if(mms@ncolbasis & (maxnumbasis<1 | maxnumbasis>mms@ncolbasis)) stop("'maxnumbasis' must be between 1 and ",mms@ncolbasis)
   if(!all(c(a0delta,a0alpha,b0alpha,a,sigma2_mu0,a0psi,b0psi)>0)) stop("'a0delta', 'a0alpha', 'b0alpha', 'a', 'sigma2_mu0', 'a0psi', and 'b0psi' must be >0")
   
   mod.p.h<-DM$mod.p.h

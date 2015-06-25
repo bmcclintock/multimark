@@ -1,3 +1,10 @@
+multimark 1.2.1 2015-06-25
+-----------------
+CHANGES
+
+* Fixed bug in 'multimarkClosed()' when all encounter histories are known
+
+
 multimark 1.2.0 2015-06-23
 -----------------
 NEW FEATURES
