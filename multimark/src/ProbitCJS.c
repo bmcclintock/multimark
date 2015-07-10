@@ -20,7 +20,7 @@ void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, doub
               double *loglike,
               int *nHists, int *Allhists, int *C, int *L, int *indBasis, int *ncolBasis, int *knownx, double *DMp, double *DMphi, int *pdim, int *phidim,
               int *iter, int *thin, int *numbasis,
-              int *modp_h, int *modphi_h, int *data_type, int *zpind, int *zphiind, int *zind, int *Hind, int *delta_type, int *printlog)
+              int *modp_h, int *modphi_h, int *data_type, int *zpind, int *zphiind, int *zind, int *Hind, int *updatedelta, int *delta_type, int *printlog)
 {
   
   GetRNGstate(); 
@@ -78,8 +78,9 @@ void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, doub
   
   double zps2=0.;
   double zphis2=0.;
-  delta_1s=delta_1[0];
-  delta_2s=delta_2[0];
+  delta_1s= (*updatedelta ? delta_1[0] : 1.);
+  delta_2s= (*updatedelta ? delta_2[0] : 0.);
+  alphas= (*updatedelta ? alpha[0] : 0.);
   psis=psi[0];
 
   double ns=0.;
@@ -165,8 +166,6 @@ void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, doub
   deltavect[0]=delta_1s;
   deltavect[1]=delta_2s;
   deltavect[2]=1.-delta_1s-delta_2s;
-  
-  alphas=alpha[0];
   
   double indbase[*ncolBasis];
   for(j=0; j< *ncolBasis; j++){
@@ -254,24 +253,26 @@ void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, doub
       sigma2_zphis = 1. / preczphis;
     }
   
-    /* update alpha */
-    if(datatype){
-      sha = *a0alpha+FREQSUMCJS(xs,Allhists,T,J,4,C);
-      sca = *b0alpha+FREQSUMCJS(xs,Allhists,T,J,3,C);
-      alphas = rbeta(sha,sca);
+    if(*updatedelta){
+      /* update alpha */
+      if(datatype){
+        sha = *a0alpha+FREQSUMCJS(xs,Allhists,T,J,4,C);
+        sca = *b0alpha+FREQSUMCJS(xs,Allhists,T,J,3,C);
+        alphas = rbeta(sha,sca);
+      }
+      
+      /* update delta_1 and delta_2 */
+      if(deltatype){
+        GETDELTACJS(deltavect, xs, Allhists, T, J, 3, a0_delta,C); 
+        delta_1s=deltavect[0];
+        delta_2s=deltavect[1];    
+      } else {
+        sha = a0_delta[0] + FREQSUMCJS(xs,Allhists,T,J,1,C) + FREQSUMCJS(xs,Allhists,T,J,2,C);
+        sca = a0_delta[1] + FREQSUMCJS(xs,Allhists,T,J,3,C) + FREQSUMCJS(xs,Allhists,T,J,4,C);
+        delta_1s = rbeta(sha,sca) / 2.0;
+        delta_2s = delta_1s;
+      }  
     }
-    
-    /* update delta_1 and delta_2 */
-    if(deltatype){
-      GETDELTACJS(deltavect, xs, Allhists, T, J, 3, a0_delta,C); 
-      delta_1s=deltavect[0];
-      delta_2s=deltavect[1];    
-    } else {
-      sha = a0_delta[0] + FREQSUMCJS(xs,Allhists,T,J,1,C) + FREQSUMCJS(xs,Allhists,T,J,2,C);
-      sca = a0_delta[1] + FREQSUMCJS(xs,Allhists,T,J,3,C) + FREQSUMCJS(xs,Allhists,T,J,4,C);
-      delta_1s = rbeta(sha,sca) / 2.0;
-      delta_2s = delta_1s;
-    }  
     
     /* update z */
     for(i=0; i<supN; i++){

@@ -331,7 +331,7 @@ mcmcCJS<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,
                     as.numeric(loglike),
                     as.integer(length(mms@vAll.hists)/noccas),as.integer(mms@vAll.hists),as.integer(mms@C),as.integer(mms@L),as.integer(mms@indBasis-1), as.integer(mms@ncolbasis), as.integer(mms@knownx),as.numeric(as.vector(t(DMp))),as.numeric(as.vector(t(DMphi))),as.integer(dim(DMp)),as.integer(dim(DMphi)),
                     as.integer(iter), as.integer(thin),as.integer(maxnumbasis),
-                    as.integer(mod.p.h),as.integer(mod.phi.h),as.integer(mms@data.type=="sometimes"),as.integer(any(params=="zp")),as.integer(any(params=="zphi")),as.integer(any(params=="z")),as.integer(any(params=="H")),as.integer(DM$mod.delta==formula(~type)),as.integer(printlog),NAOK = TRUE)
+                    as.integer(mod.p.h),as.integer(mod.phi.h),as.integer(mms@data.type=="sometimes"),as.integer(any(params=="zp")),as.integer(any(params=="zphi")),as.integer(any(params=="z")),as.integer(any(params=="H")),as.integer(DM$mod.delta != ~NULL),as.integer(DM$mod.delta==formula(~type)),as.integer(printlog),NAOK = TRUE)
   } else {
     stop("only 'probit' link is currently implemented for CJS models")
   }
@@ -340,7 +340,7 @@ mcmcCJS<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,
                         "loglike",
                         "nHists","vAll.hists","C","L", "indBasis", "ncolBasis","knownx","DMp","DMphi","pdim","phidim",
                         "iter", "thin", "maxnumbasis",
-                        "mod.p.h","mod.phi.h","sometimes?","zp?","zphi?","z?","H?","type","printlog?")
+                        "mod.p.h","mod.phi.h","sometimes?","zp?","zphi?","z?","H?","updatedelta?","type","printlog?")
   
   g <- posterior$iter
   x <- posterior$x
@@ -399,13 +399,19 @@ loglikeCJS<-function(parms,DM,noccas,C,All.hists){
     zphi <- rep(0,length(H))
   }
   z <- parms$z
-  if(DM$mod.delta==formula(~type)){
-    delta_1 <- parms$delta_1
-    delta_2 <- parms$delta_2
+  if(DM$mod.delta != ~NULL){
+    if(DM$mod.delta==formula(~type)){
+      delta_1 <- parms$delta_1
+      delta_2 <- parms$delta_2
+    } else {
+      delta_1 <- delta_2 <- parms$delta
+    }
+    alpha <- parms$alpha
   } else {
-    delta_1 <- delta_2 <- parms$delta
+    delta_1 <- 1.0
+    delta_2 <- 0.0
+    alpha <- 0.0
   }
-  alpha <- parms$alpha
   
   XBp=DM$p%*%pbeta
   XBphi=DM$phi%*%phibeta    
@@ -434,14 +440,15 @@ priorsCJS<-function(parms,DM,priorparms,data_type,C,noccas){
              #+ base::sum(dbinom((firstcap<noccas),1,parms$psi,log=TRUE)))
              + base::sum(dbinom((parms$H>1),1,parms$psi,log=TRUE)))
   
-  if(DM$mod.delta==formula(~type)){
-    priors <- priors + ddirichlet(c(parms$delta_1,parms$delta_2,1.-parms$delta_1-parms$delta_2),priorparms$a0delta)
-  } else {
-    priors <- priors + dbeta(2*parms$delta,priorparms$a0delta[1],priorparms$a0delta[2],log=TRUE)
-  }
-  
-  if(data_type=="sometimes"){
-    priors <- priors + dbeta(parms$alpha,priorparms$a0alpha,priorparms$b0alpha,log=TRUE)
+  if(DM$mod.delta != ~NULL){
+    if(DM$mod.delta==formula(~type)){
+      priors <- priors + ddirichlet(c(parms$delta_1,parms$delta_2,1.-parms$delta_1-parms$delta_2),priorparms$a0delta)
+    } else {
+      priors <- priors + dbeta(2*parms$delta,priorparms$a0delta[1],priorparms$a0delta[2],log=TRUE)
+    }
+    if(data_type=="sometimes"){
+      priors <- priors + dbeta(parms$alpha,priorparms$a0alpha,priorparms$b0alpha,log=TRUE)
+    }
   }
   
   if(DM$mod.p.h){
@@ -741,7 +748,11 @@ multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.
     burnin<-0
   }
   
-  parmlist<-c("pbeta","phibeta","delta","sigma2_zp","zp","sigma2_zphi","zphi","alpha","psi","z","H","loglike")
+  if(mod.delta != ~NULL) {
+    parmlist<-c("pbeta","phibeta","delta","sigma2_zp","zp","sigma2_zphi","zphi","alpha","psi","z","H","loglike")
+  } else {
+    parmlist<-c("pbeta","phibeta","sigma2_zp","zp","sigma2_zphi","zphi","alpha","psi","z","H","loglike")    
+  }
   params <- checkCJS(parms,parmlist,mms,DM,iter,bin,thin,burnin,taccept,tuneadjust,maxnumbasis,a0delta,a0alpha,b0alpha,pSigma0,phiSigma0,l0p,d0p,l0phi,d0phi,a0psi,b0psi,link)
   
   data.type<-mms@data.type
@@ -768,8 +779,8 @@ multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.
   message("data type = \"",data.type,"\"\n")
   message("p model = ",as.character(mod.p))
   message("phi model = ",as.character(mod.phi))
-  message("delta model = ",as.character(mod.delta),"\n")
-  message("Initializing model \n")
+  if(mod.delta != ~NULL) message("delta model = ",as.character(mod.delta))
+  message("\nInitializing model \n")
   posteriorCJS(inits,DM,mms,priorparms)
   
   propzp <- checkvecs(propzp,M,"propzp")
@@ -876,6 +887,14 @@ getprobsCJS<-function(out,link="probit"){
 checkparmsCJS <- function(mms,modlist,params,parmlist,M){    
   if(mms@data.type=="sometimes"){
     parmlist<-c(parmlist,"alpha")
+  }
+  deltatypeind <- which(lapply(modlist,function(x) any("~type"==x$mod.delta))==TRUE)
+  if(length(deltatypeind)){
+    if(!all(lapply(params[deltatypeind],function(x) base::sum(match(x,c("delta_1","delta_2"),nomatch=0)))==base::sum(1:length(1:2)))) stop("required parameters not found for all models")
+  }
+  delta1ind <- which(lapply(modlist,function(x) any("~1"==x$mod.delta))==TRUE)
+  if(length(delta1ind)){
+    if(!all(lapply(params[delta1ind],function(x) base::sum(match(x,"delta",nomatch=0)))==1)) stop("required parameters not found for all models")
   }
   hpind <- which(lapply(modlist,function(x) any("h"==attributes(terms(x$mod.p))$term.labels))==TRUE)  
   if(!length(hpind)){
@@ -1216,14 +1235,20 @@ multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlis
   All.hists<-matrix(mms@vAll.hists,byrow=TRUE,ncol=noccas)
   C<-mms@C
   
+  checkparmsCJS(mms,modlist,params,parmlist=c("pbeta[(Intercept)]","phibeta[(Intercept)]","psi",paste0("H[",1:M,"]"),paste0("z[",rep(1:M,each=noccas),",",1:noccas,"]"),"loglike"),M)
+  
   pmodnames <- unlist(lapply(modlist,function(x) x$mod.p)) 
   phimodnames <- unlist(lapply(modlist,function(x) x$mod.phi))
   deltamodnames <- unlist(lapply(modlist,function(x) x$mod.delta)) 
   
-  checkparmsCJS(mms,modlist,params,parmlist=c("pbeta[(Intercept)]","phibeta[(Intercept)]","psi",paste0("H[",1:M,"]"),paste0("z[",rep(1:M,each=noccas),",",1:noccas,"]"),"loglike"),M)
-  
   message("\nPerforming open population Bayesian multimodel inference by RJMCMC \n")
-  message(paste0("mod",1:nmod,": ","p(",pmodnames,")phi(",phimodnames,")delta(",deltamodnames,")\n"))  
+  if(all(deltamodnames!=~NULL)) {
+    message(paste0("mod",1:nmod,": ","p(",pmodnames,")phi(",phimodnames,")delta(",deltamodnames,")\n"))  
+  } else if(all(deltamodnames==~NULL)){
+    message(paste0("mod",1:nmod,": ","p(",pmodnames,")phi(",phimodnames,")\n"))
+  } else {
+    stop("Cannot perform multimodel inference using both 'multimarkCJS()' and 'markCJS()' models")
+  }
   
   missing <- missingparmnamesCJS(params,M,noccas,zppropsd,zphipropsd)
   
