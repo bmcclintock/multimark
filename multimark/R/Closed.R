@@ -187,9 +187,9 @@ mcmcClosed<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,tacce
                   as.numeric(Prop.sd),as.numeric(arate),as.numeric(logPosterior),
                   as.integer(length(mms@vAll.hists)/noccas),as.integer(mms@vAll.hists), as.integer(mms@C), as.integer(mms@indBasis-1), as.integer(mms@ncolbasis), as.integer(mms@knownx), as.numeric(as.vector(t(DMp))), as.numeric(as.vector(t(DMc))),as.integer(pdim),
                   as.integer(iter), as.integer(thin), as.integer(adapt), as.integer(bin), as.numeric(taccept),as.numeric(tuneadjust),as.integer(maxnumbasis),
-                  as.integer(npoints),as.numeric(weights),as.numeric(nodes),as.integer(mod.p.h),as.integer(mms@data.type=="sometimes"),as.integer(any(params=="zp")),as.integer(any(params=="H")),as.integer(DM$mod.delta==formula(~type)),as.integer(printlog),NAOK = TRUE) 
+                  as.integer(npoints),as.numeric(weights),as.numeric(nodes),as.integer(mod.p.h),as.integer(mms@data.type=="sometimes"),as.integer(any(params=="zp")),as.integer(any(params=="H")),as.integer(DM$mod.delta != ~NULL),as.integer(DM$mod.delta==formula(~type)),as.integer(printlog),NAOK = TRUE) 
   
-  names(posterior) <- c("ichain","mu_0","sigma2_mu","pbeta", "zp", "sigma2_zp", "delta_1","delta_2","alpha", "x", "N", "psi","H", "noccas", "M","a0delta", "a0alpha", "b0alpha","a","a0psi","b0psi","Prop.sd","arate","logPosterior","nHists","vAll.hists","C", "indBasis", "ncolBasis","knownx","DMp","DMc","pdim","iter", "thin", "adapt", "bin", "taccept","tuneadjust","maxnumbasis","npoints","weights","nodes","mod.p.h","sometimes?","zp?","H?","type?","printlog?")
+  names(posterior) <- c("ichain","mu_0","sigma2_mu","pbeta", "zp", "sigma2_zp", "delta_1","delta_2","alpha", "x", "N", "psi","H", "noccas", "M","a0delta", "a0alpha", "b0alpha","a","a0psi","b0psi","Prop.sd","arate","logPosterior","nHists","vAll.hists","C", "indBasis", "ncolBasis","knownx","DMp","DMc","pdim","iter", "thin", "adapt", "bin", "taccept","tuneadjust","maxnumbasis","npoints","weights","nodes","mod.p.h","sometimes?","zp?","H?","updatedelta?","type?","printlog?")
   
   g <- posterior$iter
   x <- posterior$x
@@ -219,13 +219,19 @@ loglikeClosed<-function(parms,DM,noccas,C,All.hists,gq){
   } else {
     zp <- rep(0,length(H))
   }
-  if(DM$mod.delta==formula(~type)){
-    delta_1 <- parms$delta_1
-    delta_2 <- parms$delta_2
+  if(DM$mod.delta != ~NULL){
+    if(DM$mod.delta==formula(~type)){
+      delta_1 <- parms$delta_1
+      delta_2 <- parms$delta_2
+    } else {
+      delta_1 <- delta_2 <- parms$delta
+    }
+    alpha <- parms$alpha
   } else {
-    delta_1 <- delta_2 <- parms$delta
+    delta_1 <- 1.0
+    delta_2 <- 0.0
+    alpha <- 0.0
   }
-  alpha <- parms$alpha
   
   Hind <- H[which(H>1)]
   indhist <- All.hists[Hind,]
@@ -256,14 +262,15 @@ priorsClosed<-function(parms,DM,priorparms,data_type){
              + dbeta(parms$alpha,priorparms$a0alpha,priorparms$b0alpha,log=TRUE)
              + -log(parms$N))
   
-  if(DM$mod.delta==formula(~type)){
-    priors <- priors + ddirichlet(c(parms$delta_1,parms$delta_2,1.-parms$delta_1-parms$delta_2),priorparms$a0delta)
-  } else {
-    priors <- priors + dbeta(2*parms$delta,priorparms$a0delta[1],priorparms$a0delta[2],log=TRUE)
-  }
-  
-  if(data_type=="sometimes"){
-    priors <- priors + dbeta(parms$alpha,priorparms$a0alpha,priorparms$b0alpha,log=TRUE)
+  if(DM$mod.delta != ~NULL){
+    if(DM$mod.delta==formula(~type)){
+      priors <- priors + ddirichlet(c(parms$delta_1,parms$delta_2,1.-parms$delta_1-parms$delta_2),priorparms$a0delta)
+    } else {
+      priors <- priors + dbeta(2*parms$delta,priorparms$a0delta[1],priorparms$a0delta[2],log=TRUE)
+    }
+    if(data_type=="sometimes"){
+      priors <- priors + dbeta(parms$alpha,priorparms$a0alpha,priorparms$b0alpha,log=TRUE)
+    }
   }
   
   if(DM$mod.p.h){
@@ -504,7 +511,11 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
     burnin<-0
   }
   
-  parmlist<-c("pbeta","delta","N","sigma2_zp","zp","alpha","psi","H","logPosterior")
+  if(mod.delta != ~NULL) {
+    parmlist<-c("pbeta","delta","N","sigma2_zp","zp","alpha","psi","H","logPosterior")
+  } else {
+    parmlist<-c("pbeta","N","sigma2_zp","zp","alpha","psi","H","logPosterior")    
+  }
   params <- checkClosed(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccept,tuneadjust,npoints,maxnumbasis,a0delta,a0alpha,b0alpha,a,sigma2_mu0,a0psi,b0psi)
   
   data.type<-mms@data.type
@@ -527,8 +538,8 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
   message("\nFitting closed capture model with logit link\n")
   message("data type = \"",data.type,"\"\n")
   message("p model = ",as.character(mod.p))
-  message("delta model = ",as.character(mod.delta),"\n")
-  message("Initializing model \n")
+  if(mod.delta != ~NULL) message("delta model = ",as.character(mod.delta))
+  message("\nInitializing model \n")
   posteriorClosed(inits,DM,mms,priorparms,gq)
   
   propzp <- checkvecs(propzp,M,"propzp")
@@ -626,6 +637,14 @@ getprobsClosed<-function(out,link="logit"){
 checkparmsClosed <- function(mms,modlist,params,parmlist,M){    
   if(mms@data.type=="sometimes"){
     parmlist<-c(parmlist,"alpha")
+  }
+  deltatypeind <- which(lapply(modlist,function(x) any("~type"==x$mod.delta))==TRUE)
+  if(length(deltatypeind)){
+    if(!all(lapply(params[deltatypeind],function(x) base::sum(match(x,c("delta_1","delta_2"),nomatch=0)))==base::sum(1:length(1:2)))) stop("required parameters not found for all models")
+  }
+  delta1ind <- which(lapply(modlist,function(x) any("~1"==x$mod.delta))==TRUE)
+  if(length(delta1ind)){
+    if(!all(lapply(params[delta1ind],function(x) base::sum(match(x,"delta",nomatch=0)))==1)) stop("required parameters not found for all models")
   }
   hind <- which(lapply(modlist,function(x) any("h"==attributes(terms(x$mod.p))$term.labels))==TRUE)  
   if(!length(hind)){
@@ -914,13 +933,19 @@ multimodelClosed<-function(mms,modlist,modprior=rep(1/length(modlist),length(mod
   C<-mms@C
   gq <- lapply(modlist,function(x) gauss.quad(x$priorparms$npoints,kind="hermite"))
   
+  checkparmsClosed(mms,modlist,params,parmlist=c("pbeta[(Intercept)]","N","psi",paste0("H[",1:M,"]"),"logPosterior"),M)
+  
   pmodnames <- unlist(lapply(modlist,function(x) x$mod.p)) 
   deltamodnames <- unlist(lapply(modlist,function(x) x$mod.delta)) 
   
-  checkparmsClosed(mms,modlist,params,parmlist=c("pbeta[(Intercept)]","N","psi",paste0("H[",1:M,"]"),"logPosterior"),M)
-  
   message("\nPerforming closed population Bayesian multimodel inference by RJMCMC \n")
-  message(paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")\n"))
+  if(all(deltamodnames!=~NULL)) {
+    message(paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")\n"))
+  } else if(all(deltamodnames==~NULL)){
+    message(paste0("mod",1:nmod,": ","p(",pmodnames,")\n"))
+  } else {
+    stop("Cannot perform multimodel inference using both 'multimarkClosed()' and 'markClosed()' models")
+  }
   
   missing <- missingparmnamesClosed(params,M,noccas,zppropsd) 
   
