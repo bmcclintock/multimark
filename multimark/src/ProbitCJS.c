@@ -81,7 +81,7 @@ void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, doub
   delta_1s= (*updatedelta ? delta_1[0] : 1.);
   delta_2s= (*updatedelta ? delta_2[0] : 0.);
   alphas= (*updatedelta ? alpha[0] : 0.);
-  psis=psi[0];
+  psis= (*updatedelta ? psi[0] : 1.);
 
   double ns=0.;
   for(i=0; i< supN; i++)  {
@@ -271,7 +271,11 @@ void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, doub
         sca = a0_delta[1] + FREQSUMCJS(xs,Allhists,T,J,3,C) + FREQSUMCJS(xs,Allhists,T,J,4,C);
         delta_1s = rbeta(sha,sca) / 2.0;
         delta_2s = delta_1s;
-      }  
+      } 
+      /* Update psi */
+      sha = (double) *a0psi + ns;
+      sca= (double) *b0psi + supN - ns;
+      psis = rbeta(sha,sca);
     }
     
     /* update z */
@@ -382,11 +386,6 @@ void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, doub
       qnew[i]=qs[i];
     }
     nstar=ns;
-    
-    /* Update psi */
-    sha = (double) *a0psi + ns;
-    sca= (double) *b0psi + supN - ns;
-    psis = rbeta(sha,sca);
     
     /* update up and uphi */    
     GETTILDE(up,uphi,probitp,probitphi,zps,zphis,zs,T,supN,C,Hs,Allhists);

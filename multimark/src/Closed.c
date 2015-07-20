@@ -75,7 +75,7 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
   delta_1s= (*updatedelta ? delta_1[0] : 1.);
   delta_2s= (*updatedelta ? delta_2[0] : 0.);
   alphas= (*updatedelta ? alpha[0] : 0.);
-  psis=psi[0];
+  psis= (*updatedelta ? psi[0] : 1.);
 
   double ns=0.;
   for(i=0; i< supN; i++)  {
@@ -275,6 +275,10 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
         delta_1s = rbeta(sha,sca) / 2.0;
         delta_2s = delta_1s;
       }
+      /* Update psi */
+      sha = (double) *a0psi + ns;
+      sca= (double) *b0psi + supN - ns;
+      psis = rbeta(sha,sca);
     }
     
     ll=LIKE(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,supN,C,Ns,pstar);
@@ -376,11 +380,6 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
     
     /* Update N */
     Ns=ns+rnbinom((double) ns,pstar);
-    
-    /* Update psi */
-    sha = (double) *a0psi + ns;
-    sca= (double) *b0psi + supN - ns;
-    psis = rbeta(sha,sca);
     
     ll=LIKE(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,supN,C,Ns,pstar);   
     
@@ -530,10 +529,6 @@ double POSTERIOR(double ll, double *beta, int *qs, double *z, double *deltavect,
   for(j=0; j<pdim; j++){
     pos += dnorm(beta[j],mu0[j],sqrt(sigma2_mu0[j]),1);
   }
-  for(i=0; i<supN; i++){
-    pos += dbinom((double) qs[i],1.0,psi,1);
-  }
-  pos += dbeta(psi,a0psi,b0psi,1);
   if(modh){
     for(i=0; i<supN; i++){
       pos += dnorm(z[i],0.0,sigma_z,1);
@@ -549,6 +544,10 @@ double POSTERIOR(double ll, double *beta, int *qs, double *z, double *deltavect,
     if(datatype){
       pos += dbeta(alpha,a0_alpha,b0_alpha,1);
     }
+    for(i=0; i<supN; i++){
+      pos += dbinom((double) qs[i],1.0,psi,1);
+    }
+    pos += dbeta(psi,a0psi,b0psi,1);
   }
   pos += -log(Ns);
   return(pos);

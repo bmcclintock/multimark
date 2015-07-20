@@ -257,9 +257,6 @@ loglikeClosed<-function(parms,DM,noccas,C,All.hists,gq){
 priorsClosed<-function(parms,DM,priorparms,data_type){
   
   priors <- (base::sum(dnorm(parms$pbeta,priorparms$mu0,sqrt(priorparms$sigma2_mu0),log=TRUE))
-             + base::sum(dbinom((parms$H>1),1,parms$psi,log=TRUE))
-             + dbeta(parms$psi,priorparms$a0psi,priorparms$b0psi,log=TRUE)
-             + dbeta(parms$alpha,priorparms$a0alpha,priorparms$b0alpha,log=TRUE)
              + -log(parms$N))
   
   if(DM$mod.delta != ~NULL){
@@ -271,6 +268,8 @@ priorsClosed<-function(parms,DM,priorparms,data_type){
     if(data_type=="sometimes"){
       priors <- priors + dbeta(parms$alpha,priorparms$a0alpha,priorparms$b0alpha,log=TRUE)
     }
+    priors <- priors + (base::sum(dbinom((parms$H>1),1,parms$psi,log=TRUE))
+                         + dbeta(parms$psi,priorparms$a0psi,priorparms$b0psi,log=TRUE))
   }
   
   if(DM$mod.p.h){
@@ -314,7 +313,7 @@ checkClosed<-function(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccept,t
       params<-parmlist[which(parmlist!="alpha")]
     }
   } else {
-    if(!all(match(params,parmlist,nomatch=0))) stop(paste0("'",params[match(params,parmlist,nomatch=0)==0],"' is not a valid parameter"))
+    if(!all(match(params,parmlist,nomatch=0))) stop(paste0("'",params[match(params,parmlist,nomatch=0)==0],"' is not a valid parameter\n  "))
   }  
   
   if(adapt<0) stop("'adapt' must be >=0")
@@ -514,7 +513,7 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
   if(mod.delta != ~NULL) {
     parmlist<-c("pbeta","delta","N","sigma2_zp","zp","alpha","psi","H","logPosterior")
   } else {
-    parmlist<-c("pbeta","N","sigma2_zp","zp","alpha","psi","H","logPosterior")    
+    parmlist<-c("pbeta","N","sigma2_zp","zp","logPosterior")    
   }
   params <- checkClosed(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccept,tuneadjust,npoints,maxnumbasis,a0delta,a0alpha,b0alpha,a,sigma2_mu0,a0psi,b0psi)
   
@@ -635,9 +634,6 @@ getprobsClosed<-function(out,link="logit"){
 }
 
 checkparmsClosed <- function(mms,modlist,params,parmlist,M){    
-  if(mms@data.type=="sometimes"){
-    parmlist<-c(parmlist,"alpha")
-  }
   deltatypeind <- which(lapply(modlist,function(x) any("~type"==x$mod.delta))==TRUE)
   if(length(deltatypeind)){
     if(!all(lapply(params[deltatypeind],function(x) base::sum(match(x,c("delta_1","delta_2"),nomatch=0)))==base::sum(1:length(1:2)))) stop("required parameters not found for all models")
@@ -645,6 +641,12 @@ checkparmsClosed <- function(mms,modlist,params,parmlist,M){
   delta1ind <- which(lapply(modlist,function(x) any("~1"==x$mod.delta))==TRUE)
   if(length(delta1ind)){
     if(!all(lapply(params[delta1ind],function(x) base::sum(match(x,"delta",nomatch=0)))==1)) stop("required parameters not found for all models")
+  }
+  if(length(deltatypeind) | length(delta1ind)){
+    parmlist<-c(parmlist,"psi",paste0("H[",1:M,"]"))
+    if(mms@data.type=="sometimes"){
+      parmlist<-c(parmlist,"alpha")
+    }
   }
   hind <- which(lapply(modlist,function(x) any("h"==attributes(terms(x$mod.p))$term.labels))==TRUE)  
   if(!length(hind)){
@@ -694,7 +696,6 @@ checkmmClosedinput<-function(mms,modlist,nmod,nchains,miter,mburnin,mthin,modpri
   if(miter<=mburnin) stop("'mburnin' must be less than ",miter)
   if(mthin>max(1,floor((miter-mburnin+1)/2)) | mthin<1) stop("'mthin' must be >0 and <=",max(1,floor((miter-mburnin+1)/2)))
   if(length(modprior)!=nmod | base::sum(modprior)!=1) stop(paste("'modprior' must be a vector of length ",nmod," that sums to 1"))
-  if(mms@data.type=="sometimes" & !all(lapply(modlist,function(x) any(varnames(x$mcmc)=="alpha"))==TRUE)) stop("'alpha' parameter not found for all models")
   if(length(M1)!=nchains) stop("'M1' must be an integer vector of length ",nchains)
   if(!all(match(M1,1:nmod,nomatch=0))) stop("'M1' must be an integer vector of length ",nchains," with values ranging from 1 to ",nmod)
 }
@@ -764,7 +765,7 @@ missingparmnamesClosed<-function(params,M,noccas,zppropsd){
   multiparms <- unique(unlist(params))
   
   commonparms <- Reduce(intersect, params)
-  commonparms <- commonparms[-match(c(paste0("H[",1:M,"]"),"logPosterior"),commonparms)]
+  commonparms <- commonparms[-match("logPosterior",commonparms)]
   
   missingparms <- lapply(params,get_missingparms,multiparms=multiparms)
   
@@ -785,7 +786,7 @@ missingparmnamesClosed<-function(params,M,noccas,zppropsd){
   list(commonparms=commonparms,missingparms=missingparms,missingpbetaparms=missingpbetaparms,missingdeltaparms=missingdeltaparms,missingsigpparms=missingsigpparms,missingzpparms=missingzpparms,zppropsd=zppropsd,usesigp=usesigp) 
 }
 
-rjmcmcClosed <- function(ichain,M,noccas,data_type,alpha,C,All.hists,modlist,DMlist,deltalist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,gq,printlog){
+rjmcmcClosed <- function(ichain,mms,M,noccas,data_type,alpha,C,All.hists,modlist,DMlist,deltalist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,gq,printlog){
   
   multimodel <- matrix(0,nrow=(max(1,floor(miter/mthin)))-(floor(mburnin/mthin)),ncol=length(monitorparms$parms)+1,dimnames=list(NULL,c(monitorparms$parms,"M")))
   
@@ -794,10 +795,17 @@ rjmcmcClosed <- function(ichain,M,noccas,data_type,alpha,C,All.hists,modlist,DMl
   
   commonparms <- monitorparms$commonparms
   
+  if(any(deltalist==~NULL)){
+    H<-get_H(mms,mms@naivex)
+    names(H)<-paste0("H[",1:M,"]")
+  } else {
+    H<-NULL
+  }
+  
   M.cur<- M1
   
   modmissingparms <- drawmissingClosed(M.cur,missing,pbetapropsd,sigppropshape,sigppropscale)
-  cur.parms <- c(modlist[[M.cur]][sample(iter,1),],modmissingparms)
+  cur.parms <- c(modlist[[M.cur]][sample(iter,1),],modmissingparms,H)
   
   DM <- DMlist[[M.cur]]
   DM$mod.delta <- deltalist[[M.cur]]
@@ -833,7 +841,7 @@ rjmcmcClosed <- function(ichain,M,noccas,data_type,alpha,C,All.hists,modlist,DMl
     }
     
     modmissingparms <- drawmissingClosed(M.cur,missing,pbetapropsd,sigppropshape,sigppropscale)
-    cur.parms <- c(modlist[[M.cur]][sample(iter,1),],modmissingparms)
+    cur.parms <- c(modlist[[M.cur]][sample(iter,1),],modmissingparms,H)
     
     DM <- DMlist[[M.cur]]
     DM$mod.delta <- deltalist[[M.cur]]
@@ -933,7 +941,7 @@ multimodelClosed<-function(mms,modlist,modprior=rep(1/length(modlist),length(mod
   C<-mms@C
   gq <- lapply(modlist,function(x) gauss.quad(x$priorparms$npoints,kind="hermite"))
   
-  checkparmsClosed(mms,modlist,params,parmlist=c("pbeta[(Intercept)]","N","psi",paste0("H[",1:M,"]"),"logPosterior"),M)
+  checkparmsClosed(mms,modlist,params,parmlist=c("pbeta[(Intercept)]","N","logPosterior"),M)
   
   pmodnames <- unlist(lapply(modlist,function(x) x$mod.p)) 
   deltamodnames <- unlist(lapply(modlist,function(x) x$mod.delta)) 
@@ -973,12 +981,12 @@ multimodelClosed<-function(mms,modlist,modprior=rep(1/length(modlist),length(mod
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
     cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimodelClosed_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
     clusterExport(cl,list("rjmcmcClosed"),envir=environment())
-    multimodel <- parLapply(cl,1:nchains, function(ichain) rjmcmcClosed(ichain,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1[ichain],monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,gq,printlog))
+    multimodel <- parLapply(cl,1:nchains, function(ichain) rjmcmcClosed(ichain,mms,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1[ichain],monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,gq,printlog))
     stopCluster(cl)
     gc()
   } else {
     multimodel <- vector('list',nchains)
-    multimodel[[nchains]] <- rjmcmcClosed(nchains,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[nchains]]),DMlist,deltalist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,gq,printlog)
+    multimodel[[nchains]] <- rjmcmcClosed(nchains,mms,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[nchains]]),DMlist,deltalist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,gq,printlog)
     gc()
   }
   

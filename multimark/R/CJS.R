@@ -435,10 +435,8 @@ priorsCJS<-function(parms,DM,priorparms,data_type,C,noccas){
   firstcap <- C[parms$H]
   
   priors <- (dmvnorm(parms$pbeta,priorparms$pbeta0,priorparms$pSigma0,log=TRUE)
-             + dmvnorm(parms$phibeta,priorparms$phibeta0,priorparms$phiSigma0,log=TRUE)
-             + dbeta(parms$psi,priorparms$a0psi,priorparms$b0psi,log=TRUE)
-             #+ base::sum(dbinom((firstcap<noccas),1,parms$psi,log=TRUE)))
-             + base::sum(dbinom((parms$H>1),1,parms$psi,log=TRUE)))
+             + dmvnorm(parms$phibeta,priorparms$phibeta0,priorparms$phiSigma0,log=TRUE))
+
   
   if(DM$mod.delta != ~NULL){
     if(DM$mod.delta==formula(~type)){
@@ -449,6 +447,9 @@ priorsCJS<-function(parms,DM,priorparms,data_type,C,noccas){
     if(data_type=="sometimes"){
       priors <- priors + dbeta(parms$alpha,priorparms$a0alpha,priorparms$b0alpha,log=TRUE)
     }
+    priors <- priors + (dbeta(parms$psi,priorparms$a0psi,priorparms$b0psi,log=TRUE)
+                    #+ base::sum(dbinom((firstcap<noccas),1,parms$psi,log=TRUE)))
+                     + base::sum(dbinom((parms$H>1),1,parms$psi,log=TRUE)))
   }
   
   if(DM$mod.p.h){
@@ -496,7 +497,7 @@ checkCJS<-function(parms,parmlist,mms,DM,iter,bin,thin,burnin,taccept,tuneadjust
       params<-parmlist[which(parmlist!="alpha")]
     }
   } else {
-    if(!all(match(params,parmlist,nomatch=0))) stop(paste0("'",params[match(params,parmlist,nomatch=0)==0],"' is not a valid parameter"))
+    if(!all(match(params,parmlist,nomatch=0))) stop(paste0("'",params[match(params,parmlist,nomatch=0)==0],"' is not a valid parameter\n  "))
   }
   
   if(link=="logit"){
@@ -751,7 +752,7 @@ multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.
   if(mod.delta != ~NULL) {
     parmlist<-c("pbeta","phibeta","delta","sigma2_zp","zp","sigma2_zphi","zphi","alpha","psi","z","H","loglike")
   } else {
-    parmlist<-c("pbeta","phibeta","sigma2_zp","zp","sigma2_zphi","zphi","alpha","psi","z","H","loglike")    
+    parmlist<-c("pbeta","phibeta","sigma2_zp","zp","sigma2_zphi","zphi","z","loglike")    
   }
   params <- checkCJS(parms,parmlist,mms,DM,iter,bin,thin,burnin,taccept,tuneadjust,maxnumbasis,a0delta,a0alpha,b0alpha,pSigma0,phiSigma0,l0p,d0p,l0phi,d0phi,a0psi,b0psi,link)
   
@@ -885,9 +886,6 @@ getprobsCJS<-function(out,link="probit"){
 }
 
 checkparmsCJS <- function(mms,modlist,params,parmlist,M){    
-  if(mms@data.type=="sometimes"){
-    parmlist<-c(parmlist,"alpha")
-  }
   deltatypeind <- which(lapply(modlist,function(x) any("~type"==x$mod.delta))==TRUE)
   if(length(deltatypeind)){
     if(!all(lapply(params[deltatypeind],function(x) base::sum(match(x,c("delta_1","delta_2"),nomatch=0)))==base::sum(1:length(1:2)))) stop("required parameters not found for all models")
@@ -895,6 +893,12 @@ checkparmsCJS <- function(mms,modlist,params,parmlist,M){
   delta1ind <- which(lapply(modlist,function(x) any("~1"==x$mod.delta))==TRUE)
   if(length(delta1ind)){
     if(!all(lapply(params[delta1ind],function(x) base::sum(match(x,"delta",nomatch=0)))==1)) stop("required parameters not found for all models")
+  }
+  if(length(deltatypeind) | length(delta1ind)){
+    parmlist<-c(parmlist,"psi",paste0("H[",1:M,"]"))
+    if(mms@data.type=="sometimes"){
+      parmlist<-c(parmlist,"alpha")
+    }
   }
   hpind <- which(lapply(modlist,function(x) any("h"==attributes(terms(x$mod.p))$term.labels))==TRUE)  
   if(!length(hpind)){
@@ -924,7 +928,6 @@ checkmmCJSinput<-function(mms,modlist,nmod,nchains,miter,mburnin,mthin,modprior,
   if(miter<=mburnin) stop("'mburnin' must be less than ",miter) 
   if(mthin>max(1,floor((miter-mburnin+1)/2)) | mthin<1) stop("'mthin' must be >0 and <=",max(1,floor((miter-mburnin+1)/2)))
   if(length(modprior)!=nmod | base::sum(modprior)!=1) stop(paste("'modprior' must be a vector of length ",nmod," that sums to 1"))
-  if(mms@data.type=="sometimes" & !all(lapply(modlist,function(x) any(varnames(x$mcmc)=="alpha"))==TRUE)) stop("'alpha' parameter not found for all models")
   if(length(M1)!=nchains) stop("'M1' must be an integer vector of length ",nchains)
   if(!all(match(M1,1:nmod,nomatch=0))) stop("'M1' must be an integer vector of length ",nchains," with values ranging from 1 to ",nmod)
 }
@@ -1006,7 +1009,7 @@ missingparmnamesCJS<-function(params,M,noccas,zppropsd,zphipropsd){
   multiparms <- unique(unlist(params))
   
   commonparms <- Reduce(intersect, params)
-  commonparms <- commonparms[-match(c(paste0("H[",1:M,"]"),paste0("z[",rep(1:M,each=noccas),",",1:noccas,"]"),"loglike"),commonparms)]
+  commonparms <- commonparms[-match(c(paste0("z[",rep(1:M,each=noccas),",",1:noccas,"]"),"loglike"),commonparms)]
   
   missingparms <- lapply(params,get_missingparms,multiparms=multiparms)
   
@@ -1073,7 +1076,7 @@ monitorparmsCJS <- function(parms,parmlist,noccas){
   list(commonparms=commonparms,parms=parms,namesp=namesp,namesphi=namesphi,getprobitp=getprobitp,getprobitphi=getprobitphi)
 }
 
-rjmcmcCJS <- function(ichain,M,noccas,data_type,alpha,C,All.hists,modlist,DMlist,deltalist,priorlist,mod.p.h,mod.phi.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale,pmodnames,phimodnames,deltamodnames,printlog){
+rjmcmcCJS <- function(ichain,mms,M,noccas,data_type,alpha,C,All.hists,modlist,DMlist,deltalist,priorlist,mod.p.h,mod.phi.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale,pmodnames,phimodnames,deltamodnames,printlog){
   
   multimodel <- matrix(0,nrow=(max(1,floor(miter/mthin)))-(floor(mburnin/mthin)),ncol=length(monitorparms$parms)+1,dimnames=list(NULL,c(monitorparms$parms,"M")))
   
@@ -1082,10 +1085,17 @@ rjmcmcCJS <- function(ichain,M,noccas,data_type,alpha,C,All.hists,modlist,DMlist
   
   commonparms <- monitorparms$commonparms
   
+  if(any(deltalist==~NULL)){
+    H<-get_H(mms,mms@naivex)
+    names(H)<-paste0("H[",1:M,"]")
+  } else {
+    H<-NULL
+  }
+  
   M.cur<- M1
   
   modmissingparms <- drawmissingCJS(M.cur,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale)
-  cur.parms <- c(modlist[[M.cur]][sample(iter,1),],modmissingparms)
+  cur.parms <- c(modlist[[M.cur]][sample(iter,1),],modmissingparms,H)
   
   DM <- DMlist[[M.cur]]
   DM$mod.delta <- deltalist[[M.cur]]
@@ -1126,7 +1136,7 @@ rjmcmcCJS <- function(ichain,M,noccas,data_type,alpha,C,All.hists,modlist,DMlist
     }
     
     modmissingparms <- drawmissingCJS(M.cur,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale)
-    cur.parms <- c(modlist[[M.cur]][sample(iter,1),],modmissingparms)
+    cur.parms <- c(modlist[[M.cur]][sample(iter,1),],modmissingparms,H)
     
     DM <- DMlist[[M.cur]]
     DM$mod.delta <- deltalist[[M.cur]]
@@ -1235,7 +1245,7 @@ multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlis
   All.hists<-matrix(mms@vAll.hists,byrow=TRUE,ncol=noccas)
   C<-mms@C
   
-  checkparmsCJS(mms,modlist,params,parmlist=c("pbeta[(Intercept)]","phibeta[(Intercept)]","psi",paste0("H[",1:M,"]"),paste0("z[",rep(1:M,each=noccas),",",1:noccas,"]"),"loglike"),M)
+  checkparmsCJS(mms,modlist,params,parmlist=c("pbeta[(Intercept)]","phibeta[(Intercept)]",paste0("z[",rep(1:M,each=noccas),",",1:noccas,"]"),"loglike"),M)
   
   pmodnames <- unlist(lapply(modlist,function(x) x$mod.p)) 
   phimodnames <- unlist(lapply(modlist,function(x) x$mod.phi))
@@ -1276,12 +1286,12 @@ multimodelCJS<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlis
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
     cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimodelCJS_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
     clusterExport(cl,list("rjmcmcCJS"),envir=environment())  
-    multimodel <- parLapply(cl,1:nchains, function(ichain) rjmcmcCJS(ichain,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,priorlist,mod.p.h,mod.phi.h,iter,miter,mburnin,mthin,modprior,M1[ichain],monitorparms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale,pmodnames,phimodnames,deltamodnames,printlog))
+    multimodel <- parLapply(cl,1:nchains, function(ichain) rjmcmcCJS(ichain,mms,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,priorlist,mod.p.h,mod.phi.h,iter,miter,mburnin,mthin,modprior,M1[ichain],monitorparms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale,pmodnames,phimodnames,deltamodnames,printlog))
     stopCluster(cl)
     gc()
   } else {
     multimodel <- vector('list',nchains)
-    multimodel[[nchains]] <- rjmcmcCJS(nchains,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[nchains]]),DMlist,deltalist,priorlist,mod.p.h,mod.phi.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale,pmodnames,phimodnames,deltamodnames,printlog)
+    multimodel[[nchains]] <- rjmcmcCJS(nchains,mms,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[nchains]]),DMlist,deltalist,priorlist,mod.p.h,mod.phi.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale,pmodnames,phimodnames,deltamodnames,printlog)
     gc()
   }
   

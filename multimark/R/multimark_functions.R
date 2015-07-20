@@ -415,7 +415,7 @@ get_inits<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0del
         if(isValidx(mms,initial.values[[ichain]]$x,M)){
           inits[[ichain]]$x<-initial.values[[ichain]]$x
         } else {
-          stop(paste("impermissible initial indiviual histories (H) for chain",ichain))
+          stop(paste("impermissible initial individual histories (H) for chain",ichain))
         }
       }
       if(any(tab!=inits[[ichain]]$x[as.integer(names(tab))])){
@@ -657,7 +657,7 @@ processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer(
   } else if(data.type=="sometimes"){
     if(!all(match(unique(c(Enc.Mat)),c(0,1,2,3,4),nomatch=0))) stop("Encounter histories for 'sometimes' data type can only include 0, 1, 2, 3, and 4 entries")
     temp.check <- which(rowSums(Enc.Mat==3)>0 & rowSums(Enc.Mat==4)==0)
-    if(length(temp.check)) warning(paste("Encounter history",temp.check,"includes a type 3 encounter but no type 4 encounter. \n"))
+    if(length(temp.check)) warning(paste("Encounter history",temp.check,"includes a type 3 encounter but no type 4 encounter\n  "))
     if(!any(Enc.Mat==4)) warning("Encounter histories contain no simulataneous encounters -- should you be using the 'never' data type?")
     ind<-5
   } else {
