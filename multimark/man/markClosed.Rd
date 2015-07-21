@@ -11,7 +11,7 @@ markClosed(Enc.Mat, covs = data.frame(), mod.p = ~1, parms = c("pbeta",
   sigma2_mu0 = 1.75, initial.values = NULL, printlog = FALSE, ...)
 }
 \arguments{
-\item{Enc.Mat}{A matrix of observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions (ignored unless \code{mms=NULL}).}
+\item{Enc.Mat}{A matrix of observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions. With a single mark type, encounter histories consist of only non-detections (0) and type 1 encounters (1).}
 
 \item{covs}{A data frame of temporal covariates for detection probabilities (ignored unless \code{mms=NULL}). The number of rows in the data frame must equal the number of sampling occasions. Covariate names cannot be "time", "age", or "h"; these names are reserved for temporal, behavioral, and individual effects when specifying \code{mod.p} and \code{mod.phi}.}
 

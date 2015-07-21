@@ -651,7 +651,7 @@ processCJSchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin){
 #' This function fits Cormack-Jolly-Seber (CJS) open population models for survival probability (\eqn{\phi}) and capture probability (\eqn{p}) for ``traditional'' capture-mark-recapture data consisting of a single mark type. Using Bayesian analysis methods, Markov chain Monte Carlo (MCMC) is used to draw samples from the joint posterior distribution. 
 #'
 #'
-#' @param Enc.Mat A matrix of observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions (ignored unless \code{mms=NULL}).
+#' @param Enc.Mat A matrix of observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions. With a single mark type, encounter histories consist of only non-detections (0) and type 1 encounters (1).
 #' @param covs A data frame of temporal covariates for detection probabilities (ignored unless \code{mms=NULL}). The number of rows in the data frame must equal the number of sampling occasions. Covariate names cannot be "time", "age", or "h"; these names are reserved for temporal, behavioral, and individual effects when specifying \code{mod.p} and \code{mod.phi}.
 #' @param mod.p Model formula for detection probability (\eqn{p}). For example, \code{mod.p=~1} specifies no effects (i.e., intercept only), \code{mod.p~time} specifies temporal effects, \code{mod.p~age} specifies age effects, \code{mod.p~h} specifies individual heterogeneity, and \code{mod.p~time+age} specifies additive temporal and age effects.
 #' @param mod.phi Model formula for survival probability (\eqn{\phi}). For example, \code{mod.phi=~1} specifies no effects (i.e., intercept only), \code{mod.phi~time} specifies temporal effects, \code{mod.phi~age} specifies age effects, \code{mod.phi~h} specifies individual heterogeneity, and \code{mod.phi~time+age} specifies additive temporal and age effects.
@@ -711,6 +711,7 @@ processCJSchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin){
 #' summary(sim.dot$mcmc)
 #' plot(sim.dot$mcmc)}
 markCJS<-function(Enc.Mat,covs=data.frame(),mod.p=~1,mod.phi=~1,parms=c("pbeta","phibeta"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,propphibeta=0.1,propzphi=1,propsigmaphi=1,pbeta0=0,pSigma0=1,phibeta0=0,phiSigma0=1,l0p=1,d0p=0.01,l0phi=1,d0phi=0.01,initial.values=NULL,link="probit",printlog=FALSE,...){
+  if(any(Enc.Mat>1 | Enc.Mat<0)) stop("With a single mark type, encounter histories can only contain 0's (non-detections) and 1's (detections)")
   mms <- processdata(Enc.Mat,covs=covs,known=rep(1,nrow(Enc.Mat)))
   out <- multimarkCJS(mms=mms,mod.p=mod.p,mod.phi=mod.phi,mod.delta=~NULL,parms=parms,nchains=nchains,iter=iter,adapt=adapt,bin=bin,thin=thin,burnin=burnin,taccept=taccept,tuneadjust=tuneadjust,proppbeta=proppbeta,propzp=propzp,propsigmap=propsigmap,propphibeta=propphibeta,propzphi=propzphi,propsigmaphi=propsigmaphi,pbeta0=pbeta0,pSigma0=pSigma0,phibeta0=phibeta0,phiSigma0=phiSigma0,l0p=l0p,d0p=d0p,l0phi=l0phi,d0phi=d0phi,initial.values=initial.values,link=link,printlog=printlog,...)
   out$initial.values <- lapply(out$initial.values,function(x) list(pbeta=x$pbeta,phibeta=x$phibeta,zp=x$zp,sigma2_zp=x$sigma2_zp,zphi=x$zphi,sigma2_zphi=x$sigma2_zphi,z=x$z))

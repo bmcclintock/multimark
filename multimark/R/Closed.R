@@ -426,7 +426,7 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
 #' This function fits closed population abundance models for ``traditional'' capture-mark-recapture data consisting of a single mark type using Bayesian analysis methods. Markov chain Monte Carlo (MCMC) is used to draw samples from the joint posterior distribution. 
 #'
 #'
-#' @param Enc.Mat A matrix of observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions (ignored unless \code{mms=NULL}).
+#' @param Enc.Mat A matrix of observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions. With a single mark type, encounter histories consist of only non-detections (0) and type 1 encounters (1).
 #' @param covs A data frame of temporal covariates for detection probabilities (ignored unless \code{mms=NULL}). The number of rows in the data frame must equal the number of sampling occasions. Covariate names cannot be "time", "age", or "h"; these names are reserved for temporal, behavioral, and individual effects when specifying \code{mod.p} and \code{mod.phi}.
 #' @param mod.p Model formula for detection probability. For example, \code{mod.p=~1} specifies no effects (i.e., intercept only), \code{mod.p~time} specifies temporal effects, \code{mod.p~c} specifies behavioral reponse (i.e., trap "happy" or "shy"), \code{mod.p~h} specifies individual heterogeneity, and \code{mod.p~time+c} specifies additive temporal and behavioral effects.
 #' @param parms A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are logit-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), logit-scale individual heterogeneity variance term ("\code{sigma2_zp}"), and logit-scale individual effects ("\code{zp}"). The log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.
@@ -474,6 +474,7 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
 #' summary(sim.dot$mcmc)
 #' plot(sim.dot$mcmc)}
 markClosed<-function(Enc.Mat,covs=data.frame(),mod.p=~1,parms=c("pbeta","N"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,npoints=500,a=25,mu0=0,sigma2_mu0=1.75,initial.values=NULL,printlog=FALSE,...){
+  if(any(Enc.Mat>1 | Enc.Mat<0)) stop("With a single mark type, encounter histories can only contain 0's (non-detections) and 1's (detections)")
   mms <- processdata(Enc.Mat,covs=covs,known=rep(1,nrow(Enc.Mat)))
   out <- multimarkClosed(mms=mms,mod.p=mod.p,mod.delta=~NULL,parms=parms,nchains=nchains,iter=iter,adapt=adapt,bin=bin,thin=thin,burnin=burnin,taccept=taccept,tuneadjust=tuneadjust,proppbeta=proppbeta,propzp=propzp,propsigmap=propsigmap,npoints=npoints,a=a,mu0=mu0,sigma2_mu0=sigma2_mu0,initial.values=initial.values,printlog=printlog,...)
   out$initial.values <- lapply(out$initial.values,function(x) list(pbeta=x$pbeta,zp=x$zp,sigma2_zp=x$sigma2_zp,N=x$N))
