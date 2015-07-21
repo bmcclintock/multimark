@@ -505,14 +505,14 @@ get_inits<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0del
         inits[[ichain]]$sigma2_zphi<-0.0
         inits[[ichain]]$zphi<-rep(0.0,M)
       }
-      if(length(initial.values[[ichain]]$z)){
-        if(all(dunif(initial.values[[ichain]]$z)==1) & is.matrix(initial.values[[ichain]]$z) & all(dim(initial.values[[ichain]]$z)==dim(mms@Enc.Mat))){
-          inits[[ichain]]$z<-initial.values[[ichain]]$z
+      if(length(initial.values[[ichain]]$q)){
+        if(all(dunif(initial.values[[ichain]]$q)==1) & is.matrix(initial.values[[ichain]]$q) & all(dim(initial.values[[ichain]]$q)==dim(mms@Enc.Mat))){
+          inits[[ichain]]$q<-initial.values[[ichain]]$q
         } else {
-          stop(paste0("initial values for 'z' must be a ",M,"x",ncol(mms@Enc.Mat)," binary (0,1) matrix"))
+          stop(paste0("initial values for 'q' must be a ",M,"x",ncol(mms@Enc.Mat)," binary (0,1) matrix"))
         }
       } else {
-        inits[[ichain]]$z<-get_z(mms,DM,inits[[ichain]]$H,inits[[ichain]]$pbeta,inits[[ichain]]$zp,inits[[ichain]]$phibeta,inits[[ichain]]$zphi)
+        inits[[ichain]]$q<-get_q(mms,DM,inits[[ichain]]$H,inits[[ichain]]$pbeta,inits[[ichain]]$zp,inits[[ichain]]$phibeta,inits[[ichain]]$zphi)
       }
     } else {
       if(length(initial.values[[ichain]]$N)){
