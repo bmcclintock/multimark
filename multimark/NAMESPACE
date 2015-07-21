@@ -1,6 +1,7 @@
 export(
   markClosed,
   multimarkClosed,
+  markCJS,
   multimarkCJS,
   processdata,
   simdataClosed,

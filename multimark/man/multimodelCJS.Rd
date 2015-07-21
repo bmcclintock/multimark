@@ -4,16 +4,13 @@
 \alias{multimodelCJS}
 \title{Multimodel inference for 'multimark' open population survival models}
 \usage{
-multimodelCJS(mms, modlist, modprior = rep(1/length(modlist),
-  length(modlist)), monparms = "phi", miter = NULL, mburnin = 0,
-  mthin = 1, M1 = NULL, pbetapropsd = 1, zppropsd = NULL,
-  phibetapropsd = 1, zphipropsd = NULL, sigppropshape = 1,
-  sigppropscale = 0.01, sigphipropshape = 1, sigphipropscale = 0.01,
-  printlog = FALSE)
+multimodelCJS(modlist, modprior = rep(1/length(modlist), length(modlist)),
+  monparms = "phi", miter = NULL, mburnin = 0, mthin = 1, M1 = NULL,
+  pbetapropsd = 1, zppropsd = NULL, phibetapropsd = 1,
+  zphipropsd = NULL, sigppropshape = 1, sigppropscale = 0.01,
+  sigphipropshape = 1, sigphipropscale = 0.01, printlog = FALSE)
 }
 \arguments{
-\item{mms}{An object of class \code{multimarksetup}. See \code{\link{multimarksetup-class}}.}
-
 \item{modlist}{A list of individual model output lists returned by \code{\link{multimarkCJS}}. The models must have the same number of chains and MCMC iterations.}
 
 \item{modprior}{Vector of length \code{length(modlist)} containing prior model probabilities. Default is \code{modprior = rep(1/length(modlist), length(modlist))}.}
@@ -61,7 +58,7 @@ Note that setting \code{parms="all"} is required when fitting individual \code{\
 \dontshow{
 setup<-processdata(bobcat)
 test.dot<-multimarkCJS(mms=setup,parms="all",iter=10,burnin=0)
-test<-multimodelCJS(mms=setup,modlist=list(mod1=test.dot,mod2=test.dot))
+test<-multimodelCJS(modlist=list(mod1=test.dot,mod2=test.dot))
 set.seed(10)
 }
 \donttest{
@@ -83,7 +80,7 @@ sim.pdot.phiTime <- multimarkCJS(mms=setup,mod.phi=~Time,parms="all")
 
 #Perform RJMCMC using defaults
 modlist <- list(mod1=sim.pdot.phidot,mod2=sim.pdot.phiTime)
-sim.M <- multimodelCJS(mms=setup,modlist=modlist)
+sim.M <- multimodelCJS(modlist=modlist)
 
 #Posterior model probabilities
 sim.M$pos.prob
