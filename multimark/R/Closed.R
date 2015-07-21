@@ -421,6 +421,65 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
   return(list(chains=chains,initial.values=initial.values))  
 }
 
+#' Fit closed population abundance models for ``traditional'' capture-mark-recapture data consisting of a single mark type
+#'
+#' This function fits closed population abundance models for ``traditional'' capture-mark-recapture data consisting of a single mark type using Bayesian analysis methods. Markov chain Monte Carlo (MCMC) is used to draw samples from the joint posterior distribution. 
+#'
+#'
+#' @param Enc.Mat A matrix of observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions (ignored unless \code{mms=NULL}).
+#' @param covs A data frame of temporal covariates for detection probabilities (ignored unless \code{mms=NULL}). The number of rows in the data frame must equal the number of sampling occasions. Covariate names cannot be "time", "age", or "h"; these names are reserved for temporal, behavioral, and individual effects when specifying \code{mod.p} and \code{mod.phi}.
+#' @param mod.p Model formula for detection probability. For example, \code{mod.p=~1} specifies no effects (i.e., intercept only), \code{mod.p~time} specifies temporal effects, \code{mod.p~c} specifies behavioral reponse (i.e., trap "happy" or "shy"), \code{mod.p~h} specifies individual heterogeneity, and \code{mod.p~time+c} specifies additive temporal and behavioral effects.
+#' @param parms A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are logit-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), logit-scale individual heterogeneity variance term ("\code{sigma2_zp}"), and logit-scale individual effects ("\code{zp}"). The log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.
+#' @param nchains The number of parallel MCMC chains for the model.
+#' @param iter The number of MCMC iterations.
+#' @param adapt The number of iterations for proposal distribution adaptation. If \code{adapt = 0} then no adaptation occurs.
+#' @param bin Bin length for calculating acceptance rates during adaptive phase (\code{0 < bin <= iter}).
+#' @param thin Thinning interval for monitored parameters.
+#' @param burnin Number of burn-in iterations (\code{0 <= burnin < iter}).
+#' @param taccept Target acceptance rate during adaptive phase (\code{0 < taccept <= 1}). Acceptance rate is monitored every \code{bin} iterations. Default is \code{taccept = 0.44}.
+#' @param tuneadjust Adjustment term during adaptive phase (\code{0 < tuneadjust <= 1}). If acceptance rate is less than \code{taccept}, then proposal term (\code{proppbeta}, \code{propzp}, or \code{propsigmap}) is multiplied by \code{tuneadjust}. If acceptance rate is greater than or equal to \code{taccept}, then proposal term is divided by \code{tuneadjust}. Default is \code{tuneadjust = 0.95}.
+#' @param proppbeta Scaler or vector (of length k) specifying the initial standard deviation of the Normal(pbeta[j], proppbeta[j]) proposal distribution. If \code{proppbeta} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{proppbeta = 0.1}.
+#' @param propzp Scaler or vector (of length M) specifying the initial standard deviation of the Normal(zp[i], propzp[i]) proposal distribution. If \code{propzp} is a scaler, then this value is used for all i = 1, ..., M individuals. Default is \code{propzp = 1}.
+#' @param propsigmap Scaler specifying the initial Gamma(shape = 1/\code{propsigmap}, scale = sigma_zp * \code{propsigmap}) proposal distribution for sigma_zp = sqrt(sigma2_zp). Default is \code{propsigmap=1}.
+#' @param npoints Number of Gauss-Hermite quadrature points to use for numerical integration. Accuracy increases with number of points, but so does computation time.
+#' @param a Scale parameter for [sigma_z] ~ half-Cauchy(a) prior for the individual hetegeneity term sigma_zp = sqrt(sigma2_zp). Default is ``uninformative'' \code{a = 25}.
+#' @param mu0 Scaler or vector (of length k) specifying mean of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{mu0 = 0}.
+#' @param sigma2_mu0 Scaler or vector (of length k) specifying variance of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{sigma2_mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{sigma2_mu0 = 1.75}.
+#' @param initial.values Optional list of \code{nchain} list(s) specifying initial values for "\code{pbeta}", "\code{zp}", "\code{sigma2_zp}", and "\code{N}". Default is \code{initial.values = NULL}, which causes initial values to be generated automatically.
+#' @param printlog Logical indicating whether to print the progress of chains and any errors to a log file in the working directory. Ignored when \code{nchains=1}. Updates are printed to log file as 1\% increments of \code{iter} of each chain are completed. With >1 chains, setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.
+#' @param ... Additional "\code{parameters}" arguments for specifying \code{mod.p}. See \code{\link[RMark]{make.design.data}}.
+#'
+#' @details The first time \code{markClosed} (or \code{\link{markCJS}}) is called, it will likely produce a firewall warning alerting users that R has requested the ability to accept incoming network connections. Incoming network connections are required to use parallel processing as implemented in \code{markClosed}. Note that setting \code{parms="all"} is required for any \code{markClosed} model output to be used in \code{\link{multimodelClosed}}.
+#' @return A list containing the following:
+#' \item{mcmc}{Markov chain Monte Carlo object of class \code{\link[coda]{mcmc.list}}.}
+#' \item{mod.p}{Model formula for detection probability (as specified by \code{mod.p} above).}
+#' \item{mod.delta}{Formula always \code{NULL}; only for internal use in \code{\link{multimodelClosed}}.}
+#' \item{DM}{A list of design matrices for detection probability generated for model \code{mod.p}, where DM$p is the design matrix for initial capture probability (p) and DM$c is the design matrix for recapture probability (c).}
+#' \item{initial.values}{A list containing the parameter and latent variable values at iteration \code{iter} for each chain. Values are provided for "\code{pbeta}", "\code{zp}", "\code{sigma2_zp}", and "\code{N}".}
+#' \item{mms}{An object of class \code{multimarksetup}}
+#' @author Brett T. McClintock
+#' @seealso \code{\link{multimodelClosed}}
+#' @examples
+#' \dontshow{
+#' test<-markClosed(Enc.Mat=simdataClosed(delta_1=1,delta_2=0)$Enc.Mat,iter=10,burnin=0,bin=5)}
+#' \donttest{
+#' # This example is excluded from testing to reduce package check time
+#' # Example uses unrealistically low values for nchain, iter, and burnin
+#' 
+#' #Run two parallel chains using the default model for simulated ``traditional'' data
+#' data<-simdataClosed(delta_1=1,delta_2=0)$Enc.Mat
+#' sim.dot<-markClosed(data)
+#' 
+#' #Posterior summary for monitored parameters
+#' summary(sim.dot$mcmc)
+#' plot(sim.dot$mcmc)}
+markClosed<-function(Enc.Mat,covs=data.frame(),mod.p=~1,parms=c("pbeta","N"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,npoints=500,a=25,mu0=0,sigma2_mu0=1.75,initial.values=NULL,printlog=FALSE,...){
+  mms <- processdata(Enc.Mat,covs=covs,known=rep(1,nrow(Enc.Mat)))
+  out <- multimarkClosed(mms=mms,mod.p=mod.p,mod.delta=~NULL,parms=parms,nchains=nchains,iter=iter,adapt=adapt,bin=bin,thin=thin,burnin=burnin,taccept=taccept,tuneadjust=tuneadjust,proppbeta=proppbeta,propzp=propzp,propsigmap=propsigmap,npoints=npoints,a=a,mu0=mu0,sigma2_mu0=sigma2_mu0,initial.values=initial.values,printlog=printlog,...)
+  out$initial.values <- lapply(out$initial.values,function(x) list(pbeta=x$pbeta,zp=x$zp,sigma2_zp=x$sigma2_zp,N=x$N))
+  return(out)
+}
+
 #' Fit closed population abundance models for capture-mark-recapture data consisting of multiple non-invasive marks
 #'
 #' This function fits closed population abundance models for capture-mark-recapture data consisting of multiple non-invasive marks using Bayesian analysis methods. Markov chain Monte Carlo (MCMC) is used to draw samples from the joint posterior distribution. 
@@ -461,7 +520,7 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
 #' @param sigma2_mu0 Scaler or vector (of length k) specifying variance of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{sigma2_mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{sigma2_mu0 = 1.75}.
 #' @param a0psi Specifies "shape1" parameter for [psi] ~ Beta(a0psi,b0psi) prior. Default is \code{a0psi = 1}.
 #' @param b0psi Specifies "shape2" parameter for [psi] ~ Beta(a0psi,b0psi) prior. Default is \code{b0psi = 1}.
-#' @param initial.values Optional list of \code{nchain} list(s) specifying intial values for parameters and latent variables. Default is \code{initial.values = NULL}, which causes initial values to be generated automatically. In addition to the parameters ("\code{pbeta}", "\code{N}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_zp}", "\code{zp}", and "\code{psi}"), initial values can be specified for the initial latent history frequencies ("\code{x}") and initial individual encounter history indices ("\code{H}").
+#' @param initial.values Optional list of \code{nchain} list(s) specifying initial values for parameters and latent variables. Default is \code{initial.values = NULL}, which causes initial values to be generated automatically. In addition to the parameters ("\code{pbeta}", "\code{N}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_zp}", "\code{zp}", and "\code{psi}"), initial values can be specified for the initial latent history frequencies ("\code{x}") and initial individual encounter history indices ("\code{H}").
 #' @param known Optional integer vector indicating whether the encounter history of an individual is known with certainty (i.e., the observed encounter history is the true encounter history). Encounter histories with at least one type 4 encounter are automatically assumed to be known, and \code{known} does not need to be specified unless there exist encounter histories that do not contain a type 4 encounter that happen to be known with certainty (e.g., from independent telemetry studies). If specified, \code{known = c(v_1,v_2,...,v_M)} must be a vector of length \code{M = nrow(Enc.Mat)} where \code{v_i = 1} if the encounter history for individual \code{i} is known (\code{v_i = 0} otherwise). Note that known all-zero encounter histories (e.g., `000') are ignored.
 #' @param printlog Logical indicating whether to print the progress of chains and any errors to a log file in the working directory. Ignored when \code{nchains=1}. Updates are printed to log file as 1\% increments of \code{iter} of each chain are completed. With >1 chains, setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.
 #' @param ... Additional "\code{parameters}" arguments for specifying \code{mod.p}. See \code{\link[RMark]{make.design.data}}.
@@ -473,6 +532,7 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
 #' \item{mod.delta}{Model formula for conditional probability of type 1 or type 2 encounter, given detection (as specified by \code{mod.delta} above).}
 #' \item{DM}{A list of design matrices for detection probability generated for model \code{mod.p}, where DM$p is the design matrix for initial capture probability (p) and DM$c is the design matrix for recapture probability (c).}
 #' \item{initial.values}{A list containing the parameter and latent variable values at iteration \code{iter} for each chain. Values are provided for "\code{pbeta}", "\code{N}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_zp}", "\code{zp}", "\code{psi}", "\code{x}", and "\code{H}".}
+#' \item{mms}{An object of class \code{multimarksetup}}
 #' @author Brett T. McClintock
 #' @seealso \code{\link{bobcat}}, \code{\link{processdata}}, \code{\link{multimodelClosed}}
 #' @references
@@ -535,7 +595,7 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
   priorparms <-list(a0delta=a0delta,a0alpha=a0alpha,b0alpha=b0alpha,a=a,mu0=mu0,sigma2_mu0=sigma2_mu0,a0psi=a0psi,b0psi=b0psi,npoints=npoints)
   
   message("\nFitting closed capture model with logit link\n")
-  message("data type = \"",data.type,"\"\n")
+  if(mod.delta != ~NULL) message("data type = \"",data.type,"\"\n")
   message("p model = ",as.character(mod.p))
   if(mod.delta != ~NULL) message("delta model = ",as.character(mod.delta))
   message("\nInitializing model \n")
@@ -564,7 +624,7 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
   }
   
   chains <- processClosedchains(chains,params,DM,M,noccas,nchains,iter,burnin,thin)
-  return(list(mcmc=chains$chains,mod.p=mod.p,mod.delta=mod.delta,DM=list(p=DM$p,c=DM$c),initial.values=chains$initial.values,priorparms=priorparms))
+  return(list(mcmc=chains$chains,mod.p=mod.p,mod.delta=mod.delta,DM=list(p=DM$p,c=DM$c),initial.values=chains$initial.values,priorparms=priorparms,mms=mms))
 }
 
 #' Calculate posterior capture and recapture probabilities
@@ -647,6 +707,7 @@ checkparmsClosed <- function(mms,modlist,params,parmlist,M){
     if(mms@data.type=="sometimes"){
       parmlist<-c(parmlist,"alpha")
     }
+    if((length(deltatypeind)+length(delta1ind))!=length(modlist)) stop("Cannot perform multimodel inference using both 'multimarkClosed()' and 'markClosed()' models")
   }
   hind <- which(lapply(modlist,function(x) any("h"==attributes(terms(x$mod.p))$term.labels))==TRUE)  
   if(!length(hind)){
@@ -686,11 +747,11 @@ monitorparmsClosed <- function(parms,parmlist,noccas){
   list(commonparms=commonparms,parms=parms,namesp=namesp,namesc=namesc,getlogitp=getlogitp,getlogitc=getlogitc)
 }
 
-checkmmClosedinput<-function(mms,modlist,nmod,nchains,miter,mburnin,mthin,modprior,M1){
-  if(class(mms)!="multimarksetup") stop("'mms' must be an object of class 'multimarksetup'")
-  if(!all(match(unlist(unique(lapply(modlist,names))),c("mcmc","mod.p","mod.delta","DM","initial.values","priorparms"),nomatch=0))) stop("each object in 'modlist' must be a list returned by multimarkClosed()")
-  if(!all(lapply(modlist,function(x) is.mcmc.list(x$mcmc))==TRUE)) stop("each object in 'modlist' must be a list returned by multimarkClosed() output")
+checkmmClosedinput<-function(mmslist,modlist,nmod,nchains,miter,mburnin,mthin,modprior,M1){
+  if(!all(match(unlist(unique(lapply(modlist,names))),c("mcmc","mod.p","mod.delta","DM","initial.values","priorparms","mms"),nomatch=0))) stop("each object in 'modlist' must be a list returned by multimarkClosed() or markClosed()")
+  if(!all(lapply(modlist,function(x) is.mcmc.list(x$mcmc))==TRUE)) stop("mcmc output for each model must be an object of type 'mcmc.list'")
   if(nmod<2) stop("'modlist' must contain at least two models")
+  if(length(mmslist)!=1) stop("'multimarksetup' (mms) object must be identical for each model")
   if(length(nchains)!=1) stop("all models must have same number of chains")
   if(length(miter)!=1) stop("all chains must have same number of iterations")
   if(miter<=mburnin) stop("'mburnin' must be less than ",miter)
@@ -698,6 +759,9 @@ checkmmClosedinput<-function(mms,modlist,nmod,nchains,miter,mburnin,mthin,modpri
   if(length(modprior)!=nmod | base::sum(modprior)!=1) stop(paste("'modprior' must be a vector of length ",nmod," that sums to 1"))
   if(length(M1)!=nchains) stop("'M1' must be an integer vector of length ",nchains)
   if(!all(match(M1,1:nmod,nomatch=0))) stop("'M1' must be an integer vector of length ",nchains," with values ranging from 1 to ",nmod)
+  mms<-mmslist[[1]]
+  if(class(mms)!="multimarksetup") stop("'mms' for each model must be an object of class 'multimarksetup'")
+  return(mms)
 }
 
 drawmissingClosed<-function(M.cur,missing,pbetapropsd,sigppropshape,sigppropscale){
@@ -872,7 +936,6 @@ rjmcmcClosed <- function(ichain,mms,M,noccas,data_type,alpha,C,All.hists,modlist
 #' This function performs Bayesian multimodel inference for a set of 'multimark' closed population abundance models using the reversible jump Markov chain Monte Carlo (RJMCMC) algorithm proposed by Barker & Link (2013).
 #'
 #'
-#' @param mms An object of class \code{multimarksetup}. See \code{\link{multimarksetup-class}}.
 #' @param modlist A list of individual model output lists returned by \code{\link{multimarkClosed}}. The models must have the same number of chains and MCMC iterations.
 #' @param modprior Vector of length \code{length(modlist)} containing prior model probabilities. Default is \code{modprior = rep(1/length(modlist), length(modlist))}.
 #' @param monparms Parameters to monitor. Only parameters common to all models can be monitored (e.g., "\code{pbeta[(Intercept)]}", "\code{N}", "\code{psi}"), but derived capture ("\code{p}") and recapture ("\code{c}") probabilities can also be monitored. Default is \code{monparms = "N"}.
@@ -897,7 +960,7 @@ rjmcmcClosed <- function(ichain,mms,M,noccas,data_type,alpha,C,All.hists,modlist
 #' \dontshow{
 #' setup<-processdata(bobcat)
 #' test.dot<-multimarkClosed(mms=setup,parms="all",iter=10,burnin=0,bin=5)
-#' test<-multimodelClosed(mms=setup,modlist=list(mod1=test.dot,mod2=test.dot))
+#' test<-multimodelClosed(modlist=list(mod1=test.dot,mod2=test.dot))
 #' }
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
@@ -914,18 +977,19 @@ rjmcmcClosed <- function(ichain,mms,M,noccas,data_type,alpha,C,All.hists,modlist
 #' 
 #' #Perform RJMCMC using defaults
 #' modlist <- list(mod1=bobcat.dot,mod2=bobcat.time)
-#' bobcat.M <- multimodelClosed(mms=setup,modlist=modlist,monparms=c("N","p"))
+#' bobcat.M <- multimodelClosed(modlist=modlist,monparms=c("N","p"))
 #' 
 #' #Posterior model probabilities
 #' bobcat.M$pos.prob
 #'  
 #' #multimodel posterior summary for abundance
 #' summary(bobcat.M$rjmcmc[,"N"])}
-multimodelClosed<-function(mms,modlist,modprior=rep(1/length(modlist),length(modlist)),monparms="N",miter=NULL,mburnin=0,mthin=1,M1=NULL,pbetapropsd=1,zppropsd=NULL,sigppropshape=6,sigppropscale=4,printlog=FALSE){
+multimodelClosed<-function(modlist,modprior=rep(1/length(modlist),length(modlist)),monparms="N",miter=NULL,mburnin=0,mthin=1,M1=NULL,pbetapropsd=1,zppropsd=NULL,sigppropshape=6,sigppropscale=4,printlog=FALSE){
   
   nmod <- length(modlist)
   iter <- unlist(unique(lapply(modlist,function(x) unique(lapply(x$mcmc,nrow)))))
   nchains <- unlist(unique(lapply(modlist,function(x) length(x$mcmc))))
+  mmslist <- unlist(unique(lapply(modlist,function(x) x$mms)))
   
   params <- lapply(modlist,function(x) varnames(x$mcmc))
   
@@ -933,7 +997,7 @@ multimodelClosed<-function(mms,modlist,modprior=rep(1/length(modlist),length(mod
   
   if(is.null(miter)) miter <- iter
   
-  checkmmClosedinput(mms,modlist,nmod,nchains,miter,mburnin,mthin,modprior,M1)
+  mms<-checkmmClosedinput(mmslist,modlist,nmod,nchains,miter,mburnin,mthin,modprior,M1)
   
   noccas<-ncol(mms@Enc.Mat)
   M<-nrow(mms@Enc.Mat)
@@ -951,8 +1015,6 @@ multimodelClosed<-function(mms,modlist,modprior=rep(1/length(modlist),length(mod
     message(paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")\n"))
   } else if(all(deltamodnames==~NULL)){
     message(paste0("mod",1:nmod,": ","p(",pmodnames,")\n"))
-  } else {
-    stop("Cannot perform multimodel inference using both 'multimarkClosed()' and 'markClosed()' models")
   }
   
   missing <- missingparmnamesClosed(params,M,noccas,zppropsd) 

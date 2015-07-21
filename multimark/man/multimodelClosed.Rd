@@ -4,14 +4,12 @@
 \alias{multimodelClosed}
 \title{Multimodel inference for 'multimark' closed population abundance models}
 \usage{
-multimodelClosed(mms, modlist, modprior = rep(1/length(modlist),
-  length(modlist)), monparms = "N", miter = NULL, mburnin = 0,
-  mthin = 1, M1 = NULL, pbetapropsd = 1, zppropsd = NULL,
-  sigppropshape = 6, sigppropscale = 4, printlog = FALSE)
+multimodelClosed(modlist, modprior = rep(1/length(modlist), length(modlist)),
+  monparms = "N", miter = NULL, mburnin = 0, mthin = 1, M1 = NULL,
+  pbetapropsd = 1, zppropsd = NULL, sigppropshape = 6,
+  sigppropscale = 4, printlog = FALSE)
 }
 \arguments{
-\item{mms}{An object of class \code{multimarksetup}. See \code{\link{multimarksetup-class}}.}
-
 \item{modlist}{A list of individual model output lists returned by \code{\link{multimarkClosed}}. The models must have the same number of chains and MCMC iterations.}
 
 \item{modprior}{Vector of length \code{length(modlist)} containing prior model probabilities. Default is \code{modprior = rep(1/length(modlist), length(modlist))}.}
@@ -51,7 +49,7 @@ Note that setting \code{parms="all"} is required when fitting individual \code{\
 \dontshow{
 setup<-processdata(bobcat)
 test.dot<-multimarkClosed(mms=setup,parms="all",iter=10,burnin=0,bin=5)
-test<-multimodelClosed(mms=setup,modlist=list(mod1=test.dot,mod2=test.dot))
+test<-multimodelClosed(modlist=list(mod1=test.dot,mod2=test.dot))
 }
 \donttest{
 # This example is excluded from testing to reduce package check time
@@ -68,7 +66,7 @@ bobcat.time <- multimarkClosed(mms=setup,mod.p=~time,parms="all")
 
 #Perform RJMCMC using defaults
 modlist <- list(mod1=bobcat.dot,mod2=bobcat.time)
-bobcat.M <- multimodelClosed(mms=setup,modlist=modlist,monparms=c("N","p"))
+bobcat.M <- multimodelClosed(modlist=modlist,monparms=c("N","p"))
 
 #Posterior model probabilities
 bobcat.M$pos.prob
