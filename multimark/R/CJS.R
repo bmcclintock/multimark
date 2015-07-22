@@ -696,9 +696,11 @@ processCJSchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin){
 #' @seealso \code{\link{processdata}}, \code{\link{multimodelCJS}}
 #' @examples
 #' \dontshow{
-#' test<-markCJS(Enc.Mat=simdataCJS(delta_1=1,delta_2=0)$Enc.Mat,iter=10,burnin=0)}
+#' data<-simdataCJS(delta_1=1,delta_2=0)$Enc.Mat
+#' test<-markCJS(data,iter=10,burnin=0)
+#' test.age <- markCJS(data,mod.phi=~age,iter=10,burnin=0,parameters=list(Phi=list(age.bins=c(0,1,4))),right=FALSE)}
 #' \donttest{
-#' # This example is excluded from testing to reduce package check time
+#' # These examples are excluded from testing to reduce package check time
 #' # Example uses unrealistically low values for nchain, iter, and burnin
 #' 
 #' #Simulate open population data using defaults
@@ -709,7 +711,13 @@ processCJSchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin){
 #' 
 #' #Posterior summary for monitored parameters
 #' summary(sim.dot$mcmc)
-#' plot(sim.dot$mcmc)}
+#' plot(sim.dot$mcmc)
+#' 
+#' #Fit ``age'' model with 2 age classes (e.g., juvenile and adult) for survival
+#' #using 'parameters' and 'right' arguments from RMark::make.design.data
+#' sim.age <- markCJS(data,mod.phi=~age,
+#'            parameters=list(Phi=list(age.bins=c(0,1,4))),right=FALSE)
+#' summary(getprobsCJS(sim.age))}
 markCJS<-function(Enc.Mat,covs=data.frame(),mod.p=~1,mod.phi=~1,parms=c("pbeta","phibeta"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,propphibeta=0.1,propzphi=1,propsigmaphi=1,pbeta0=0,pSigma0=1,phibeta0=0,phiSigma0=1,l0p=1,d0p=0.01,l0phi=1,d0phi=0.01,initial.values=NULL,link="probit",printlog=FALSE,...){
   if(any(Enc.Mat>1 | Enc.Mat<0)) stop("With a single mark type, encounter histories can only contain 0's (non-detections) and 1's (detections)")
   mms <- processdata(Enc.Mat,covs=covs,known=rep(1,nrow(Enc.Mat)))
@@ -791,7 +799,8 @@ markCJS<-function(Enc.Mat,covs=data.frame(),mod.p=~1,mod.phi=~1,parms=c("pbeta",
 #' McClintock, B. T., Bailey, L. L., Dreher, B. P., and Link, W. A. 2014. Probit models for capture-recapture data subject to imperfect detection, individual heterogeneity and misidentification. \emph{The Annals of Applied Statistics} 8: 2461-2484.
 #' @examples
 #' \dontshow{
-#' test<-multimarkCJS(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0)}
+#' test<-multimarkCJS(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0)
+#' test.age <- multimarkCJS(Enc.Mat=bobcat,mod.phi=~age,iter=10,burnin=0,parameters=list(Phi=list(age.bins=c(0,1,7))),right=FALSE)}
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
 #' # Example uses unrealistically low values for nchain, iter, and burnin
@@ -804,7 +813,13 @@ markCJS<-function(Enc.Mat,covs=data.frame(),mod.p=~1,mod.phi=~1,parms=c("pbeta",
 #' 
 #' #Posterior summary for monitored parameters
 #' summary(sim.dot$mcmc)
-#' plot(sim.dot$mcmc)}
+#' plot(sim.dot$mcmc)
+#' 
+#' #' #Fit ``age'' model with 2 age classes (e.g., juvenile and adult) for survival
+#' #using 'parameters' and 'right' arguments from RMark::make.design.data
+#' sim.age <- multimarkCJS(data$Enc.Mat,mod.phi=~age,
+#'            parameters=list(Phi=list(age.bins=c(0,1,4))),right=FALSE)
+#' summary(getprobsCJS(sim.age))}
 multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.p=~1,mod.phi=~1,mod.delta=~type,parms=c("pbeta","phibeta","delta"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,propphibeta=0.1,propzphi=1,propsigmaphi=1,maxnumbasis=1,pbeta0=0,pSigma0=1,phibeta0=0,phiSigma0=1,l0p=1,d0p=0.01,l0phi=1,d0phi=0.01,a0delta=1,a0alpha=1,b0alpha=1,a0psi=1,b0psi=1,initial.values=NULL,known=integer(),link="probit",printlog=FALSE,...){
   
   if(is.null(mms)) mms <- processdata(Enc.Mat,data.type,covs,known)

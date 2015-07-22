@@ -36,7 +36,7 @@ multimarkCJS(Enc.Mat, data.type = "never", covs = data.frame(),
 
 \item{mod.delta}{Model formula for conditional probabilities of type 1 (delta_1) and type 2 (delta_2) encounters, given detection. Currently only \code{mod.delta=~1} (i.e., \eqn{\delta_1 = \delta_2}) and \code{mod.delta=~type} (i.e., \eqn{\delta_1 \ne \delta_2}) are implemented.}
 
-\item{parms}{A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are probit-scale detection probability parameters ("\code{pbeta}" for \eqn{p} and "\code{phibeta}" for \eqn{\phi}), conditional probability of type 1 or type 2 encounter, given detection ("\code{delta})", probability of simultaneous type 1 and type 2 detection, given both types encountered ("\code{alpha}"), probit-scale individual heterogeneity variance terms ("\code{sigma2_zp}" for \eqn{p} and "\code{sigma2_zphi}" for \eqn{\phi}), probit-scale individual effects ("\code{zp}" and "\code{zphi}"), and the probability that a randomly selected individual from the \code{M = nrow(Enc.Mat)} observed individuals belongs to the \eqn{n} unique individuals encountered at least once ("\code{psi}"). Individual encounter history indices ("\code{H}"), latent variable indicators for whether each individual was alive (1) or dead (0) during each sampling occasion ("\code{z}"), and the log likelihood ("\code{loglike}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.}
+\item{parms}{A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are probit-scale detection probability parameters ("\code{pbeta}" for \eqn{p} and "\code{phibeta}" for \eqn{\phi}), conditional probability of type 1 or type 2 encounter, given detection ("\code{delta})", probability of simultaneous type 1 and type 2 detection, given both types encountered ("\code{alpha}"), probit-scale individual heterogeneity variance terms ("\code{sigma2_zp}" for \eqn{p} and "\code{sigma2_zphi}" for \eqn{\phi}), probit-scale individual effects ("\code{zp}" and "\code{zphi}"), and the probability that a randomly selected individual from the \code{M = nrow(Enc.Mat)} observed individuals belongs to the \eqn{n} unique individuals encountered at least once ("\code{psi}"). Individual encounter history indices ("\code{H}"), latent variable indicators for whether each individual was alive (1) or dead (0) during each sampling occasion ("\code{q}"), and the log likelihood ("\code{loglike}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.}
 
 \item{nchains}{The number of parallel MCMC chains for the model.}
 
@@ -94,7 +94,7 @@ multimarkCJS(Enc.Mat, data.type = "never", covs = data.frame(),
 
 \item{b0psi}{Specifies "shape2" parameter for [psi] ~ Beta(a0psi,b0psi) prior. Default is \code{b0psi = 1}.}
 
-\item{initial.values}{Optional list of \code{nchain} list(s) specifying initial values for parameters and latent variables. Default is \code{initial.values = NULL}, which causes initial values to be generated automatically. In addition to the parameters ("\code{pbeta}", "\code{phibeta}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_zp}", "\code{sigma2_zphi}", "\code{zp}", "\code{zphi}", and "\code{psi}"), initial values can be specified for the initial latent history frequencies ("\code{x}"), initial individual encounter history indices ("\code{H}"), and initial latent variable indicators for whether each individual was alive (1) or dead (0) during each sampling occasion ("\code{z}").}
+\item{initial.values}{Optional list of \code{nchain} list(s) specifying initial values for parameters and latent variables. Default is \code{initial.values = NULL}, which causes initial values to be generated automatically. In addition to the parameters ("\code{pbeta}", "\code{phibeta}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_zp}", "\code{sigma2_zphi}", "\code{zp}", "\code{zphi}", and "\code{psi}"), initial values can be specified for the initial latent history frequencies ("\code{x}"), initial individual encounter history indices ("\code{H}"), and initial latent variable indicators for whether each individual was alive (1) or dead (0) during each sampling occasion ("\code{q}").}
 
 \item{known}{Optional integer vector indicating whether the encounter history of an individual is known with certainty (i.e., the observed encounter history is the true encounter history). Encounter histories with at least one type 4 encounter are automatically assumed to be known, and \code{known} does not need to be specified unless there exist encounter histories that do not contain a type 4 encounter that happen to be known with certainty (e.g., from independent telemetry studies). If specified, \code{known = c(v_1,v_2,...,v_M)} must be a vector of length \code{M = nrow(Enc.Mat)} where \code{v_i = 1} if the encounter history for individual \code{i} is known (\code{v_i = 0} otherwise). Note that known all-zero encounter histories (e.g., `000') are ignored.}
 
@@ -111,7 +111,7 @@ A list containing the following:
 \item{mod.phi}{Model formula for survival probability (as specified by \code{mod.phi} above).}
 \item{mod.delta}{Formula always \code{NULL}; only for internal use in \code{\link{multimodelCJS}}.}
 \item{DM}{A list of design matrices for detection and survival probability respectively generated by \code{mod.p} and \code{mod.phi}, where DM$p is the design matrix for capture probability (\eqn{p}) and DM$phi is the design matrix for survival probability (\eqn{\phi}).}
-\item{initial.values}{A list containing the parameter and latent variable values at iteration \code{iter} for each chain. Values are provided for "\code{pbeta}", "\code{phibeta}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_zp}" "\code{sigma2_zphi}", "\code{zp}", "\code{zphi}", "\code{psi}", "\code{x}", "\code{H}", and "\code{z}".}
+\item{initial.values}{A list containing the parameter and latent variable values at iteration \code{iter} for each chain. Values are provided for "\code{pbeta}", "\code{phibeta}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_zp}" "\code{sigma2_zphi}", "\code{zp}", "\code{zphi}", "\code{psi}", "\code{x}", "\code{H}", and "\code{q}".}
 \item{mms}{An object of class \code{multimarksetup}}
 }
 \description{
@@ -122,7 +122,8 @@ The first time \code{multimarkCJS} (or \code{\link{multimarkClosed}}) is called,
 }
 \examples{
 \dontshow{
-test<-multimarkCJS(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0)}
+test<-multimarkCJS(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0)
+test.age <- multimarkCJS(Enc.Mat=bobcat,mod.phi=~age,iter=10,burnin=0,parameters=list(Phi=list(age.bins=c(0,1,7))),right=FALSE)}
 \donttest{
 # This example is excluded from testing to reduce package check time
 # Example uses unrealistically low values for nchain, iter, and burnin
@@ -135,7 +136,13 @@ sim.dot <- multimarkCJS(data$Enc.Mat)
 
 #Posterior summary for monitored parameters
 summary(sim.dot$mcmc)
-plot(sim.dot$mcmc)}
+plot(sim.dot$mcmc)
+
+#' #Fit ``age'' model with 2 age classes (e.g., juvenile and adult) for survival
+#using 'parameters' and 'right' arguments from RMark::make.design.data
+sim.age <- multimarkCJS(data$Enc.Mat,mod.phi=~age,
+           parameters=list(Phi=list(age.bins=c(0,1,4))),right=FALSE)
+summary(getprobsCJS(sim.age))}
 }
 \author{
 Brett T. McClintock
