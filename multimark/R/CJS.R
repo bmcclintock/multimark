@@ -887,7 +887,8 @@ multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.
   
   if(nchains>1){
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
-    cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimarkCJS_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
+    modlog <- ifelse(mod.delta != ~NULL,"multimarkCJS","markCJS")
+    cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0(modlog,"_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
     clusterExport(cl,list("mcmcCJS"),envir=environment())  
     chains <- parLapply(cl,1:nchains, function(ichain) mcmcCJS(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sdp,Prop.sdphi,maxnumbasis,pbeta0,pprec0,phibeta0,phiprec0,l0p,d0p,l0phi,d0phi,a0delta,a0alpha,b0alpha,a0psi,b0psi,link,printlog))
     stopCluster(cl)
@@ -1394,7 +1395,11 @@ multimodelCJS<-function(modlist,modprior=rep(1/length(modlist),length(modlist)),
   pos.prob <- vector('list',nchains)
   for(ichain in 1:nchains){
     pos.prob[[ichain]] <-hist(multimodel[[ichain]][,"M"],plot=F,breaks=0:nmod)$density
-    names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")phi(",phimodnames,")delta(",deltamodnames,")")
+    if(all(deltamodnames!=~NULL)){
+      names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")phi(",phimodnames,")delta(",deltamodnames,")")
+    } else {
+      names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")phi(",phimodnames,")")
+    }
     multimodel[[ichain]] <- mcmc(multimodel[[ichain]])
     attributes(multimodel[[ichain]])$mcpar <- c(head(temp,n=1),tail(temp,n=1),mthin)
   }
@@ -1402,6 +1407,10 @@ multimodelCJS<-function(modlist,modprior=rep(1/length(modlist),length(modlist)),
   multimodel <- as.mcmc.list(multimodel)
   names(pos.prob) <- paste0("chain",1:nchains)
   pos.prob[["overall"]]<- hist(unlist(multimodel[, "M"]),plot = F, breaks = 0:nmod)$density
-  names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")phi(",phimodnames,")delta(",deltamodnames,")")
+  if(all(deltamodnames!=~NULL)){
+    names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")phi(",phimodnames,")delta(",deltamodnames,")")
+  } else {
+    names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")phi(",phimodnames,")")
+  }
   list(rjmcmc=multimodel,pos.prob=pos.prob) 
 }

@@ -1,12 +1,12 @@
-multimark 1.3.0 2015-07-20
+multimark 1.3.0 2015-07-21
 -----------------
 NEW FEATURES
 
-* 'markClosed()' and 'markCJS()' wrappers facilitate ``traditional'' capture-recapture analysis with a single mark type; Bayesian multimodel inference using 'multimodelClosed()' and 'multimodelCJS()' can also be implemented with output from these ``traditional'' models
+* 'markClosed()' and 'markCJS()' wrappers facilitate ``conventional'' capture-recapture analysis with a single mark type; Bayesian multimodel inference using 'multimodelClosed()' and 'multimodelCJS()' can also be implemented with output from these ``conventional'' models
 
 CHANGES
 
-* 'mms' no longer an argument for 'multimodelClosed()' or 'multimodelCJS()'; these data are now returned with individual model output for error checking
+* 'mms' no longer an argument for 'multimodelClosed()' or 'multimodelCJS()'; these data are now returned with individual model output for additional error checking
 
 * Fixed bug in 'multimarkClosed()' when all encounter histories are known
 
