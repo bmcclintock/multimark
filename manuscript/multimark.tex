@@ -84,10 +84,12 @@ July 21, 2015
 
 \newpage{}
 
+\linenumbers
+
 \noindent \textbf{Summary}\\
 \textbf{1.} I describe an open source R package, \verb|multimark|, for estimation of survival and abundance from capture-mark-recapture data consisting of multiple ``non-invasive'' marks. Non-invasive marks include natural pelt or skin patterns, scars, and genetic markers that enable individual identification in lieu of physical capture, and thus apply to any species that can be individually identified from visual or genetic sampling surveys. \verb|multimark| provides a means for combining and jointly analyzing encounter histories from multiple non-invasive sources that otherwise cannot be reliably matched (e.g. left- and right-sided photos of bilaterally asymmetrical individuals).\\
 \textbf{2.} \verb|multimark| is currently capable of fitting open population Cormack-Jolly-Seber (CJS) and closed population abundance models with up to two mark types using Bayesian Markov chain Monte Carlo (MCMC) methods. Although originally motivated by the challenges posed by multiple non-invasive marks, \verb|multimark| can also be used for Bayesian analyses of conventional capture-recapture data consisting of a single mark type.\\
-\textbf{3.} Some package features include: (i) general model specification using formulas already familiar to most R users, (ii) ability to include temporal, behavioural, cohort, and individual heterogeneity effects in detection and survival probabilities, (iii) Bayesian multimodel inference using reversible jump MCMC, and (iv) data simulation capabilities for power analyses and assessing model performance.\\
+\textbf{3.} Some package features include: (i) general model specification using formulas already familiar to most R users, (ii) ability to include temporal, behavioural, cohort, and individual heterogeneity effects in detection and survival probabilities, (iii) improved MCMC algorithm that is computationally faster and more efficient than previously proposed methods, (iv) Bayesian multimodel inference using reversible jump MCMC, and (v) data simulation capabilities for power analyses and assessing model performance.\\
 \textbf{4.} I demonstrate use of \verb|multimark| using left- and right-sided encounter histories for bobcats (\textit{Lynx rufus}) collected from remote single-camera stations in southern California. In this example, there is evidence of a behavioural effect (i.e. trap ``happy'' response) that is otherwise indiscernible using traditional single-sided analyses.\\
 \textbf{5.} The package will be most useful to ecologists seeking stronger inferences by combining different sources of mark-recapture data that are difficult (or impossible) to reliably reconcile, particularly with the sparse datasets typical of rare or elusive species for which non-invasive sampling techniques are most commonly employed. Addressing deficiencies in currently available software, \verb|multimark| also provides a user-friendly interface for performing Bayesian multimodel inference using capture-recapture data consisting of a single conventional mark or multiple non-invasive marks.\\
 
@@ -96,28 +98,26 @@ July 21, 2015
 
 %\newpage{}
 
-\linenumbers
-
 \global\long\def\baselinestretch{1.0}
  \global\long\def\baselinestretch{1.0}
 
 
 \section{Introduction}
 
-``Non-invasive'' capture-recapture sampling techniques are becoming commonplace for monitoring animal populations \citep[e.g.][]{Hammond1990,LukacsBurnham2005a,OConnellEtAl2010}. Examples of non-invasive marks include natural pelt or skin patterns, scars, and genetic markers that enable individual identification in the absence of physical capture. Capture-recapture methods based on non-invasive marks have been applied to diverse taxa, including sharks \citep[e.g.][]{HolmbergEtAl2008}, reptiles \citep[e.g.][]{NairEtAl2012}, ursids \citep[e.g.][]{DreherEtAl2007}, felids \citep[e.g.][]{KaranthNichols1998,RuellEtAl2009}, and marine mammals \citep[e.g.][]{Hammond1990,WilsonEtAl1999,MadonEtAl2011}. While non-invasive capture-recapture methods have many advantages related to financial cost and animal welfare, they also pose new difficulties such as animal misidentification \citep{WrightEtAl2009,YoshizakiEtAl2009,LinkEtAl2010,MorrisonEtAl2011} and the complexity of multiple types of marks \citep{CorkreyEtAl2008,MadonEtAl2011,BonnerHolmberg2013,McClintockEtAl2013a}. 
+Capture-recapture methods historically relied on the physical capture, marking, and recapturing of animals for estimating population abundance and related demographic parameters such as survival \citep[e.g.][]{WilliamsEtAl2002}. More recently, ``non-invasive'' capture-recapture sampling techniques are becoming commonplace for monitoring animal populations \citep[e.g.][]{Hammond1990,LukacsBurnham2005a,OConnellEtAl2010}. Non-invasive marks can include natural pelt or skin patterns, scars, and genetic markers that enable individual identification in the absence of physical capture. Capture-recapture methods based on non-invasive marks have been applied to diverse taxa, including sharks \citep[e.g.][]{HolmbergEtAl2008}, reptiles \citep[e.g.][]{NairEtAl2012}, ursids \citep[e.g.][]{DreherEtAl2007}, felids \citep[e.g.][]{KaranthNichols1998,RuellEtAl2009}, and marine mammals \citep[e.g.][]{Hammond1990,WilsonEtAl1999,MadonEtAl2011}. While non-invasive capture-recapture methods have many advantages related to financial cost and animal welfare, they also pose new difficulties such as animal misidentification \citep{WrightEtAl2009,YoshizakiEtAl2009,LinkEtAl2010,MorrisonEtAl2011} and the complexity of multiple types of marks \citep{CorkreyEtAl2008,MadonEtAl2011,BonnerHolmberg2013,McClintockEtAl2013a}. 
 
-Multiple marks can arise from sighting or camera surveys of species with natural mark patterns that are bilaterally asymmetrical (e.g. cetaceans, felids) or from multiple sources of non-invasive capture-recapture data being collected concurrently (e.g. faecal DNA sampling and visual surveys). With multiple marks, an encounter history is produced for each individual and mark type, but there is typically no reliable means to match them (unless each mark type is simultaneously observed at least once for every encountered individual). Because the number of unique individuals encountered must be known for standard capture-recapture analyses of population abundance (or related demographic parameters), the typical approach is to conduct separate analyses for each mark type and compare the results \citep[e.g.][]{WilsonEtAl1999,BerrowEtAl2012,NairEtAl2012}. However, given that sample sizes (and precision) may be considerably reduced, this is not as efficient as conducting an integrated analysis utlizing encounter histories arising from all mark types \citep{McClintockEtAl2013a}. Additional costs of conducting separate analyses for each mark type include a limited ability to explore models with behavioural or cohort effects, and, for capture-recapture models that condition on first encounter, a forfeiting of information from histories with the (apparent) first encounter occurring on the last sampling occasion. These limitations can be particularly important for the sparse datasets typical of rare and elusive populations for which non-invasive sampling techniques are most commonly employed. 
+Multiple marks can arise from sighting or camera surveys of species with natural mark patterns that are bilaterally asymmetrical (e.g. cetaceans, felids) or from multiple sources of non-invasive capture-recapture data being collected concurrently (e.g. faecal DNA sampling and visual surveys). With multiple marks, an encounter history is produced for each individual and mark type, but there is typically no reliable means to match them (unless each mark type is simultaneously observed at least once for every encountered individual). Because the number of unique individuals encountered must be known for standard capture-recapture analyses, the typical approach is to conduct separate analyses for each mark type and compare the results \citep[e.g.][]{WilsonEtAl1999,BerrowEtAl2012,NairEtAl2012}. However, given that sample sizes (and precision) may be considerably reduced, this is not as efficient as conducting an integrated analysis utlizing encounter histories arising from all mark types \citep{McClintockEtAl2013a}. Additional costs of conducting separate analyses for each mark type include a limited ability to explore models with behavioural or cohort effects, and, for capture-recapture models that condition on first encounter, a forfeiting of information from histories with the (apparent) first encounter occurring on the last sampling occasion. These limitations can be particularly important for the sparse datasets typical of rare and elusive populations for which non-invasive sampling techniques are most commonly employed. 
 
-\cite{BonnerHolmberg2013} and \cite{McClintockEtAl2013a} recently developed methods for performing integrated analyses of capture-recapture data consisting of multiple non-invasive marks. However, to my knowledge, their approaches have yet to be applied by practitioners. This is certainly not due to a lack of appropriate data \citep[e.g.][]{WilsonEtAl1999,HolmbergEtAl2008,MadonEtAl2011,BerrowEtAl2012,NairEtAl2012}, and is likely attributable to the mathematical and computational complexity of the models, as well as a lack of user-friendly software for implementing them. Generalized software for performing Bayesian multimodel inference with capture-recapture data has also been lacking, thereby leaving these procedures largely inaccessible to non-statisticians \citep[e.g.][]{BrooksEtAl2000,DurbanElston2005,KingBrooks2008,Royle2008}. These software needs were the motivation for \verb|multimark|, an R \citep{RTeam2013} package for Bayesian analysis of capture-recapture data consisting of multiple non-invasive marks. 
+Based on the latent multinomial model of \cite{LinkEtAl2010}, \cite{BonnerHolmberg2013} and \cite{McClintockEtAl2013a} recently developed methods for performing integrated analyses of capture-recapture data consisting of multiple non-invasive marks. However, to my knowledge, their approaches have yet to be applied by practitioners. This is certainly not due to a lack of appropriate data \citep[e.g.][]{WilsonEtAl1999,HolmbergEtAl2008,MadonEtAl2011,BerrowEtAl2012,NairEtAl2012}, and is likely attributable to the mathematical and computational complexity of the models, as well as a lack of user-friendly software for implementing them. Generalized software for performing Bayesian multimodel inference with capture-recapture data has also been lacking, thereby leaving these procedures largely inaccessible to non-statisticians \citep[e.g.][]{BrooksEtAl2000,DurbanElston2005,KingBrooks2008,Royle2008,McClintockEtAl2013a}. These software needs were the motivation for \verb|multimark|, an R \citep{RTeam2013} package for Bayesian analysis of capture-recapture data consisting of multiple non-invasive marks. 
 
-After providing some additional background on capture-recapture with multiple marks, I briefly describe the models implemented in \verb|multimark|. These currently include open population Cormack-Jolly-Seber (CJS) and closed population abundance models \citep[e.g.][]{WilliamsEtAl2002} with up to two mark types. Although originally motivated by the challenges posed by multiple non-invasive marks, \verb|multimark| can also be used for analyses of conventional capture-recapture data consisting of a single mark type. Using real and simulated data for illustration, I provide an overview of the workflow for the package and a new analysis of left- and right-sided encounter histories for bobcats ({\it Lynx rufus}) collected from remote single-camera stations in southern California. Additional information, including help files, data, examples, and package usage is available by downloading the \verb|multimark| package from CRAN (http://cran.r-project.org) or github (https://github.com/bmcclintock/multimark).
+After providing some additional background on capture-recapture with multiple marks, I briefly describe the models implemented in \verb|multimark|. These currently include open population Cormack-Jolly-Seber (CJS) and closed population abundance models \citep[e.g.][]{WilliamsEtAl2002} with up to two mark types. Although originally motivated by the challenges posed by multiple non-invasive marks, \verb|multimark| can also be used for analyses of conventional capture-recapture data consisting of a single mark type. Using real and simulated data for illustration, I provide an overview of the workflow for the package and a new analysis of left- and right-sided encounter histories for bobcats ({\it Lynx rufus}) collected from remote single-camera stations in southern California. Additional information, including help files, data, examples, and package usage is available by downloading the \verb|multimark| package from CRAN (http://cran.r-project.org) or github (https://github.com/bmcclintock/multimark). This article describes \verb|multimark| version 1.3.0.
 
 \section{Description}
 \subsection{Background}
 
 Capture-recapture data are typically represented by a collection of encounter histories ${\bf Y} = \{{\bf y}_1,{\bf y}_2,\ldots,{\bf y}_n\}$, where each element of ${\bf y}_i=\left(y_{i,1},y_{i,2},\ldots,y_{i,T}\right)$ indicates whether individual $i$ was detected $(y_{i,t}=1)$ or not detected $(y_{i,t}=0)$ on each of $t=1,\dots,T$ sampling occasions. Typical analyses then proceed by formulating a likelihood conditional on the $n$ unique individuals encountered \citep[e.g.][]{WilliamsEtAl2002}. With two mark types, we instead have ${\bf {\tilde Y}}_m = \{{\bf {\tilde y}}_{m_1},{\bf {\tilde y}}_{m_2},\ldots,{\bf {\tilde y}}_{m_{n_m}}\}$ for $m \in \{1,2\}$, where each element of ${\bf {\tilde y}}_{m_i}=\left({\tilde y}_{m_{i,1}},{\tilde y}_{m_{i,2}},\ldots,{\tilde y}_{m_{i,T}}\right)$ indicates individual $i$ was detected $({\tilde y}_{m_{i,t}}=m)$ or not detected $({\tilde y}_{m_{i,t}}=0)$, and $n_m$ is the number of unique individuals encountered for mark type $m$. We focus on situations where it is difficult (or impossible) to reliably match individuals from ${\bf {\tilde Y}}_1$ and ${\bf {\tilde Y}}_2$. In this case, although we know $n \le n_1+n_2$, $n$ is nevertheless unknown and standard capture-recapture analysis methods cannot be reliably used for simultaneous inference using both sources of data.
 
-Depending on the mark types, it may sometimes be possible to observe both marks simulateneously. In this case, some of the encounter histories from ${\bf {\tilde Y}}_1$ and ${\bf {\tilde Y}}_2$ can be matched to unique individuals with certainty. For example, suppose images were collected during vessel-based line transect surveys of surfacing whales, where mark type 1 corresponds to patch patterns on the left side and mark type 2 corresponds to patterns on the right side. If an individual happens to be photographed on both sides simultaneously on at least one sampling occasion, then the true encounter history for this individual would be known (i.e. left- and right-sided images could be matched). This results in an additional set of $n_{known}$ observed encounter histories, ${\bf {\tilde Y}}_{known} = \left\{{\bf {\tilde y}}_{known_1},{\bf {\tilde y}}_{known_2},\ldots,{\bf {\tilde y}}_{known_{n_{known}}}\right\}$, consisting of histories that are known with certainty (Table \ref{tab:hist}).
+Depending on the mark types and sampling design, it may sometimes be possible to observe both marks simulateneously within a sampling occasion. In this case, some of the encounter histories from ${\bf {\tilde Y}}_1$ and ${\bf {\tilde Y}}_2$ can be matched to unique individuals with certainty. For example, suppose images were collected during vessel-based line transect surveys of surfacing whales, where mark type 1 corresponds to patch patterns on the left side and mark type 2 corresponds to patterns on the right side. If an individual happens to be photographed on both sides simultaneously on at least one sampling occasion, then the true encounter history for this individual would be known (i.e. left- and right-sided images could be matched). This results in an additional set of $n_{known}$ observed encounter histories, ${\bf {\tilde Y}}_{known} = \left\{{\bf {\tilde y}}_{known_1},{\bf {\tilde y}}_{known_2},\ldots,{\bf {\tilde y}}_{known_{n_{known}}}\right\}$, consisting of histories that are known with certainty (Table \ref{tab:hist}).
 
 \begin{table}
   \caption{\label{tab:hist} Latent encounter histories ${\bf y}$ and the recorded histories $({\bf {\tilde y}}_1, {\bf {\tilde y}}_2, {\bf {\tilde y}}_{known})$ they generate for $T=2$ sampling occasions and two mark types, where ${\bf y}=\left(y_1,y_2\right)$ for $y_t \in \{0,1,2,3,4\}$. Latent encounter histories are indexed by $j=1+\sum_{t=1}^T y_t 5^{T-t}$, where the encounter types indicate non-detection $(y_t=0)$, type 1 encounter $(y_t=1)$, type 2 encounter $(y_t=2)$, non-simultaneous type 1 and type 2 encounter $(y_t=3)$, and simultaneous type 1 and type 2 encounter $(y_t=4)$. If simultaneous encounters are possible, these result in some ${\bf y}$ being completely observable (as indicated by ${\bf {\tilde y}}_{known}$).}
@@ -154,13 +154,13 @@ Depending on the mark types, it may sometimes be possible to observe both marks 
   \end{tabular}
 \end{table}
 
-In essence, \verb|multimark| facilitates the joint analysis of type 1 $({\bf {\tilde Y}}_1)$, type 2 $({\bf {\tilde Y}}_2)$, and known encounter histories $({\bf {\tilde Y}}_{known})$ while accounting for uncertainty in the number of unique individuals encountered using extensions of the methodology proposed by \cite{BonnerHolmberg2013} and \cite{McClintockEtAl2013a}. While the mathematical and computational details are complicated (and generally of little interest to ecologists), \verb|multimark| performs these operations in the background and requires only simple data formatting and model specification formulas familiar to most R users.
+In essence, \verb|multimark| facilitates the joint analysis of type 1 $({\bf {\tilde Y}}_1)$, type 2 $({\bf {\tilde Y}}_2)$, and known encounter histories $({\bf {\tilde Y}}_{known})$ while accounting for uncertainty in the number of unique individuals encountered using extensions of the methodology proposed by \cite{BonnerHolmberg2013} and \cite{McClintockEtAl2013a}. While the mathematical and computational details are generally of little interest to ecologists, \verb|multimark| performs these operations in the background and requires only simple data formatting and model specification formulas familiar to most R users.
 
 \subsection{Models}
 
 \verb|multimark| currently includes open population Cormack-Jolly-Seber (CJS) and closed population abundance models \citep[e.g.][]{WilliamsEtAl2002}. These Bayesian implementations are similar in spirit to the CJS model of \cite{Royle2008} and the abundance model of \cite{KingEtAl2015}. Given the latent encounter histories $({\bf Y})$ that generated the observed encounter histories $({\bf {\tilde Y}}_1, {\bf {\tilde Y}}_2, {\bf {\tilde Y}}_{known})$, the likelihood for the CJS model with two mark types is
 \begin{equation}
-  [ {\bf Y} \mid {\bf p}, {\boldsymbol \delta}, \alpha, \boldsymbol{\phi}, {\bf Z}] \propto \prod_{i=1}^{n} \prod_{t=C_i+1}^T \pi_{i,t}
+  [ {\bf Y} \mid {\bf p}, {\boldsymbol \delta}, \alpha, \boldsymbol{\phi}, {\bf Q}] \propto \prod_{i=1}^{n} \prod_{t=C_i+1}^T \pi_{i,t}
   \label{eq:CJSlike}
 \end{equation}
 \begin{equation*}
@@ -173,14 +173,18 @@ In essence, \verb|multimark| facilitates the joint analysis of type 1 $({\bf {\t
                 1 & \text{otherwise}
               \end{cases}
 \end{equation*}
-where $C_i \in \{ 1,\ldots,T \}$ is the time of first capture for individual $i$, $p_{i,t}$ is the detection probability for individual $i$ during sampling occasion $t$, $\delta_m$ is the conditional probability of a type $m$ encounter (given detection), $\alpha$ is the conditional probability of a simultaneous type 1 and type 2 encounter (given both mark types detected), $\phi_{i,t-1}$ is the survival probability between times $t-1$ and $t$, and $q_{i,t}$ is an indicator for whether individual $i$ was alive $(q_{i,t}=1)$ or not $(q_{i,t}=0)$ during sampling occasion $t$. For added flexibility, $p$ and $\phi$ are modeled using the probit link function:
+where $y_{i,t}=0$ indicates a non-detection for individual $i$ on occasion $t$, $y_{i,t}=1$ indicates a type 1 encounter, $y_{i,t}=2$ indicates a type 2 encounter, $y_{i,t}=3$ indicates a non-simulteneous type 1 and type 2 encounter, $y_{i,t}=4$ indicates a simulteneous type 1 and type 2 encounter, $C_i \in \{ 1,\ldots,T \}$ is the time of first capture for individual $i$, $p_{i,t}$ is the detection probability for individual $i$ during sampling occasion $t$, $\delta_m$ is the conditional probability of a type $m$ encounter (given detection), $\alpha$ is the conditional probability of a simultaneous type 1 and type 2 encounter (given both mark types detected), $\phi_{i,t-1}$ is the survival probability between times $t-1$ and $t$, and $q_{i,t}$ is an indicator for whether individual $i$ was alive $(q_{i,t}=1)$ or not $(q_{i,t}=0)$ during sampling occasion $t$. With $T=3$, we for example have cell probabilities $\pi_i= \prod_{t=C_i+1}^T \pi_{i,t} = \left(1-p_{i,3}\right) \phi_{i,2} q_{i,3} + \left(1- \phi_{i,2}\right)\left(1-q_{i,3}\right)$ for latent encounter history 020, $\pi_i= p_{i,2} \delta_1 \phi_{i,1} p_{i,3} \delta_2 \phi_{i,2}$ for latent encounter history 412, $\pi_i=\left(1-p_{i,2}\right) \phi_{i,1} p_{i,3} \left(1-\delta_1-\delta_2\right) \left(1-\alpha\right) \phi_{i,2}$ for history 103, and $p_{i,3} \left(1-\delta_1-\delta_2\right) \alpha \phi_{i,2}$ for history 034.
+
+For added flexibility, $p$ and $\phi$ are modeled using the probit link function:
 \begin{equation*}
   \Phi \left( p_{i,t} \right) = {{\bf x}^p_t}^\prime \boldsymbol{\beta}^p + z^p_i
 \end{equation*}
 \begin{equation*}
   \Phi \left( \phi_{i,t} \right) = {{\bf x}^\phi_t}^\prime \boldsymbol{\beta}^\phi + z^\phi_i
 \end{equation*}
-where $\Phi()$ the cumulative distribution function of the standard normal density, ${\bf x}^p_t$ and ${\bf x}^\phi_t$ are row $t$ of the design matrices for $p$ and $\phi$, $\boldsymbol{\beta}^p$ and $\boldsymbol{\beta}^\phi$ are the corresponding regression coefficients, and $z^p_i \sim {\cal N} \left( 0,\sigma^2_{z^p} \right)$ and $z^\phi_i \sim {\cal N} \left( 0,\sigma^2_{z^\phi} \right)$ are individual-level effects. The probit link is implemented for CJS models in \verb|multimark| because it facilitates a Gibbs sampler in the spirit of \cite{Albert&Chib1993} and \cite{LaakeEtAl2013}.  We note that this model reduces to that of \cite{LaakeEtAl2013} for conventional capture-recapture data with a single mark type when $\delta_1=1$ and $\delta_2=0$ for $y_{i,t} \in \{0,1\}$.
+where $\Phi()$ the cumulative distribution function of the standard normal density, ${\bf x}^p_t$ and ${\bf x}^\phi_t$ are row $t$ of the design matrices for $p$ and $\phi$, $\boldsymbol{\beta}^p$ and $\boldsymbol{\beta}^\phi$ are the corresponding regression coefficients, and $z^p_i \sim {\cal N} \left( 0,\sigma^2_{z^p} \right)$ and $z^\phi_i \sim {\cal N} \left( 0,\sigma^2_{z^\phi} \right)$ are individual-level effects that respectively allow for individual heterogeneity in both detection and survival probability. Thus, while exploring the feasible set of latent encounter histories $({\bf Y})$, the parameters and latent variables to be estimated by \verb|multimark| include ${\boldsymbol \beta}^p$, ${\boldsymbol\beta}^\phi$, ${\boldsymbol \delta}$, $\alpha$, ${\bf Q}$, ${\bf z}^p$, ${\bf z}^\phi$, $\sigma^2_{z^p}$, and $\sigma^2_{z^\phi}$. 
+
+The probit link is implemented for CJS models in \verb|multimark| because it facilitates a Gibbs sampler in the spirit of \cite{Albert&Chib1993} and \cite{LaakeEtAl2013}.  The probit link is very similar to the logit link, but the logit link has slightly fatter tails and is interpretable in terms of log-odds. I note that this model reduces to that of \cite{LaakeEtAl2013} for conventional capture-recapture data with a single mark type when $\delta_1=1$ and $\delta_2=0$ for $y_{i,t} \in \{0,1\}$.
 
 Similarly, the likelihood for the closed population abundance model with two mark types is
 \begin{equation}
@@ -197,7 +201,9 @@ Similarly, the likelihood for the closed population abundance model with two mar
                 1 & \text{otherwise}
               \end{cases}
 \end{equation*}
-where $N$ is the population size, and $p^*$ is the probability that a randomly selected individual is detected at least once. As before, this model reduces to that for conventional capture-recapture data with a single mark type when $\delta_1=1$ and $\delta_2=0$ for $y_{i,t} \in \{0,1\}$. For added flexability, $p$ is modeled using the logit link function:
+where $N$ is the population size, and $p^*$ is the probability that a randomly selected individual is detected at least once. As before, this model reduces to that for conventional capture-recapture data with a single mark type when $\delta_1=1$ and $\delta_2=0$ for $y_{i,t} \in \{0,1\}$. Returning to Table \ref{tab:hist} with $T=2$, we for example have cell probabilities $\pi_i=\prod_{t=1}^T \pi_{i,t}=\left(1-p_{i,1}\right) p_{i,2} \delta_1$ for latent encounter history 01, $\pi_i= p_{i,1} \delta_2 \left(1-p_{i,2}\right)$ for history 20, $\pi_i=p_{i,1} \delta_2 p_{i,2} \left(1-\delta_1-\delta_2\right) \left(1-\alpha\right)$ for history 23, and $\pi_i=p_{i,1} \left(1-\delta_1-\delta_2\right) \alpha p_{i,2} \left(1-\delta_1-\delta_2\right) \left(1-\alpha\right)$ for history 43.
+
+For closed population models, $p$ is modeled using the logit link function:
 \begin{equation*}
   \text{logit} \left( p_{i,t} \right) = {{\bf x}^p_t}^\prime \boldsymbol{\beta}^p + z^p_i
 \end{equation*}
@@ -205,7 +211,7 @@ such that
 \begin{equation*}
   p^* = 1 - \int_{-\infty}^{\infty} \prod_{t=1}^T \left(1-\frac{1}{1+\exp\left(-({{\bf x}^p_t}^\prime \boldsymbol{\beta}^p + z^p)\right)} \right) {\cal N}\left(z^p;0,\sigma^2_{z^p}\right) dz^p
 \end{equation*}
-Although a Gibbs sampler has been proposed for closed population models using the probit link and a complete data likelihood \citep{McClintockEtAl2014}, this does not apply to the ``semi-complete'' data likelihood in Eq. \ref{eq:closedlike} (hence the traditional logit link is used). The primary utility of \verb|multimark| is finding the set of latent encounter histories that are feasible given the observed encounter histories \citep[sensu][]{LinkEtAl2010,BonnerHolmberg2013,McClintockEtAl2013a,McClintockEtAl2014}. Given a feasible set of latent encounter histories $({\bf Y})$, fitting capture-recapture models such as Eqs. \ref{eq:CJSlike} or \ref{eq:closedlike} is relatively straightforward.
+is the probability of being detected at least once after accounting for individual heterogeneity in $p$ (note that $p^* = 1 - \prod_{t=1}^T \left(1- \text{logit}^{-1} \left({{\bf x}^p_t}^\prime \boldsymbol{\beta}^p\right) \right)$ when $\sigma^2_{z^p}=0$). The parameters and latent variables to be estimated therefore include $\boldsymbol{\beta}^p$, ${\boldsymbol \delta}$, $\alpha$, $N$, ${\bf z}^p$, and $\sigma^2_{z^p}$. Although a Gibbs sampler has been proposed for closed population models using the probit link and a complete data likelihood \citep{McClintockEtAl2014}, this does not apply to the ``semi-complete'' data likelihood in Eq. \ref{eq:closedlike} (hence the traditional logit link is used). The primary utility of \verb|multimark| is finding the set of latent encounter histories that are feasible given the observed encounter histories \citep[sensu][]{LinkEtAl2010,BonnerHolmberg2013,McClintockEtAl2013a,McClintockEtAl2014}. Given a feasible set of latent encounter histories $({\bf Y})$, fitting capture-recapture models such as Eqs. \ref{eq:CJSlike} or \ref{eq:closedlike} is relatively straightforward.
 
 \section{Workflow}
 \subsection{Multiple non-invasive marks}
@@ -295,30 +301,30 @@ Sample size per chain = 10000
    plus standard error of the mean:
 
                       Mean      SD  Naive SE Time-series SE
-pbeta[(Intercept)] -1.2819 0.25944 0.0025944        0.02259
-N                  35.4325 5.28704 0.0528704        0.30073
-delta_1             0.4108 0.07927 0.0007927        0.01192
-delta_2             0.4271 0.07923 0.0007923        0.01182
+pbeta[(Intercept)] -1.3963 0.24837 0.0024837        0.01503
+N                  36.0808 5.78436 0.0578436        0.32252
+delta_1             0.3677 0.08244 0.0008244        0.01217
+delta_2             0.3867 0.08183 0.0008183        0.01172
 
 2. Quantiles for each variable:
 
                       2.5%     25%     50%     75%   97.5%
-pbeta[(Intercept)] -1.8239 -1.4505 -1.2746 -1.0989 -0.8016
-N                  28.0000 32.0000 35.0000 38.0000 48.0000
-delta_1             0.2518  0.3563  0.4138  0.4664  0.5590
-delta_2             0.2671  0.3726  0.4304  0.4831  0.5752
+pbeta[(Intercept)] -1.9000 -1.5561 -1.3904 -1.2259 -0.9256
+N                  27.9750 32.0000 35.0000 39.0000 50.0000
+delta_1             0.2127  0.3085  0.3661  0.4251  0.5308
+delta_2             0.2293  0.3293  0.3857  0.4433  0.5457
 \end{Soutput}
 \begin{Sinput}
 > coda::effectiveSize(bobcat.dot$mcmc)
 \end{Sinput}
 \begin{Soutput}
 pbeta[(Intercept)]                  N            delta_1            delta_2 
-         131.88674          309.07930           44.21238           44.90002 
+         272.90838          321.66283           45.85059           48.75330 
 \end{Soutput}
 \end{Schunk}
 Here we can see posterior summaries for the default monitored parameters $(\beta^p, N, \delta_1, \delta_2)$. Based on the effective sample sizes, it's clear that the default chain length is inadequate for this example; a typical ``rule of thumb'' is effective sample sizes $>4000$ for all quantities of interest.
 
-Other common models for detection probability can be easily specified using formulas for \textit{mod.p}, including shorthands for time variation (\textit{mod.p={\~{}}time}), temporal trends (\textit{mod.p={\~{}}Time}), behavioural response to first capture (\textit{mod.p={\~{}}c}), and individual heterogeneity (\textit{mod.p={\~{}}h}). Additive or interaction terms can be included (e.g. \textit{mod.p={\~{}}time+c+h}, \textit{mod.p=\~{}Time+I(Time\^{}2)}, \textit{mod.p={\~{}}time*c}). User-specifed temporal covariates in detection probability can also be used: 
+Other common models for detection probability can be easily specified using linear model formulas for \textit{mod.p}, including shorthands for time variation (\textit{mod.p={\~{}}time}), temporal trends (\textit{mod.p={\~{}}Time}), behavioural response to first capture (\textit{mod.p={\~{}}c}), and individual heterogeneity (\textit{mod.p={\~{}}h}). Additive or interaction terms can be included (e.g. \textit{mod.p={\~{}}time+c+h}, \textit{mod.p=\~{}Time+I(Time\^{}2)}, \textit{mod.p={\~{}}time*c}). User-specifed temporal covariates in detection probability can also be used: 
 \begin{Schunk}
 \begin{Sinput}
 > dummy <- rnorm(ncol(bobcat)) # some fake temporal covariates
@@ -341,7 +347,9 @@ The \textit{covs} argument is a data frame used to enter discrete- or continuous
 %summary(bobcat.dummy_h$mcmc[,c("pbeta[dummy]","sigma2_zp")])
 %@
 
-There are currently two options for specifying models for ${\boldsymbol \delta}$, the default \textit{mod.delta={\~{}}type} (i.e. $\delta_1 \ne \delta_2$), and \textit{mod.delta={\~{}}1} (i.e. $\delta_1 = \delta_2$). There are many additional arguments for specifying the number (\textit{nchains}) and length (\textit{iter}) of chains, including burn-in and adaptive periods. For potential improvements in mixing, the number of ``moves'' used to  update the feasible set of latent encounter histories at each iteration can be user specified (\textit{maxnumbasis}; see Appendix S1). The default priors are ``uninformative'', but user-specified priors can be used for each parameter. Initial values can be automatically generated or user specified for each parameter.
+There are currently two options for specifying models for the conditional probabilities of type 1 and type 2 encounters $({\boldsymbol \delta})$, the default \textit{mod.delta={\~{}}type} (i.e. $\delta_1 \ne \delta_2$), and \textit{mod.delta={\~{}}1} (i.e. $\delta_1 = \delta_2$). The constraint $\delta_1 = \delta_2$ will often be reasonable when type 1 and type 2 encounters arise from a very similar process, such as with left- and right-sided images (see \textit{Example}) . However, when type 1 and type 2 encounters arise from very different processes (e.g. faecal DNA and visual surveys), then specifying $\delta_1 \ne \delta_2$ is likely a model deserving consideration.  
+
+There are many additional arguments for specifying the number (\textit{nchains}) and length (\textit{iter}) of chains, including burn-in and adaptive periods. For potential improvements in mixing, the number of ``moves'' used to  update the feasible set of latent encounter histories at each iteration can be user specified (\textit{maxnumbasis}; see Appendix S1). The default priors are ``uninformative'', but user-specified priors can be used for each parameter. Initial values can be automatically generated or user specified for each parameter.
 
 The function \textit{multimarkCJS()} works in exactly the same fashion, with the only notable difference being specification of models for $\phi$ (in addition to $p$ and ${\bf \delta}$). Although CJS-specific data are not included with \verb|multimark|, data can be simulated using the \textit{simdataCJS()} function (or \textit{simdataClosed()} for closed populations):
 
@@ -379,22 +387,22 @@ Sample size per chain = 40000
    plus standard error of the mean:
 
                          Mean      SD  Naive SE Time-series SE
-pbeta[(Intercept)]   -0.15140 0.13359 0.0004723       0.004430
-phibeta[(Intercept)]  1.36590 0.28271 0.0009995       0.011139
-alpha                 0.41376 0.11629 0.0004111       0.002977
-sigma2_zphi           0.03509 0.07353 0.0002600       0.003850
-delta_1               0.19499 0.04631 0.0001637       0.001644
-delta_2               0.61160 0.05175 0.0001829       0.001156
+pbeta[(Intercept)]   -0.15716 0.12916 0.0004566       0.004168
+phibeta[(Intercept)]  1.36677 0.27045 0.0009562       0.010230
+alpha                 0.41452 0.11586 0.0004096       0.002907
+sigma2_zphi           0.02932 0.05608 0.0001983       0.002294
+delta_1               0.19614 0.04581 0.0001620       0.001601
+delta_2               0.61126 0.05195 0.0001837       0.001180
 
 2. Quantiles for each variable:
 
-                          2.5%       25%     50%      75%  97.5%
-pbeta[(Intercept)]   -0.400914 -0.244114 -0.1554 -0.06250 0.1200
-phibeta[(Intercept)]  0.903728  1.167340  1.3335  1.52943 2.0162
-alpha                 0.206999  0.329973  0.4067  0.49071 0.6579
-sigma2_zphi           0.002623  0.006893  0.0139  0.03306 0.2093
-delta_1               0.109283  0.162635  0.1934  0.22540 0.2902
-delta_2               0.508181  0.576891  0.6124  0.64722 0.7103
+                          2.5%       25%      50%      75%  97.5%
+pbeta[(Intercept)]   -0.397592 -0.247046 -0.16172 -0.07123 0.1054
+phibeta[(Intercept)]  0.922360  1.175204  1.33609  1.52690 1.9784
+alpha                 0.207287  0.331264  0.40812  0.49030 0.6577
+sigma2_zphi           0.002495  0.006458  0.01266  0.02846 0.1662
+delta_1               0.112033  0.163847  0.19424  0.22626 0.2905
+delta_2               0.506597  0.576504  0.61231  0.64717 0.7098
 \end{Soutput}
 \end{Schunk}
 An additional feature for \textit{multimarkCJS()} is simple specification of ``age'' and cohort effects for $p$ (\textit{mod.p={\~{}}age} and \textit{mod.p={\~{}}cohort}) and $\phi$ (\textit{mod.phi={\~{}}age} and \textit{mod.phi={\~{}}cohort}), which can be useful for investigating structure related to time since first capture and time of initial capture, respectively. These variables by default include a level for each unique age or cohort, but they can be binned to reduce the number of levels using additional arguments. 
@@ -411,10 +419,10 @@ For conventional capture-recapture data consisting of a single mark type, encoun
 +               nchains=2,iter=45000,burnin=5000)
 \end{Sinput}
 \end{Schunk}
-There are fewer arguments for \textit{markCJS()} and \textit{markClosed()} because there is only one mark type (e.g., the arguments \textit{mms} and \textit{mod.delta} are no longer needed), but the remaining arguments are specified exactly as for \textit{multimarkCJS()} and \textit{multimarkClosed()}. 
+There are fewer arguments for \textit{markCJS()} and \textit{markClosed()} because there is only one mark type (e.g. the arguments \textit{mms} and \textit{mod.delta} are no longer needed), but the remaining arguments are specified exactly as for \textit{multimarkCJS()} and \textit{multimarkClosed()}. 
 
 \subsection{Further analysis}
-While the \verb|coda| package can be used to summarize, plot, and assess convergence of MCMC samples from \textit{markClosed()}, \textit{multimarkClosed()}, \textit{markCJS()}, and \textit{multimarkCJS()}, several additional functions are available for further analysis of model output. Because link functions are used for $p$ and $\phi$, the functions \textit{getprobsClosed()} and \textit{getprobsCJS()} provide estimates on the real scale:
+While the \verb|coda| package can be used to summarize, plot, and assess convergence of MCMC samples from \textit{markClosed()}, \textit{multimarkClosed()}, \textit{markCJS()}, and \textit{multimarkCJS()}, several additional functions are available for further analysis of model output. Because link functions are used for $p$ and $\phi$, the functions \textit{getprobsClosed()} and \textit{getprobsCJS()} provide estimates on the real scale. For example, we can compare the probabilities of capture $(p)$ and recapture $(c)$ when there is a behavioural response to first capture (i.e. \textit{mod.p=~c}):
 \begin{Schunk}
 \begin{Sinput}
 > bobcat.c <- multimarkClosed(mms=bobcatsetup,mod.p=~c)
@@ -460,7 +468,8 @@ Based on \cite{BarkerLink2013}, Bayesian multimodel inference using reversible j
 The list \verb|bobcat.M| includes RJMCMC output (\verb|bobcat.M$rjmcmc|) for parameters common to all models (which can be specified using the argument \textit{monparms}) and posterior model probabilities (\verb|bobcat.M$pos.prob|). Other arguments for \textit{multimodelClosed()} and \textit{multimodelCJS()} include prior model probabilities (\textit{modprior}) and user-specified proposal distributions for moving between models.
 
 \section{Example}
-I will now provide results from a new closed population analysis of the bobcat data performed in \verb|multimark|. Previous analyses of these data include \cite{McClintockEtAl2013a}, who performed an integrated analysis but for a limited model set that did not include behavioural or individual effects, and \cite{AlonsoEtAl2015}, who performed standard single-sided analyses that could not investigate behavioural effects to first capture. Using \verb|multimark|, it is possible to conduct a more complete analysis using both left- and right-sided encounter histories that includes no effects, temporal effects, behavioural effects, and indivdual effects in detection probability. I also investigated two models for ${\boldsymbol \delta}$ ($\delta_1 \ne \delta_2$ and $\delta_1 = \delta_2$) because it is reasonable to suspect that the conditional probabilities of left- and right-sided encounters are similar. 
+\label{sec:example}
+I will now provide results from a new closed population analysis of the bobcat data performed in \verb|multimark|. Previous analyses of these data include \cite{McClintockEtAl2013a}, who performed an integrated analysis but for a limited model set that did not include behavioural or individual effects, and \cite{AlonsoEtAl2015}, who performed standard single-sided analyses that could not investigate behavioural responses to first capture. Using \verb|multimark|, it is possible to conduct a more complete analysis using both left- and right-sided encounter histories that includes no effects, temporal effects, behavioural effects, and indivdual effects in detection probability. I also investigated two models for ${\boldsymbol \delta}$ ($\delta_1 \ne \delta_2$ and $\delta_1 = \delta_2$) because it is reasonable to suspect that the conditional probabilities of left-sided (type 1) and right-sided (type 2) encounters are similar. 
 
 
 
@@ -477,9 +486,9 @@ Fitting all possible additive combinations yielded 16 models using the default `
 \end{eqnarray*}
 With 2 chains each consisting of 2 million iterations (with thinning every 20 iterations to reduce memory requirements), the simplest models required 12 mins on a computer running Windows 7 (3.4GHz Intel Core i7, 16GB RAM), while the more complicated models including time variation required at most 2 hrs. These relatively fast run times are attributable to \verb|multimark|'s parallel processing of MCMC algorithms written in the C programming language \citep{KernighanRitchie1988}. Bayesian multimodel inference was performed with \textit{multimodelClosed()} using the default equal prior model weights, where 300000 iterations for each chain required 2.6 hrs. The longer run time for \textit{multimodelClosed()} owes to the number of models and the RJMCMC algorithm being written entirely in R.
 
-Models including a positive behavioural response to first capture accounted for 0.51 of the posterior model weight, while models including $\delta_1=\delta_2$ accounted for 0.78 of posterior model weight (Table \ref{tab:modprobs}). Model-averaged posterior modes were $N=35$ (HPDI: 26-101; Fig. \ref{fig:modaveN}) for population abundance, $p=0.15$ (HPDI: 0.04-0.27) for capture probability, and $c=0.21$ (HPDI: 0.07-0.33) for recapture probability. With $\delta_1=\delta_2=0.41$ (HPDI: 0.30-0.50) based on the model with the highest posterior probability, both-sided encounters were relatively infrequent for these data ($1-\delta_1-\delta_2=0.18$; HPDI: 0.00-0.39).
+Models including a positive behavioural response to first capture accounted for 0.51 of the posterior model weight, while models including $\delta_1=\delta_2$ accounted for 0.78 of posterior model weight (Table \ref{tab:modprobs}). Model-averaged posterior modes were $N=35$ (Highest Posterior Density Interval: 26-101; Fig. \ref{fig:modaveN}) for population abundance, $p=0.15$ (HPDI: 0.04-0.27) for capture probability, and $c=0.21$ (HPDI: 0.07-0.33) for recapture probability. With $\delta_1=\delta_2=0.41$ (HPDI: 0.30-0.50) based on the model with the highest posterior probability, both-sided encounters were relatively infrequent for these data ($1-\delta_1-\delta_2=0.18$; HPDI: 0.00-0.39).
 % latex table generated in R 3.2.1 by xtable 1.7-4 package
-% Wed Jul 22 12:26:14 2015
+% Thu Jul 23 18:10:11 2015
 \begin{table}[ht]
 \centering
 \begin{tabular}{llllll}
@@ -512,6 +521,9 @@ p(\~{}c)delta(\~{}1) & 0.30 & 38 & 27-91 & 38944 & 1.00 \\
     \caption{\label{fig:modaveN}Model-averaged posterior distribution of population abundance $(N)$ for the bobcat data.}
   \end{doublespace}
 \end{figure}
+
+For comparision, I performed conventional left- and right-sided analyses for these data using \textit{markClosed()} and \textit{multimodelClosed()}. Because models for ${\boldsymbol \delta}$ and behavioural response do not apply, the candidiate model set was limited to \textit{mod.p={\~{}}1}, \textit{mod.p={\~{}}time}, \textit{mod.p={\~{}}h}, and \textit{mod.p={\~{}}time+h} for these single-sided analyses. As before, the default ``non-informative'' priors were used, and the length and number of chains, burn-in periods, and adaptive periods were also the same. For the left-side analysis, the constant detection probability model accounted for 0.95 of the posterior model weight, while the individual heterogeneity model accounted for 0.04 of posterior model weight. Model-averaged posterior modes were $N=32$ (HPDI: 24-52) for population abundance and $p=0.12$ (HPDI: 0.07-0.19) for capture probability. 
+For the right-side analysis, the constant detection probability model accounted for 0.6 of the posterior model weight and the individual heterogeneity model accounted for 0.39 of posterior model weight. Model-averaged posterior modes were $N=33$ (HPDI: 23-85) for population abundance and $p=0.12$ (HPDI: 0.04-0.19) for capture probability. These conflicting results demonstrate the unenviable position one can often find oneself when conducting separate analyses for different mark types from the same population. One may be tempted to choose the ``most precise'' estimate based on the left-side analysis, but the integrated analysis suggests this would considerably underestimate the uncertainty about $N$. Choosing the ``more conservative'' right-sided results or averaging the $N$ estimates from the left- and right-sided analyses would also underestimate the uncertainty about $N$ based on the integrated analysis. This discrepancy is likely attributable to the potential behavioural response to first capture identified by the integrated analysis. 
 
 \section{Discussion}
 I have described some of the key features of \verb|multimark|, a new R package for the analysis of capture-recapture data consisting of a single conventional mark or multiple non-invasive marks. The package currently includes open population CJS and closed population models, with functions for derived parameters (e.g. $\phi$, $p$) and multimodel inference. It adds to the growing toolbox of freely-available software for the analysis of non-spatial \citep[e.g.][]{WhiteBurnham1999,ChoquetEtAl2009,Laake2013,LaakeEtAl2013} and spatial \citep[e.g.][]{GopalaswamyEtAl2012,Efford2015} capture-recapture data, but it is the first to combine otherwise irreconcilable encounter histories arising from multiple mark types. Although initially developed for integrated analyses of left- and right-sided images for bilaterally asymmetrical species, the package can be used to jointly analyze data arising from any two types of marks. For example, \verb|multimark| could be used to integrate an analysis of encounter histories arising from genetic (e.g. hair or faecal) and visual (e.g. photo-ID) detections (sensu \citealt{MadonEtAl2011}; but see \citealt{Bonner2013}).  \verb|multimark| is also the first capture-recapture software to implement generalized Bayesian multimodel inference based on the RJMCMC algorithm proposed by \cite{BarkerLink2013}.
