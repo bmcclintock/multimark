@@ -749,13 +749,13 @@ monitorparmsClosed <- function(parms,parmlist,noccas){
   list(commonparms=commonparms,parms=parms,namesp=namesp,namesc=namesc,getlogitp=getlogitp,getlogitc=getlogitc)
 }
 
-checkmmClosedinput<-function(mmslist,modlist,nmod,nchains,miter,mburnin,mthin,modprior,M1){
+checkmmClosedinput<-function(mmslist,modlist,nmod,nchains,iter,miter,mburnin,mthin,modprior,M1){
   if(!all(match(unlist(unique(lapply(modlist,names))),c("mcmc","mod.p","mod.delta","DM","initial.values","priorparms","mms"),nomatch=0))) stop("each object in 'modlist' must be a list returned by multimarkClosed() or markClosed()")
   if(!all(lapply(modlist,function(x) is.mcmc.list(x$mcmc))==TRUE)) stop("mcmc output for each model must be an object of type 'mcmc.list'")
   if(nmod<2) stop("'modlist' must contain at least two models")
   if(length(mmslist)!=1) stop("'multimarksetup' (mms) object must be identical for each model")
   if(length(nchains)!=1) stop("all models must have same number of chains")
-  if(length(miter)!=1) stop("all chains must have same number of iterations")
+  if(length(iter)!=1) stop("all chains must have same number of iterations")
   if(miter<=mburnin) stop("'mburnin' must be less than ",miter)
   if(mthin>max(1,floor((miter-mburnin+1)/2)) | mthin<1) stop("'mthin' must be >0 and <=",max(1,floor((miter-mburnin+1)/2)))
   if(length(modprior)!=nmod | base::sum(modprior)!=1) stop(paste("'modprior' must be a vector of length ",nmod," that sums to 1"))
@@ -991,7 +991,7 @@ multimodelClosed<-function(modlist,modprior=rep(1/length(modlist),length(modlist
   nmod <- length(modlist)
   iter <- unlist(unique(lapply(modlist,function(x) unique(lapply(x$mcmc,nrow)))))
   nchains <- unlist(unique(lapply(modlist,function(x) length(x$mcmc))))
-  mmslist <- unlist(unique(lapply(modlist,function(x) x$mms)))
+  mmslist <- unlist(unique(lapply(modlist, function(x) {x$mms@covs<-data.frame();x$mms})))
   
   params <- lapply(modlist,function(x) varnames(x$mcmc))
   
@@ -999,7 +999,7 @@ multimodelClosed<-function(modlist,modprior=rep(1/length(modlist),length(modlist
   
   if(is.null(miter)) miter <- iter
   
-  mms<-checkmmClosedinput(mmslist,modlist,nmod,nchains,miter,mburnin,mthin,modprior,M1)
+  mms<-checkmmClosedinput(mmslist,modlist,nmod,nchains,iter,miter,mburnin,mthin,modprior,M1)
   
   noccas<-ncol(mms@Enc.Mat)
   M<-nrow(mms@Enc.Mat)

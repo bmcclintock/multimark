@@ -8,6 +8,8 @@ CHANGES
 
 * 'mms' no longer an argument for 'multimodelClosed()' or 'multimodelCJS()'; these data are now returned with individual model output for additional error checking
 
+* CJS latent variable 'z' now denoted as 'q'
+
 * Fixed bug in 'multimarkClosed()' when all encounter histories are known
 
 
