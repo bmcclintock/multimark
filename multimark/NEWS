@@ -1,4 +1,4 @@
-multimark 1.3.0 2015-07-21
+multimark 1.3.0 2015-07-27
 -----------------
 NEW FEATURES
 
@@ -9,6 +9,8 @@ CHANGES
 * 'mms' no longer an argument for 'multimodelClosed()' or 'multimodelCJS()'; these data are now returned with individual model output for additional error checking
 
 * CJS latent variable 'z' now denoted as 'q'
+
+BUG FIXES
 
 * Fixed bug in 'multimarkClosed()' when all encounter histories are known
 

@@ -14,11 +14,14 @@ export(
 
 import(parallel,Matrix,coda)
 
-importFrom(statmod,gauss.quad)
-importFrom(RMark,process.data)
-importFrom(RMark,make.design.data)
-importFrom(methods,setClass)
-importFrom("Brobdingnag",brob,as.brob,sum)
-importFrom(mvtnorm,dmvnorm)
+importFrom("statmod","gauss.quad")
+importFrom("RMark","process.data","make.design.data")
+importFrom("Brobdingnag","brob","as.brob","sum")
+importFrom("mvtnorm","dmvnorm")
+
+importFrom("graphics", "hist")
+importFrom("methods", "setClass", "new", "validObject")
+importFrom("stats", "dbeta", "dbinom", "dcauchy", "dnorm", "dunif", "end", "formula", "integrate", "model.matrix", "pnorm", "rbeta", "rbinom", "rgamma", "rmultinom", "rnbinom", "rnorm", "runif", "start", "terms")
+importFrom("utils", "flush.console", "setTxtProgressBar", "txtProgressBar")
 
 useDynLib(multimark,ClosedC,ProbitCJSC)
