@@ -64,12 +64,12 @@
 \par\end{center}
 
 \begin{center}
-\textsc{Running Head}: \verb|multimark| mark-recapture package \bigskip{}
+\textsc{Running Head}: \verb|multimark| capture-recapture package \bigskip{}
 
 \par\end{center}
 
 \begin{center}
-July 21, 2015 
+July 31, 2015 
 \par\end{center}
 
 \clearpage{}
@@ -117,41 +117,6 @@ After providing some additional background on capture-recapture with multiple ma
 Capture-recapture data are typically represented by a collection of encounter histories ${\bf Y} = \{{\bf y}_1,{\bf y}_2,\ldots,{\bf y}_n\}$, where each element of ${\bf y}_i=\left(y_{i,1},y_{i,2},\ldots,y_{i,T}\right)$ indicates whether individual $i$ was detected $(y_{i,t}=1)$ or not detected $(y_{i,t}=0)$ on each of $t=1,\dots,T$ sampling occasions. Typical analyses then proceed by formulating a likelihood conditional on the $n$ unique individuals encountered \citep[e.g.][]{WilliamsEtAl2002}. With two mark types, we instead have ${\bf {\tilde Y}}_m = \{{\bf {\tilde y}}_{m_1},{\bf {\tilde y}}_{m_2},\ldots,{\bf {\tilde y}}_{m_{n_m}}\}$ for $m \in \{1,2\}$, where each element of ${\bf {\tilde y}}_{m_i}=\left({\tilde y}_{m_{i,1}},{\tilde y}_{m_{i,2}},\ldots,{\tilde y}_{m_{i,T}}\right)$ indicates individual $i$ was detected $({\tilde y}_{m_{i,t}}=m)$ or not detected $({\tilde y}_{m_{i,t}}=0)$, and $n_m$ is the number of unique individuals encountered for mark type $m$. We focus on situations where it is difficult (or impossible) to reliably match individuals from ${\bf {\tilde Y}}_1$ and ${\bf {\tilde Y}}_2$. In this case, although we know $n \le n_1+n_2$, $n$ is nevertheless unknown and standard capture-recapture analysis methods cannot be reliably used for simultaneous inference using both sources of data.
 
 Depending on the mark types and sampling design, it may sometimes be possible to observe both marks simulateneously within a sampling occasion. In this case, some of the encounter histories from ${\bf {\tilde Y}}_1$ and ${\bf {\tilde Y}}_2$ can be matched to unique individuals with certainty. For example, suppose images were collected during vessel-based line transect surveys of surfacing whales, where mark type 1 corresponds to patch patterns on the left side and mark type 2 corresponds to patterns on the right side. If an individual happens to be photographed on both sides simultaneously on at least one sampling occasion, then the true encounter history for this individual would be known (i.e. left- and right-sided images could be matched). This results in an additional set of $n_{known}$ observed encounter histories, ${\bf {\tilde Y}}_{known} = \left\{{\bf {\tilde y}}_{known_1},{\bf {\tilde y}}_{known_2},\ldots,{\bf {\tilde y}}_{known_{n_{known}}}\right\}$, consisting of histories that are known with certainty (Table \ref{tab:hist}).
-
-\begin{table}
-  \caption{\label{tab:hist} Latent encounter histories ${\bf y}$ and the recorded histories $({\bf {\tilde y}}_1, {\bf {\tilde y}}_2, {\bf {\tilde y}}_{known})$ they generate for $T=2$ sampling occasions and two mark types, where ${\bf y}=\left(y_1,y_2\right)$ for $y_t \in \{0,1,2,3,4\}$. Latent encounter histories are indexed by $j=1+\sum_{t=1}^T y_t 5^{T-t}$, where the encounter types indicate non-detection $(y_t=0)$, type 1 encounter $(y_t=1)$, type 2 encounter $(y_t=2)$, non-simultaneous type 1 and type 2 encounter $(y_t=3)$, and simultaneous type 1 and type 2 encounter $(y_t=4)$. If simultaneous encounters are possible, these result in some ${\bf y}$ being completely observable (as indicated by ${\bf {\tilde y}}_{known}$).}
-  \begin{tabular}{lc|ccc}
-  \hline 
-  $j$ & ${\bf y}$ & ${\bf {\tilde y}}_1$ &  ${\bf {\tilde y}}_2$ & ${\bf {\tilde y}}_{known}$ \tabularnewline
-  \hline 
-  1 & 00 & .. & .. & .. \tabularnewline
-  2 & 01 & 01 & .. & .. \tabularnewline
-  3 & 02 & .. & 02 & .. \tabularnewline
-  4 & 03 & 01 & 02 & .. \tabularnewline
-  5 & 04 & .. & .. & 04 \tabularnewline
-  6 & 10 & 10 & .. & .. \tabularnewline
-  7 & 11 & 11 & .. & .. \tabularnewline
-  8 & 12 & 10 & 02 & .. \tabularnewline
-  9 & 13 & 11 & 02 & .. \tabularnewline
-  10 & 14 & .. & .. & 14 \tabularnewline
-  11 & 20 & .. & 20 & .. \tabularnewline
-  12 & 21 & 01 & 20 & .. \tabularnewline
-  13 & 22 & .. & 22 & .. \tabularnewline
-  14 & 23 & 01 & 22 & .. \tabularnewline
-  15 & 24 & .. & .. & 24 \tabularnewline
-  16 & 30 & 10 & 20 & .. \tabularnewline
-  17 & 31 & 11 & 20 & .. \tabularnewline
-  18 & 32 & 10 & 22 & .. \tabularnewline
-  19 & 33 & 11 & 22 & .. \tabularnewline
-  20 & 34 & .. & .. & 34 \tabularnewline
-  21 & 40 & .. & .. & 40 \tabularnewline
-  22 & 41 & .. & .. & 41 \tabularnewline
-  23 & 42 & .. & .. & 42 \tabularnewline
-  24 & 43 & .. & .. & 43 \tabularnewline
-  25 & 44 & .. & .. & 44 \tabularnewline
-  \hline 
-  \end{tabular}
-\end{table}
 
 In essence, \verb|multimark| facilitates the joint analysis of type 1 $({\bf {\tilde Y}}_1)$, type 2 $({\bf {\tilde Y}}_2)$, and known encounter histories $({\bf {\tilde Y}}_{known})$ while accounting for uncertainty in the number of unique individuals encountered using extensions of the methodology proposed by \cite{BonnerHolmberg2013} and \cite{McClintockEtAl2013a}. While the mathematical and computational details are generally of little interest to ecologists, \verb|multimark| performs these operations in the background and requires only simple data formatting and model specification formulas familiar to most R users.
 
@@ -216,19 +181,6 @@ is the probability of being detected at least once after accounting for individu
 \subsection{Multiple non-invasive marks}
 \subsubsection{Data formatting}
 There are three types of multiple-mark data that can be analyzed with \verb|multimark|. These are the ``never'', ``sometimes'', and ``always'' data types, and they are named based on their respective probabilities of a simultaneous type 1 and type 2 encounter (Table \ref{tab:datatypes}). An example of the ``never'' data type is provided with \verb|multimark| and includes 23 left-sided $({\bf {\tilde Y}}_1)$ and 23 right-sided $({\bf {\tilde Y}}_2)$ encounter histories for bobcats ({\it Lynx rufus}) collected from remote single-camera stations in southern California over $T=8$ sampling periods between July 2006 and January 2007 \citep{McClintockEtAl2013a,AlonsoEtAl2015}. 
-
-\begin{table}
-  \caption{\label{tab:datatypes} Summary of three different types of multiple-mark data. The data differ in terms of the latent encounter types $(y_t)$ that are possible based on the conditional probability of a simultaneous type 1 and type 2 encounter, $\alpha = \text{Pr}\left( y_t=4|y_t=3 \text{ or } y_t=4 \right)$.}
-  \begin{tabular}{c|cc}
-  \hline 
-  Data type & $y_t$ &  Constraints \tabularnewline
-  \hline 
-  ``never'' & $\{0,1,2,3\}$ & $\alpha=0$ \tabularnewline
-  ``sometimes'' & $\{0,1,2,3,4\}$ & $0<\alpha<1$ \tabularnewline
-  ``always'' & $\{0,1,2,4\}$ & $\alpha=1$ \tabularnewline
-  \hline 
-  \end{tabular}
-\end{table}
 
 \verb|multimark| expects observed encounter history data to be a matrix with rows corresponding to individuals and columns corresponding to sampling occasions. Because the bobcat data were collected from single-camera stations, simultaneous left- and right-sided encounters were not possible; hence $\alpha=0$ and the rows consist of either 0's and 1's or 0's and 2's:
 <<load-library, echo=TRUE>>=
@@ -409,6 +361,7 @@ library(modeest)
 #modprobc <- sum(modprobs[unlist(lapply(modlist,function(x) any(attributes(terms(x$mod.p))$term.labels=="c")))])
 #modprobnotype <- sum(modprobs[!unlist(lapply(modlist,function(x) any(attributes(terms(x$mod.delta))$term.labels=="type")))])
 load("manuscript_bobcat_results.RData")
+posprobtab<-xtable(modprobstab,caption="Posterior model probabilities (PMM) and abundance estimates for the bobcat data. Summaries include posterior modes $(N)$, 95\\% highest posterior density intervals (HPDI), effective sample sizes (ESS), and Gelman-Rubin-Brooks diagnostics (GRB) for $N$. Models for detection probability (p) included no effects (\\~{}1), behavioural effects (\\~{}c), time effects (\\~{}time), and individual effects (\\~{}h). Models for the conditional probability of a left- or right-sided encounter (delta) included $\\delta_1=\\delta_2$ (\\~{}1) and $\\delta_1 \\ne \\delta_2$ (\\~{}type)." ,label ="tab:modprobs")
 @
 
 Fitting all possible additive combinations yielded 16 models using the default ``non-informative'' priors for \textit{multimarkClosed()}:
@@ -425,20 +378,13 @@ Fitting all possible additive combinations yielded 16 models using the default `
 With 2 chains each consisting of 2 million iterations (with thinning every 20 iterations to reduce memory requirements), the simplest models required 12 mins on a computer running Windows 7 (3.4GHz Intel Core i7, 16GB RAM), while the more complicated models including time variation required at most 2 hrs. These relatively fast run times are attributable to \verb|multimark|'s parallel processing of MCMC algorithms written in the C programming language \citep{KernighanRitchie1988}. Bayesian multimodel inference was performed with \textit{multimodelClosed()} using the default equal prior model weights, where 300000 iterations for each chain required \Sexpr{round(etime[3]/(60*60),1)} hrs. The longer run time for \textit{multimodelClosed()} owes to the number of models and the RJMCMC algorithm being written entirely in R.
 
 Models including a positive behavioural response to first capture accounted for \Sexpr{round(modprobc,2)} of the posterior model weight, while models including $\delta_1=\delta_2$ accounted for \Sexpr{round(modprobnotype,2)} of posterior model weight (Table \ref{tab:modprobs}). Model-averaged posterior modes were $N=\Sexpr{mlv(unlist(bobcat.M.all$rjmcmc[,"N"]),method="mfv")$M}$ (Highest Posterior Density Interval: \Sexpr{paste0(coda::HPDinterval(coda::mcmc(unlist(bobcat.M.all$rjmcmc[,"N"])))[1:2],collapse="-")}; Fig. \ref{fig:modaveN}) for population abundance, $p=\Sexpr{round(mlv(unlist(bobcat.M.all$rjmcmc[,"p[1]"]),method="kernel",boot=TRUE,R=miter/1000,B=1000)$M,2)}$ (HPDI: \Sexpr{paste0(round(coda::HPDinterval(coda::mcmc(unlist(bobcat.M.all$rjmcmc[,"p[1]"])))[1:2],2),collapse="-")}) for capture probability, and $c=\Sexpr{round(mlv(unlist(bobcat.M.all$rjmcmc[,"c[2]"]),method="kernel",boot=TRUE,R=miter/1000,B=1000)$M,2)}$ (HPDI: \Sexpr{paste0(round(coda::HPDinterval(coda::mcmc(unlist(bobcat.M.all$rjmcmc[,"c[2]"])))[1:2],2),collapse="-")}) for recapture probability. With $\delta_1=\delta_2=\Sexpr{round(mlv(unlist(modlist[[modorder[1]]]$mcmc[,"delta"]),method="mfv")$M,2)}$ (HPDI: \Sexpr{paste0(formatC(coda::HPDinterval(coda::mcmc(unlist(modlist[[modorder[1]]]$mcmc[,"delta"])))[1:2],format="f",digits=2),collapse="-")}) based on the model with the highest posterior probability, both-sided encounters were relatively infrequent for these data ($1-\delta_1-\delta_2=\Sexpr{round(1-2*mlv(unlist(modlist[[modorder[1]]]$mcmc[,"delta"]),method="mfv")$M,2)}$; HPDI: \Sexpr{paste0(formatC(coda::HPDinterval(coda::mcmc(1-2*unlist(modlist[[modorder[1]]]$mcmc[,"delta"])))[1:2],format="f",digits=2),collapse="-")}).
-<<tab:modprobs,results=tex,echo=FALSE>>=
-print(xtable(modprobstab,caption="Posterior model probabilities (PMM) and abundance estimates for the bobcat data. Summaries include posterior modes $(N)$, 95\\% highest posterior density intervals (HPDI), effective sample sizes (ESS), and Gelman-Rubin-Brooks diagnostics (GRB) for $N$. Models for detection probability (p) included no effects (\\~{}1), behavioural effects (\\~{}c), time effects (\\~{}time), and individual effects (\\~{}h). Models for the conditional probability of a left- or right-sided encounter (delta) included $\\delta_1=\\delta_2$ (\\~{}1) and $\\delta_1 \\ne \\delta_2$ (\\~{}type)." ,label ="tab:modprobs"),include.rownames=FALSE,sanitize.colnames.function=function(x){x})
-@
+
 <<fig:modaveN,results=tex,echo=FALSE,include=FALSE, results=hide, warning=FALSE, message=FALSE>>=
 pdf("modaveN.pdf")
 hist(unlist(bobcat.M.all$rjmcmc[,"N"]),main=NA,xlab=bquote(italic(N)),freq=FALSE,xlim=c(0,250),breaks=300)
 dev.off()
 @
-\begin{figure}
-  \includegraphics[width=6in,height=4in]{modaveN.pdf}
-  \begin{doublespace}
-    \caption{\label{fig:modaveN}Model-averaged posterior distribution of population abundance $(N)$ for the bobcat data.}
-  \end{doublespace}
-\end{figure}
+
 <<load-library, echo=FALSE, eval=FALSE, include=FALSE, results=hide, warning=FALSE, message=FALSE>>=
 data <- bobcat[which(apply(bobcat==2,1,sum)>0),]
 data[which(data>0)]=1
@@ -507,9 +453,76 @@ Many potentially desirable extensions to \verb|multimark| are possible. These in
 
 \noindent \textbf{Acknowledgments} 
 
-\noindent I thank the Associate Editor, G. P\'{e}ron and E. Cooch for reviewing the manuscript, P. Boveng, P. Conn, and J. Laake for helpful comments on earlier drafts, and D. Johnson for helpful discussions. The findings and conclusions in the manuscript are those of the author(s) and do not necessarily represent the views of the National Marine Fisheries Service, NOAA. Any use of trade, product, or firm names does not imply an endorsement by the US Government.
+\noindent I thank Associate Editor B. Anholt, G. P\'{e}ron, and E. Cooch for reviewing the manuscript, P. Boveng, P. Conn, and J. Laake for helpful comments on earlier drafts, and D. Johnson for helpful discussions. The findings and conclusions in the manuscript are those of the author(s) and do not necessarily represent the views of the National Marine Fisheries Service, NOAA. Any use of trade, product, or firm names does not imply an endorsement by the US Government.
 
 \bibliographystyle{mee}
 \bibliography{master.bib}
+
+\clearpage
+
+\begin{table}
+  \caption{\label{tab:hist} Latent encounter histories ${\bf y}$ and the recorded histories $({\bf {\tilde y}}_1, {\bf {\tilde y}}_2, {\bf {\tilde y}}_{known})$ they generate for $T=2$ sampling occasions and two mark types, where ${\bf y}=\left(y_1,y_2\right)$ for $y_t \in \{0,1,2,3,4\}$. Latent encounter histories are indexed by $j=1+\sum_{t=1}^T y_t 5^{T-t}$, where the encounter types indicate non-detection $(y_t=0)$, type 1 encounter $(y_t=1)$, type 2 encounter $(y_t=2)$, non-simultaneous type 1 and type 2 encounter $(y_t=3)$, and simultaneous type 1 and type 2 encounter $(y_t=4)$. If simultaneous encounters are possible, these result in some ${\bf y}$ being completely observable (as indicated by ${\bf {\tilde y}}_{known}$).}
+  \begin{tabular}{lc|ccc}
+  \hline 
+  $j$ & ${\bf y}$ & ${\bf {\tilde y}}_1$ &  ${\bf {\tilde y}}_2$ & ${\bf {\tilde y}}_{known}$ \tabularnewline
+  \hline 
+  1 & 00 & .. & .. & .. \tabularnewline
+  2 & 01 & 01 & .. & .. \tabularnewline
+  3 & 02 & .. & 02 & .. \tabularnewline
+  4 & 03 & 01 & 02 & .. \tabularnewline
+  5 & 04 & .. & .. & 04 \tabularnewline
+  6 & 10 & 10 & .. & .. \tabularnewline
+  7 & 11 & 11 & .. & .. \tabularnewline
+  8 & 12 & 10 & 02 & .. \tabularnewline
+  9 & 13 & 11 & 02 & .. \tabularnewline
+  10 & 14 & .. & .. & 14 \tabularnewline
+  11 & 20 & .. & 20 & .. \tabularnewline
+  12 & 21 & 01 & 20 & .. \tabularnewline
+  13 & 22 & .. & 22 & .. \tabularnewline
+  14 & 23 & 01 & 22 & .. \tabularnewline
+  15 & 24 & .. & .. & 24 \tabularnewline
+  16 & 30 & 10 & 20 & .. \tabularnewline
+  17 & 31 & 11 & 20 & .. \tabularnewline
+  18 & 32 & 10 & 22 & .. \tabularnewline
+  19 & 33 & 11 & 22 & .. \tabularnewline
+  20 & 34 & .. & .. & 34 \tabularnewline
+  21 & 40 & .. & .. & 40 \tabularnewline
+  22 & 41 & .. & .. & 41 \tabularnewline
+  23 & 42 & .. & .. & 42 \tabularnewline
+  24 & 43 & .. & .. & 43 \tabularnewline
+  25 & 44 & .. & .. & 44 \tabularnewline
+  \hline 
+  \end{tabular}
+\end{table}
+
+\clearpage
+
+\begin{table}
+  \caption{\label{tab:datatypes} Summary of three different types of multiple-mark data. The data differ in terms of the latent encounter types $(y_t)$ that are possible based on the conditional probability of a simultaneous type 1 and type 2 encounter, $\alpha = \text{Pr}\left( y_t=4|y_t=3 \text{ or } y_t=4 \right)$.}
+  \begin{tabular}{c|cc}
+  \hline 
+  Data type & $y_t$ &  Constraints \tabularnewline
+  \hline 
+  ``never'' & $\{0,1,2,3\}$ & $\alpha=0$ \tabularnewline
+  ``sometimes'' & $\{0,1,2,3,4\}$ & $0<\alpha<1$ \tabularnewline
+  ``always'' & $\{0,1,2,4\}$ & $\alpha=1$ \tabularnewline
+  \hline 
+  \end{tabular}
+\end{table}
+
+\clearpage
+
+<<tab:modprobs,results=tex,echo=FALSE>>=
+print(posprobtab,include.rownames=FALSE,sanitize.colnames.function=function(x){x})
+@
+
+\clearpage
+
+\begin{figure}
+  \includegraphics[width=6in,height=4in]{modaveN.pdf}
+  \begin{doublespace}
+    \caption{\label{fig:modaveN}Model-averaged posterior distribution of population abundance $(N)$ for the bobcat data.}
+  \end{doublespace}
+\end{figure}
 
 \end{document}
