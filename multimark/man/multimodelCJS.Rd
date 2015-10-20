@@ -72,10 +72,10 @@ phibetaTime <- seq(2,0,length=noccas-1) # declining trend in survival
 data <- simdataCJS(noccas=5,phibeta=phibetaTime,data.type=data_type)
 setup <- processdata(data$Enc.Mat,data.type=data_type)
 
-#Run two parallel chains using the default model. Note parms="all".
+#Run single chain using the default model. Note parms="all".
 sim.pdot.phidot <- multimarkCJS(mms=setup,parms="all")
 
-#Run two parallel chains with temporal trend for phi. Note parms="all".
+#Run single chain with temporal trend for phi. Note parms="all".
 sim.pdot.phiTime <- multimarkCJS(mms=setup,mod.phi=~Time,parms="all")
 
 #Perform RJMCMC using defaults

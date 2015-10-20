@@ -58,10 +58,10 @@ test<-multimodelClosed(modlist=list(mod1=test.dot,mod2=test.dot))
 #Generate object of class "multimarksetup"
 setup <- processdata(bobcat)
 
-#Run two parallel chains using the default model for bobcat data. Note parms="all".
+#Run single chain using the default model for bobcat data. Note parms="all".
 bobcat.dot <- multimarkClosed(mms=setup,parms="all")
 
-#Run two parallel chains for bobcat data with time effects. Note parms="all".
+#Run single chain for bobcat data with time effects. Note parms="all".
 bobcat.time <- multimarkClosed(mms=setup,mod.p=~time,parms="all")
 
 #Perform RJMCMC using defaults

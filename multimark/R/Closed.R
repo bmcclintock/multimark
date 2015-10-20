@@ -466,7 +466,7 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
 #' # This example is excluded from testing to reduce package check time
 #' # Example uses unrealistically low values for nchain, iter, and burnin
 #' 
-#' #Run two parallel chains using the default model for simulated ``traditional'' data
+#' #Run single chain using the default model for simulated ``traditional'' data
 #' data<-simdataClosed(delta_1=1,delta_2=0)$Enc.Mat
 #' sim.dot<-markClosed(data)
 #' 
@@ -549,7 +549,7 @@ markClosed<-function(Enc.Mat,covs=data.frame(),mod.p=~1,parms=c("pbeta","N"),nch
 #' # This example is excluded from testing to reduce package check time
 #' # Example uses unrealistically low values for nchain, iter, and burnin
 #' 
-#' #Run two parallel chains using the default model for bobcat data
+#' #Run single chain using the default model for bobcat data
 #' bobcat.dot<-multimarkClosed(bobcat)
 #' 
 #' #Posterior summary for monitored parameters
@@ -971,10 +971,10 @@ rjmcmcClosed <- function(ichain,mms,M,noccas,data_type,alpha,C,All.hists,modlist
 #' #Generate object of class "multimarksetup"
 #' setup <- processdata(bobcat)
 #'  
-#' #Run two parallel chains using the default model for bobcat data. Note parms="all".
+#' #Run single chain using the default model for bobcat data. Note parms="all".
 #' bobcat.dot <- multimarkClosed(mms=setup,parms="all")
 #' 
-#' #Run two parallel chains for bobcat data with time effects. Note parms="all".
+#' #Run single chain for bobcat data with time effects. Note parms="all".
 #' bobcat.time <- multimarkClosed(mms=setup,mod.p=~time,parms="all")
 #' 
 #' #Perform RJMCMC using defaults

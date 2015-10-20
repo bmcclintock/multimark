@@ -38,10 +38,10 @@ test <- processdata(bobcat)}
 #Generate object of class "multimarksetup"
 setup <- processdata(bobcat)
 
-#Run two parallel chains using the default model for bobcat data
+#Run single chain using the default model for bobcat data
 bobcat.dot<-multimarkClosed(mms=setup)
 
-#Run two parallel chains for bobcat data with temporal effects (i.e., mod.p=~time)
+#Run single chain for bobcat data with temporal effects (i.e., mod.p=~time)
 bobcat.time <- multimarkClosed(mms=setup,mod.p=~time)}
 }
 \author{

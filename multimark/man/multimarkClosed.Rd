@@ -106,7 +106,7 @@ test<-multimarkClosed(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0,bin=5)}
 # This example is excluded from testing to reduce package check time
 # Example uses unrealistically low values for nchain, iter, and burnin
 
-#Run two parallel chains using the default model for bobcat data
+#Run single chain using the default model for bobcat data
 bobcat.dot<-multimarkClosed(bobcat)
 
 #Posterior summary for monitored parameters

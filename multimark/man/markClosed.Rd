@@ -77,7 +77,7 @@ test<-markClosed(Enc.Mat=simdataClosed(delta_1=1,delta_2=0)$Enc.Mat,iter=10,burn
 # This example is excluded from testing to reduce package check time
 # Example uses unrealistically low values for nchain, iter, and burnin
 
-#Run two parallel chains using the default model for simulated ``traditional'' data
+#Run single chain using the default model for simulated ``traditional'' data
 data<-simdataClosed(delta_1=1,delta_2=0)$Enc.Mat
 sim.dot<-markClosed(data)
 

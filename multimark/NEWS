@@ -2,11 +2,11 @@ multimark 1.3.1 2015-10-20
 -----------------
 CHANGES
 
-* updated citations
+* Updated citations for 'multimark'
 
 BUG FIXES
 
-* Correction to help file for 'markCJS()'
+* Typo corrections in help files
 
 
 multimark 1.3.0 2015-07-27
