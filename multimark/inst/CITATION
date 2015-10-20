@@ -14,18 +14,18 @@ citEntry(entry="Manual",
                vers, ".", sep="") )
 
 citEntry(entry="Article",
-  title = "multimark: an R package for analysis of capture-recapture data consisting of multiple ``non-invasive'' marks",
+  title = "multimark: an R package for analysis of capture-recapture data consisting of multiple ``noninvasive'' marks",
   author = personList(as.person("B. T. McClintock")),
   year     = {2015},
-  journal = "submitted",
+  journal = "Ecology and Evolution",
   volume     = {},
   number     = {},
   pages     = {},
-  url = "https://github.com/bmcclintock/multimark/",
+  url = "http://onlinelibrary.wiley.com/doi/10.1002/ece3.1676/full",
   textVersion =
   paste("McClintock, B. T. (2015)",
-  "multimark: an R package for analysis of capture-recapture data consisting of multiple ``non-invasive'' marks.",
-  "https://github.com/bmcclintock/multimark/"))
+  "multimark: an R package for analysis of capture-recapture data consisting of multiple ``noninvasive'' marks.",
+  "Ecology and Evolution DOI: 10.1002/ece3.1676"))
 
 citEntry(entry="Article",
   title = "Mark-recapture with multiple, non-invasive marks",

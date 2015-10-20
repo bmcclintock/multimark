@@ -1,5 +1,9 @@
-multimark 1.3.1 2015-08-04
+multimark 1.3.1 2015-10-20
 -----------------
+CHANGES
+
+* updated citations
+
 BUG FIXES
 
 * Correction to help file for 'markCJS()'
