@@ -40,7 +40,7 @@ simdataClosed <- function(N=100,noccas=5,pbeta=-0.4,tau=0,sigma2_zp=0,delta_1=0.
   } else if(length(pbeta)!=noccas){
     stop(paste0("'pbeta' must be a scaler or vector of length ",noccas))
   }
-  delta_B<-1-delta_1-delta_2
+  delta_B<-1-(delta_1+delta_2)
   if(delta_B<0) stop ("delta_1 and delta_2 must have sum less than 1")
   
   if(data.type=="never"){
