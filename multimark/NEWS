@@ -1,3 +1,10 @@
+multimark 1.3.2 2015-12-18
+-----------------
+BUG FIXES
+
+* Allow delta_B = 0 (i.e. 1 - (delta_1 + delta_2) = 0) in 'simdataCJS()' and 'simdataClosed();
+
+
 multimark 1.3.1 2015-10-20
 -----------------
 CHANGES
