@@ -46,7 +46,7 @@ simdataCJS <- function(N=100,noccas=5,pbeta=-0.25,sigma2_zp=0,phibeta=1.6,sigma2
   } else if(length(phibeta)!=noccas-1){
     stop(paste0("'phibeta' must be a scaler or vector of length ",noccas-1))
   }
-  delta_B<-1-delta_1-delta_2
+  delta_B<-1-(delta_1+delta_2)
   if(delta_B<0) stop ("delta_1 and delta_2 must have sum less than 1")
   
   if(data.type=="never"){
