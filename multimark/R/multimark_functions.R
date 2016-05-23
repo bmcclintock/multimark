@@ -47,28 +47,17 @@ setClass("multimarksetup", representation=list(Enc.Mat="matrix",data.type="chara
 
 tol <- 1.e-6
 
-getfreq<-function(Enc.Mat,histindex,data.type){
+getfreq<-function(Enc.Mat,vAll.hists,data.type){
   
-  temp.Enc.Mat <- Enc.Mat
+  All.hists<-matrix(vAll.hists,ncol=ncol(Enc.Mat),byrow=TRUE)
+
+  M<-nrow(Enc.Mat)
   
-  if(data.type=="never"){
-    ind<-4
-  } else if(data.type=="always"){
-    ind<-4
-    temp.Enc.Mat[which(Enc.Mat==4)]=3
-  } else if(data.type=="sometimes"){
-    ind<-5
-  } 
-  M<-nrow(temp.Enc.Mat)
-  temp.noccas<-ncol(temp.Enc.Mat)
-  Hist.num<-integer(M)
-  Value<-ind^c((temp.noccas-1):0)
-  Hist.num <- 1 + temp.Enc.Mat %*% Value
-  
-  J <- length(histindex)
+  J <- nrow(All.hists)
   
   temp.x<-integer(J)
-  temp.x[sort(unique(match(Hist.num,histindex)))]=table(Hist.num)
+  Hist.num <- prodlim::row.match(as.data.frame(Enc.Mat),as.data.frame(All.hists))
+  temp.x[sort(unique(Hist.num))]<-table(Hist.num)
   temp.x[1] <- M-base::sum(temp.x[-1])
   names(temp.x)=paste0("x[",1:J,"]")
   as.vector(temp.x,mode="integer")
@@ -154,45 +143,28 @@ get_A<-function(Enc.Mat,data.type){
     All.hists<-rbind(Enc.Mat1,Enc.Mat2,Enc.Matknown)
   }
   
-  if(data.type=="never"){
-    ind<-4
-  } else if(data.type=="always"){
-    ind<-4
-    All.hists[which(All.hists==3)]<-4
-  } else if(data.type=="sometimes"){
-    ind<-5
-  }
+  if(data.type=="always") All.hists[which(All.hists==3)]<-4
   
   All.hists<-unique(rbind(rep(0,noccas),All.hists))
   
   J<-nrow(All.hists)
   
-  Value <- ind^c((noccas-1):0)
-  
-  tmp.All.hists<-All.hists
-  if(data.type=="always") tmp.All.hists[which(All.hists==4)]<-3
-  histindex <- 1 + tmp.All.hists %*% Value
-  
-  All.hists <- All.hists[order(histindex),]
-  histindex <- sort(histindex)
-  rownames(All.hists) <- histindex
+  All.hists<-All.hists[do.call("order", c(as.data.frame(All.hists[,1:noccas]), decreasing = FALSE)),]
   
   # Construct A matrix   
   ivect<-which(((rowSums(All.hists==1)>0 & rowSums(All.hists==2)>0) | rowSums(All.hists==3)>0) & (rowSums(All.hists==4)==0))  
   temp.hist<-All.hists[ivect,]
-  temp.1<-Matrix(0,nrow=length(ivect),ncol=noccas)
-  temp.2<-Matrix(0,nrow=length(ivect),ncol=noccas)
+  temp.1<-matrix(0,nrow=length(ivect),ncol=noccas)
+  temp.2<-matrix(0,nrow=length(ivect),ncol=noccas)
   temp.1[which(temp.hist==1 | temp.hist>2)] <- 1
   temp.2[which(temp.hist>1)] <- 2
-  places1<-as.vector(1+temp.1 %*% Value) 
-  places2<-as.vector(1+temp.2 %*% Value)
   
-  A<-sparseMatrix(i=c(ivect,ivect),j=c(match(places1,histindex),match(places2,histindex)),dims=c(J,J),x=1)
+  A <- sparseMatrix(i = c(ivect, ivect), j = c(prodlim::row.match(as.data.frame(temp.1),as.data.frame(All.hists)), prodlim::row.match(as.data.frame(temp.2), as.data.frame(All.hists))), dims = c(J, J), x = 1)
   diag(A)[-ivect] <- 1
   A<-A[,-1]
   A<-A[,-which(colSums(A)==0)]
   
-  A<-list(Aprime=t(A),vAll.hists=as.vector(t(All.hists),mode="integer"),ivect=ivect,histindex=histindex)
+  A<-list(Aprime=t(A),vAll.hists=as.vector(t(All.hists),mode="integer"),ivect=ivect)
 }
 
 get_basis_vectors <- function(tA,ivect,data.type){
@@ -204,14 +176,6 @@ get_basis_vectors <- function(tA,ivect,data.type){
   # A and ivect are objects returned by "get_A" above.
   # data.type = data type that determines mapping of recorded histories to latent histories (see Table 1 in paper). 
   #   Data type "never" indicates simultaneous type 1 and type 2 detections are never observed, "sometimes" indicates simultaneous type 1 and type 2 detections are sometimes observed, and "always" indicates simultaneous type 1 and type 2 detections are always observed
-  
-  if(data.type=="never"){
-    ind<-4
-  } else if(data.type=="always"){
-    ind<-4
-  } else if(data.type=="sometimes"){
-    ind<-5
-  }
   
   J <- ncol(tA)
   
@@ -279,27 +243,8 @@ get_H <- function(mms,x){
     temp.Enc.Mat <- mms@Enc.Mat
     noccas <- ncol(temp.Enc.Mat)
     All.hists <- matrix(mms@vAll.hists,byrow=TRUE,ncol=noccas)
-    
-    if(mms@data.type=="never"){
-      ind<-4
-    } else if(mms@data.type=="always"){
-      ind<-4
-      tmp.simult <- which(mms@Enc.Mat==4)
-      if(length(tmp.simult)){
-        temp.Enc.Mat[tmp.simult] <- 3
-      }
-      tmp.simult <- which(All.hists==4)
-      if(length(tmp.simult)){
-        All.hists[tmp.simult] <- 3
-      }
-    } else if(mms@data.type=="sometimes"){
-      ind<-5
-    } 
 
-    Value<-ind^c((noccas-1):0)
-    Hindex <- 1 + temp.Enc.Mat %*% Value
-    histindex <- 1 + All.hists %*% Value
-    H <- match(Hindex,histindex)
+    H <- prodlim::row.match(as.data.frame(temp.Enc.Mat),as.data.frame(All.hists))
     
   } else {
     H<-integer(base::sum(x))
@@ -587,18 +532,19 @@ get_inits<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0del
   return(inits)
 }
 
-get_known<-function(known,Enc.Mat,histindex,data.type){
+get_known<-function(known,Enc.Mat,vAll.hists,data.type){
   M <- nrow(Enc.Mat)
+  All.hists<-matrix(vAll.hists,ncol=ncol(Enc.Mat),byrow=TRUE)
   if(length(known) & base::sum(known)>0){
     if(length(known)!=M | base::sum(known)>M){
       stop(paste0("'known' must be an integer vector of length ",M," with sum between 0 and ",M))
     } else {
-      knownx <- getfreq(Enc.Mat[which(known>0),],histindex,data.type)
+      knownx <- getfreq(Enc.Mat[which(known>0),],vAll.hists,data.type)
       knownx[1] <- integer(1) #ignore known all-zero histories
       if(base::sum(apply(Enc.Mat==3 | Enc.Mat==4,1,base::sum)>0)>base::sum(knownx)) stop("'known' vector misspecified. Encounter histories containing simultaneous encounters are known")     
     }
   } else {
-    knownx <- integer(length(histindex))
+    knownx <- integer(nrow(All.hists))
   }
   knownx
 }
@@ -649,17 +595,14 @@ processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer(
   if(data.type=="never"){
     if(!all(match(unique(c(Enc.Mat)),c(0,1,2,3),nomatch=0))) stop("Encounter histories for 'never' data type can only include 0, 1, 2, and 3 entries")
     if(any(Enc.Mat==3)) warning("Data type is 'never' but includes type 3 encounters")
-    ind<-4
   } else if(data.type=="always"){
     if(!all(match(unique(c(Enc.Mat)),c(0,1,2,4),nomatch=0))) stop("Encounter histories for 'always' data type can only include 0, 1, 2, and 4 entries")
     if(!any(Enc.Mat==4)) warning("Encounter histories contain no simulataneous encounters -- should you be using the 'never' data type?")
-    ind<-4
   } else if(data.type=="sometimes"){
     if(!all(match(unique(c(Enc.Mat)),c(0,1,2,3,4),nomatch=0))) stop("Encounter histories for 'sometimes' data type can only include 0, 1, 2, 3, and 4 entries")
     temp.check <- which(rowSums(Enc.Mat==3)>0 & rowSums(Enc.Mat==4)==0)
     if(length(temp.check)) warning(paste("Encounter history",temp.check,"includes a type 3 encounter but no type 4 encounter\n  "))
     if(!any(Enc.Mat==4)) warning("Encounter histories contain no simulataneous encounters -- should you be using the 'never' data type?")
-    ind<-5
   } else {
     stop("Data type ('data.type') must be 'never', 'sometimes', or 'always'")
   }
@@ -678,8 +621,9 @@ processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer(
   }
   
   A<- get_A(Enc.Mat,data.type)
-  naivex<-getfreq(Enc.Mat,A$histindex,data.type)
-  knownx<-get_known(known,Enc.Mat,A$histindex,data.type)
+  J<-ncol(A$Aprime)
+  naivex<-getfreq(Enc.Mat,A$vAll.hists,data.type)
+  knownx<-get_known(known,Enc.Mat,A$vAll.hists,data.type)
   C<-get_C(matrix(A$vAll.hists,byrow=TRUE,ncol=noccas))
   L<-get_L(matrix(A$vAll.hists,byrow=TRUE,ncol=noccas))
   Basis<-get_basis_vectors(A$Aprime,A$ivect,data.type=data.type)
@@ -689,7 +633,7 @@ processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer(
   } else {
     Basis <- Basis[,-1]
     ncolbasis<-ncol(Basis)
-    indBasis<-as.vector(which(Basis!=0)-length(A$histindex)*rep(seq(0,ncolbasis-1),each=3),mode="integer")
+    indBasis<-as.vector(which(Basis!=0)-J*rep(seq(0,ncolbasis-1),each=3),mode="integer")
   }
   mms<-new(Class="multimarksetup",Enc.Mat=Enc.Mat,data.type=data.type,vAll.hists=A$vAll.hists,Aprime=A$Aprime,indBasis=indBasis,ncolbasis=ncolbasis,knownx=knownx,C=C,L=L,naivex=naivex,covs=covs)  
   return(mms)
