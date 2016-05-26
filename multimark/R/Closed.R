@@ -78,6 +78,100 @@ simdataClosed <- function(N=100,noccas=5,pbeta=-0.4,tau=0,sigma2_zp=0,delta_1=0.
   return(list(Enc.Mat=Enc.Mat,trueEnc.Mat=tEnc.Mat))
 }
 
+#' Simulate spatially-explicit closed population capture-mark-recapture data arising from multiple non-invasive marks
+#'
+#' This function generates encounter histories from simulated closed population capture-mark-recapture data consisting of multiple non-invasive marks. 
+#'
+#'
+#' @param N True population size or abundance.
+#' @param ntraps The number of traps. The square root of \code{ntraps} must be a whole number in order to create a regular grid of trap coordinates on the unit square.
+#' @param noccas The number of sampling occasions per trap.
+#' @param pbeta Complementary loglog-scale intercept term for capture probability (p). Must be a scaler or vector of length \code{noccas}.
+#' @param tau Additive complementary loglog-scale behavioral effect term for recapture probability (c).
+#' @param sigma2_zp Complementary loglog-scale variance for the detection function.
+#' @param delta_1 Conditional probability of type 1 encounter, given detection.
+#' @param delta_2 Conditional probability of type 2 encounter, given detection.
+#' @param alpha Conditional probability of simultaneous type 1 and type 2 detection, given both types encountered. Only applies when \code{data.type="sometimes"}.
+#' @param data.type Specifies the encounter history data type. All data types include non-detections (type 0 encounter), type 1 encounter (e.g., left-side), and type 2 encounters (e.g., right-side). When both type 1 and type 2 encounters occur for the same individual within a sampling occasion, these can either be "non-simultaneous" (type 3 encounter) or "simultaneous" (type 4 encounter). Three data types are currently permitted:
+#' 
+#'  \code{data.type="never"} indicates both type 1 and type 2 encounters are never observed for the same individual within a sampling occasion, and observed encounter histories therefore include only type 1 or type 2 encounters (e.g., only left- and right-sided photographs were collected). Observed encounter histories can consist of non-detections (0), type 1 encounters (1), and type 2 encounters (2). See \code{\link{bobcat}}. Latent encounter histories consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 3 encounters (3).
+#'
+#'  \code{data.type="sometimes"} indicates both type 1 and type 2 encounters are sometimes observed (e.g., both-sided photographs are sometimes obtained, but not necessarily for all individuals). Observed encounter histories can consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), type 3 encounters (3), and type 4 encounters (4). Type 3 encounters can only be observed when an individual has at least one type 4 encounter. Latent encounter histories consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), type 3 encounters (3), and type 4 encounters (4). 
+#'
+#'  \code{data.type="always"} indicates both type 1 and type 2 encounters are always observed, but some encounter histories may still include only type 1 or type 2 encounters. Observed encounter histories can consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4). Latent encounter histories consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4).
+#'
+#' @param detection Detectoin function for detection probability. Must be "\code{half-normal}" or "\code{exponential}".
+#'
+#' @return A list containing the following:
+#' \item{Enc.Mat}{A matrix containing the observed encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc.}
+#' \item{trueEnc.Mat}{A matrix containing the true (latent) encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc.}
+#' \item{trapCoords}{A matrix containing the X- and Y-coordinates for the traps. Trap coordinates are assumed to be distributed in a regular grid on the unit square.}
+#' \item{centers}{A matrix containing the true (latent) coordinates of the activity centers for each individual in the population.}
+#' @author Brett T. McClintock 
+#' @seealso \code{\link{processdata}}, \code{\link{multimarkClosed}}
+#' @references
+#' Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.
+#' 
+#' McClintock, B. T., Conn, P. B., Alonso, R. S., and Crooks, K. R. 2013. Integrated modeling of bilateral photo-identification data in mark-recapture analyses. \emph{Ecology} 94: 1464-1471.
+#' @examples
+#' #simulate data for data.type="sometimes" using defaults
+#' data<-simdataClosedSCR(data.type="sometimes")
+simdataClosedSCR <- function(N=100,ntraps=16,noccas=5,pbeta=log(0.4),tau=0,sigma2_zp=0.1,delta_1=0.4,delta_2=0.4,alpha=0.5,data.type="never",detection="half-normal"){
+  
+  if(length(pbeta)==1){
+    pbeta=rep(pbeta,noccas)
+  } else if(length(pbeta)!=noccas){
+    stop(paste0("'pbeta' must be a scaler or vector of length ",noccas))
+  }
+  delta_B<-1-(delta_1+delta_2)
+  if(delta_B<0) stop ("delta_1 and delta_2 must have sum less than 1")
+  
+  if(data.type=="never"){
+    alpha<-0
+  } else if(data.type=="always"){
+    alpha<-1
+  } else if(data.type!="sometimes"){
+    stop("'data.type' must be 'never', 'sometimes', or 'always'")
+  }
+  
+  if(sqrt(ntraps)%%1) stop("The square root of 'ntraps' must be a whole number")
+  
+  tEnc.Mat<-matrix(0,nrow=N,ncol=noccas*ntraps)        #"true" latent histories
+  trapCoords<-as.matrix(expand.grid(seq(0,1,length=sqrt(ntraps)),seq(0,1,length=sqrt(ntraps)))) #trap coordinates on unit square
+  centers<-cbind(runif(N),runif(N))                    #activity center coordinates on unit square
+  
+  dist2<-getdist(centers,trapCoords)
+  
+  if(detection=="half-normal") {
+    dexp<-2
+  } else if(detection=="exponential"){
+    dexp<-1
+  } else {
+    stop("'detection' argument must be 'half-normal' or 'exponential'")
+  }
+  
+  for(i in 1:N){
+    for(k in 1:ntraps){
+      ind<-0
+      for(j in 1:noccas){
+        p<-invcloglog(pbeta[j]-1./(2*sigma2_zp)*dist2[i,k]^dexp)
+        c<-invcloglog(pbeta[j]+tau-1./(2*sigma2_zp)*dist2[i,k]^dexp)
+        tEnc.Mat[i,(k-1)*noccas+j] <- rbinom(1,1,((1-ind)*p+ind*c) )       #"true" latent histories
+        if(tEnc.Mat[i,(k-1)*noccas+j]==1){
+          ind<-1
+        }
+      }
+    }
+  }
+  Rand.Mat<-matrix(runif(N*noccas*ntraps,0,1),N,noccas*ntraps)
+  tEnc.Mat[which(tEnc.Mat==1 & Rand.Mat<delta_2)] <- 2      # type 2 encounters
+  tEnc.Mat[which(tEnc.Mat==1 & Rand.Mat>(1-delta_B))] <- 4  # type 1 and type 2 encounters
+  tEnc.Mat[which(tEnc.Mat==4)] <- tEnc.Mat[which(tEnc.Mat==4)]-(runif(base::sum(tEnc.Mat==4))<(1-alpha))   # unobserved type 1 and type 2 encounters
+  
+  Enc.Mat <- get_Enc(tEnc.Mat,data.type)
+  return(list(Enc.Mat=Enc.Mat,trueEnc.Mat=tEnc.Mat,trapCoords=trapCoords,centers=centers))
+}
+
 get_DMClosed<-function(mod.p,mod.delta,Enc.Mat,covs,type="Closed",...){
   Enc.Mat[which(Enc.Mat>0)] <- 1
   ch<-as.character(as.matrix( apply(Enc.Mat, 1, paste, collapse = ""), ncol=1 ))

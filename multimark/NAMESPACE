@@ -5,6 +5,7 @@ export(
   multimarkCJS,
   processdata,
   simdataClosed,
+  simdataClosedSCR,
   simdataCJS,
   getprobsClosed,
   getprobsCJS,

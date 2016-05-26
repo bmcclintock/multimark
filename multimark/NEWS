@@ -2,6 +2,8 @@ multimark 2.0.0 2016-05-23
 -----------------
 NEW FEATURES
 
+* Added spatial capture-recapture model of Royle et al. (2009)
+
 * Increased capacity for handling hundreds of sampling occasions
 
 

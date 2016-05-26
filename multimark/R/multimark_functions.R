@@ -269,6 +269,10 @@ expit<-function(x){
   1/(1+exp(-x))
 }
 
+invcloglog<-function(x){
+  1.-exp(-exp(x))
+}
+
 expittol<-function(x){
   l <- dim(x)
   expittol <- pmin(pmax(tol,expit(x)),1.-tol)
@@ -322,6 +326,12 @@ isValidx<-function(mms,x,M){
   ifelse(ncol(mms@Aprime)==length(x),
          ifelse((all((mms@Aprime%*%x)==(mms@Aprime%*%mms@naivex)) & all(x>=mms@knownx) & base::sum(x)==M),TRUE,FALSE),
          FALSE)
+}
+
+getdist <- function(centers, trapCoords)  {
+  x <- outer(centers[, 1], trapCoords[, 1], "-")
+  y <- outer(centers[, 2], trapCoords[, 2], "-")
+  sqrt(x^2 + y^2)
 }
 
 get_inits<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0delta,a0psi,b0psi,DM,gq=NULL){
