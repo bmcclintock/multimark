@@ -542,6 +542,246 @@ get_inits<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0del
   return(inits)
 }
 
+get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0delta,a0psi,b0psi,DM,spatialInputs=NULL,dexp){
+  
+  inits<-vector("list",nchains)
+  
+  if(!is.null(initial.values)){
+    for(ichain in 1:length(initial.values)){
+      if(!is.list(initial.values[[ichain]])) stop(paste0("'initial.values' for chain ",ichain," must be a list"))
+    }
+    if(length(initial.values)<nchains){
+      for(ichain in (length(initial.values)+1):nchains){
+        initial.values[[ichain]]<-list()
+      }
+    }
+  } else {
+    initial.values<-inits
+  }
+  
+  mod.p.trap<-DM$mod.p.trap
+  pdim<-ncol(DM$p)
+  ntraps<-nrow(spatialInputs$trapCoords)
+  
+  for(ichain in 1:nchains){
+    
+    if(length(initial.values[[ichain]]$H)){
+      tab<-table(initial.values[[ichain]]$H)
+      if(length(initial.values[[ichain]]$x)){
+        if(isValidx(mms,initial.values[[ichain]]$x,M)){
+          inits[[ichain]]$x<-initial.values[[ichain]]$x
+        } else {
+          stop(paste("impermissible initial latent frequencies (x) for chain",ichain))
+        }
+      } else {
+        initial.values[[ichain]]$x<-rep(0,length(mms@naivex))
+        initial.values[[ichain]]$x[as.integer(names(tab))]<-as.vector(tab)
+        if(isValidx(mms,initial.values[[ichain]]$x,M)){
+          inits[[ichain]]$x<-initial.values[[ichain]]$x
+        } else {
+          stop(paste("impermissible initial individual histories (H) for chain",ichain))
+        }
+      }
+      if(any(tab!=inits[[ichain]]$x[as.integer(names(tab))])){
+        stop(paste("initial individual histories (H) not compatible with initial latent frequencies (x) for chain",ichain)) 
+      } else {
+        inits[[ichain]]$H<-initial.values[[ichain]]$H         
+      }
+    } else {
+      if(length(initial.values[[ichain]]$x)){
+        if(isValidx(mms,initial.values[[ichain]]$x,M)){
+          inits[[ichain]]$x<-initial.values[[ichain]]$x
+        } else {
+          stop(paste("impermissible initial latent frequencies (x) for chain",ichain))
+        }
+      } else {
+        inits[[ichain]]$x<-mms@naivex
+      }
+      inits[[ichain]]$H<-get_H(mms,inits[[ichain]]$x)
+    }
+    
+    if(length(initial.values[[ichain]]$pbeta)){
+      if(length(initial.values[[ichain]]$pbeta)==pdim){
+        inits[[ichain]]$pbeta<-initial.values[[ichain]]$pbeta
+      } else {
+        stop(paste("initial values for pbeta must be vector of length",pdim))
+      }
+    } else {
+      inits[[ichain]]$pbeta<-log(-log(1-expit(rnorm(pdim,0,1.6))))
+    }
+
+    if(mod.p.trap){
+      if(length(initial.values[[ichain]]$ptrap)){
+        if(length(initial.values[[ichain]]$ptrap)==ntraps){
+          inits[[ichain]]$ptrap<-initial.values[[ichain]]$ptrap
+        } else {
+          stop(paste("initial values for ptrap must be vector of length",ntraps))
+        }
+      } else {
+        inits[[ichain]]$ptrap<-log(-log(1-expit(rnorm(ntraps,0,1.6))))
+      }
+    } else {
+      inits[[ichain]]$ptrap<-rep(0.0,ntraps)
+    }
+    
+    inits[[ichain]]$zp<-rep(0.0,M)
+    
+    if(length(initial.values[[ichain]]$centers)){
+      if(length(initial.values[[ichain]]$centers)==M){
+        inits[[ichain]]$centers<-initial.values[[ichain]]$centers
+      } else {
+        stop(paste("initial values for centers must be vector of length",M))
+      }
+    } else {
+      centers <- rep(NA,M)
+      mdm <- NULL
+      #plot(SpatialGrid(points2grid(SpatialPoints(spatialInputs$studyArea[,1:2]))))
+      #points(spatialInputs$trapCoords[,1],spatialInputs$trapCoords[,2],pch=2)
+      for(i in 1:M){
+        tt <- matrix(mms@Enc.Mat[i,],ncol=noccas,nrow=ntraps,byrow=TRUE)
+        tt <- row(tt)[tt>0]
+        if(length(tt)) {
+          xxx <- spatialInputs$trapCoords[tt,]
+          av.coord <- apply(matrix(xxx, ncol=2), 2, mean)
+          dvec <- as.vector(getdist(matrix(av.coord,ncol=2), spatialInputs$studyArea))
+          centers[i] <- (1:length(dvec))[dvec==min(dvec)][1] 
+          #points(spatialInputs$trapCoords[tt,1],spatialInputs$trapCoords[tt,2],col=i+1)
+          tt1 <- unique(tt)
+          if(length(tt1) > 1) mdm <- c(mdm, max(getdist(spatialInputs$trapCoords[tt1,], spatialInputs$trapCoords[tt1,])))
+        } else {
+          centers[i] <- sample(1:nrow(spatialInputs$studyArea), 1)
+        }
+        #points(spatialInputs$studyArea[centers[i],1],spatialInputs$studyArea[centers[i],2],col=i+1,pch=20)
+      }   
+      inits[[ichain]]$centers<-spatialInputs$studyArea[centers,] 
+      mmdm <- mean(mdm) # Mean Maximum Distance Moved
+    }
+    
+    if(length(initial.values[[ichain]]$sigma2_zp)){
+      if(length(initial.values[[ichain]]$sigma2_zp)==1 & initial.values[[ichain]]$sigma2_zp>0){
+        inits[[ichain]]$sigma2_zp<-max(initial.values[[ichain]]$sigma2_zp,tol)
+      } else {
+        stop("initial value for sigma2_zp must be a positive scalar")
+      }
+    } else {
+      inits[[ichain]]$sigma2_zp <- rgamma(1,shape=4,scale=(mmdm/4)/4)
+    }
+    
+    if(!is.null(DM$phi)){
+      
+      mod.phi.h<-DM$mod.phi.h
+      phidim<-ncol(DM$phi)  
+      
+      if(length(initial.values[[ichain]]$phibeta)){
+        if(length(initial.values[[ichain]]$phibeta)==phidim){
+          inits[[ichain]]$phibeta<-initial.values[[ichain]]$phibeta
+        } else {
+          stop(paste("initial values for phibeta must be vector of length",phidim))
+        }
+      } else {
+        inits[[ichain]]$phibeta<-rnorm(phidim)
+      }
+      if(mod.phi.h){
+        if(length(initial.values[[ichain]]$sigma2_zphi)){
+          if(length(initial.values[[ichain]]$sigma2_zphi)==1 & initial.values[[ichain]]$sigma2_zphi>0){
+            inits[[ichain]]$sigma2_zphi<-max(initial.values[[ichain]]$sigma2_zphi,tol)
+          } else {
+            stop("initial value for sigma2_zphi must be a positive scalar")
+          }
+        } else {
+          inits[[ichain]]$sigma2_zphi<-runif(1,tol,5)
+        }
+        if(length(initial.values[[ichain]]$zphi)){
+          if(length(initial.values[[ichain]]$zphi)==M){
+            inits[[ichain]]$zphi<-initial.values[[ichain]]$zphi
+          } else {
+            stop(paste("initial values for zphi must be vector of length",M))
+          }
+        } else {
+          inits[[ichain]]$zphi<-rnorm(M,0.0,sqrt(inits[[ichain]]$sigma2_zphi))
+        }
+      } else {
+        inits[[ichain]]$sigma2_zphi<-0.0
+        inits[[ichain]]$zphi<-rep(0.0,M)
+      }
+      if(length(initial.values[[ichain]]$q)){
+        if(all(dunif(initial.values[[ichain]]$q)==1) & is.matrix(initial.values[[ichain]]$q) & all(dim(initial.values[[ichain]]$q)==dim(mms@Enc.Mat))){
+          inits[[ichain]]$q<-initial.values[[ichain]]$q
+        } else {
+          stop(paste0("initial values for 'q' must be a ",M,"x",ncol(mms@Enc.Mat)," binary (0,1) matrix"))
+        }
+      } else {
+        inits[[ichain]]$q<-get_q(mms,DM,inits[[ichain]]$H,inits[[ichain]]$pbeta,inits[[ichain]]$zp,inits[[ichain]]$phibeta,inits[[ichain]]$zphi)
+      }
+    } else {
+      if(length(initial.values[[ichain]]$N)){
+        if(length(initial.values[[ichain]]$N)==1 & initial.values[[ichain]]$N>=base::sum(inits[[ichain]]$H>1) & (!abs(initial.values[[ichain]]$N-round(initial.values[[ichain]]$N))>0)){
+          inits[[ichain]]$N<-initial.values[[ichain]]$N
+        } else {
+          stop(paste0("initial value for N for chain ",ichain," must be positive integer >=",base::sum(inits[[ichain]]$H>1)))
+        }
+      } else {
+        pstar <- pstarintegrandSCR(inits[[ichain]]$pbeta,inits[[ichain]]$sigma2_zp,DM$p,spatialInputs,dexp)
+        inits[[ichain]]$N<-base::sum(inits[[ichain]]$H>1)+rnbinom(1,base::sum(inits[[ichain]]$H>1),pstar)
+      }      
+    }
+    if(mms@data.type=="never"){    
+      inits[[ichain]]$alpha <- 0.0
+    } else if(mms@data.type=="sometimes"){
+      if(length(initial.values[[ichain]]$alpha)){
+        if(length(initial.values[[ichain]]$alpha)==1 & initial.values[[ichain]]$alpha>0 & initial.values[[ichain]]$alpha<1){
+          inits[[ichain]]$alpha <- initial.values[[ichain]]$alpha
+        } else {
+          stop(paste("chain",ichain,"initial value for alpha must be a scalar between 0 and 1"))
+        }
+      } else {
+        inits[[ichain]]$alpha <- rbeta(1,a0alpha,b0alpha)
+      }    
+    } else {
+      inits[[ichain]]$alpha <- 1.0
+    }
+    if(length(initial.values[[ichain]]$delta_1) & length(initial.values[[ichain]]$delta_2)){
+      if(length(initial.values[[ichain]]$delta_1)==1 & length(initial.values[[ichain]]$delta_2)==1 & (dunif(initial.values[[ichain]]$delta_1+initial.values[[ichain]]$delta_2))){
+        if(DM$mod.delta==formula(~type)){
+          inits[[ichain]]$delta_1 <- initial.values[[ichain]]$delta_1
+          inits[[ichain]]$delta_2 <- initial.values[[ichain]]$delta_2
+        } else {
+          if(initial.values[[ichain]]$delta_1!=initial.values[[ichain]]$delta_2){
+            warning("mod.delta=~1 but initial values for 'delta_1' and 'delta_2' are different; 'delta_1 / 2' used as initial value for 'delta'")  
+            inits[[ichain]]$delta_1<-inits[[ichain]]$delta_2<-inits[[ichain]]$delta<-initial.values[[ichain]]$delta_1/2
+          } else {
+            inits[[ichain]]$delta_1<-inits[[ichain]]$delta_2<-inits[[ichain]]$delta<-initial.values[[ichain]]$delta_1
+          }
+        }
+      } else {
+        stop("initial values for delta_1 and delta_2 must be positive scalars with sum less than 1")
+      }
+    } else if(length(initial.values[[ichain]]$delta_1) | length(initial.values[[ichain]]$delta_2)){
+      stop("initial values for delta_1 and delta_2 must be positive scalars with sum less than 1")    
+    } else {
+      if(DM$mod.delta==formula(~type)){
+        delta<-rdirichlet(1,a0delta)
+      } else {
+        inits[[ichain]]$delta <- rbeta(1,a0delta[1],a0delta[2])/2
+        delta<-numeric(2)
+        delta[1]<-delta[2]<-inits[[ichain]]$delta
+      }
+      inits[[ichain]]$delta_1<-delta[1]
+      inits[[ichain]]$delta_2<-delta[2]    
+    }   
+    if(length(initial.values[[ichain]]$psi)){
+      if(length(initial.values[[ichain]]$psi)==1 & initial.values[[ichain]]$psi>0 & initial.values[[ichain]]$psi<1){
+        inits[[ichain]]$psi<-initial.values[[ichain]]$psi
+      } else {
+        stop("initial value for psi must be a scalar between 0 and 1")
+      }
+    } else {
+      inits[[ichain]]$psi <- rbeta(1,a0psi+base::sum(inits[[ichain]]$H>1),b0psi+M-base::sum(inits[[ichain]]$H>1))
+    }
+  }
+  return(inits)
+}
+
 get_known<-function(known,Enc.Mat,vAll.hists,data.type){
   M <- nrow(Enc.Mat)
   All.hists<-matrix(vAll.hists,ncol=ncol(Enc.Mat),byrow=TRUE)

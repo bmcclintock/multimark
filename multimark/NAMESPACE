@@ -1,6 +1,7 @@
 export(
   markClosed,
   multimarkClosed,
+  multimarkClosedSCR,
   markCJS,
   multimarkCJS,
   processdata,
@@ -25,5 +26,6 @@ importFrom("methods", "setClass", "new", "validObject")
 importFrom("stats", "dbeta", "dbinom", "dcauchy", "dnorm", "dunif", "end", "formula", "integrate", "model.matrix", "pnorm", "rbeta", "rbinom", "rgamma", "rmultinom", "rnbinom", "rnorm", "runif", "start", "terms")
 importFrom("utils", "flush.console", "setTxtProgressBar", "txtProgressBar")
 importFrom("prodlim","row.match")
+importFrom("sp","points2grid","SpatialPoints")
 
 useDynLib(multimark,ClosedC,ProbitCJSC)
