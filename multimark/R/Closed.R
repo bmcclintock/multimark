@@ -206,16 +206,23 @@ simdataClosedSCR <- function(N=100,ntraps=16,noccas=5,pbeta=log(0.4),tau=0,sigma
   return(list(Enc.Mat=Enc.Mat,trueEnc.Mat=tEnc.Mat,spatialInputs=spatialInputs))
 }
 
-get_DMClosed<-function(mod.p,mod.delta,Enc.Mat,covs,type="Closed",ntraps=1,...){
-  if(ntraps>1){
-    Enc.Mat<-matrix(t(Enc.Mat),nrow=nrow(Enc.Mat)*ntraps,ncol=ncol(Enc.Mat)/ntraps,byrow=TRUE)
+get_DMClosed<-function(mod.p,mod.delta,Enc.Mat,covs,type="Closed",ntraps=1,detection=NULL,...){
+  if(!is.null(detection)){
+    Enc.Mat<-matrix(1,nrow=nrow(Enc.Mat)*ntraps,ncol=ncol(Enc.Mat)/ntraps,byrow=TRUE)
+  } else {
+    Enc.Mat[which(Enc.Mat>0)] <- 1
   }
-  Enc.Mat[which(Enc.Mat>0)] <- 1
   ch<-as.character(as.matrix( apply(Enc.Mat, 1, paste, collapse = ""), ncol=1 ))
   if(length(which(ch==paste(rep(0,ncol(Enc.Mat)),collapse="")))){
     ch<-ch[-which(ch==paste(rep(0,ncol(Enc.Mat)),collapse=""))] 
   }
-  CH<-process.data(data.frame(ch,options(stringsAsFactors = FALSE)),model=type)
+  if(!is.null(detection)){
+    ch<-data.frame(ch=ch,trap=as.factor(rep(1:ntraps)),options(stringsAsFactors = FALSE))
+    CH<-process.data(ch,groups="trap",model=type)
+  } else {
+    ch<-data.frame(ch,options(stringsAsFactors = FALSE))
+    CH<-process.data(ch,model=type)
+  }
   temp<-make.design.data(CH,...)
   if(CH$nocc %% 2 == 0){
     temp$p$Time <- temp$p$Time+1-(CH$nocc/2)-.5
@@ -229,6 +236,13 @@ get_DMClosed<-function(mod.p,mod.delta,Enc.Mat,covs,type="Closed",ntraps=1,...){
   if(any(modterms=="time")){
     mod.p<-formula(paste("~-1",paste(modterms,collapse="+"),sep="+"))
   }
+  if(any(modterms=="trap")){
+    if(length(modterms)>1){
+      mod.p<-formula(paste("~-1",paste(modterms[-which(modterms=="trap")],collapse="+"),sep="+"))
+    } else {
+      mod.p<-formula(~1)  
+    }
+  }
   if(any(modterms=="h")){
     if(length(modterms)>1){
       mod.p<-formula(paste("~-1",paste(modterms[-which(modterms=="h")],collapse="+"),sep="+"))
@@ -239,40 +253,42 @@ get_DMClosed<-function(mod.p,mod.delta,Enc.Mat,covs,type="Closed",ntraps=1,...){
   } else {
     mod.p.h<-FALSE
   }
-  if(ntraps>1 & any(modterms=="trap")){
-    if(length(modterms)>1){
-      mod.p<-formula(paste("~-1",paste(modterms[-which(modterms=="trap")],collapse="+"),sep="+"))
-    } else {
-      mod.p<-formula(~1)  
-    }
-    mod.p.trap<-TRUE 
-  } else {
-    mod.p.trap<-FALSE
-  }
   if(length(covs)){
     temp$p<-cbind(temp$p,covs)
     temp$c<-cbind(temp$c,covs)
   }
   DMp<-model.matrix(mod.p,temp$p)
   DMc<-model.matrix(mod.p,temp$c)
+  if(any(modterms=="trap")){
+    trapDM<-kronecker(diag(ntraps),rep(1,CH$nocc))
+    colnames(trapDM)<-paste0("trap",1:ntraps)
+    DMp<-cbind(DMp,trapDM)
+    DMc<-cbind(DMc,trapDM)
+  }
   
-  if(nrow(DMp)!=CH$nocc) stop(paste("model design matrix must have",CH$nocc,"rows"))
+  if(nrow(DMp)!=CH$nocc*ntraps) stop(paste("model design matrix must have",CH$nocc*ntraps,"rows"))
   
   if(!any(colnames(DMp)=="(Intercept)")){
-    DMp<-cbind(rep(1,CH$nocc),DMp)
+    DMp<-cbind(rep(1,CH$nocc*ntraps),DMp)
     colnames(DMp)[1]<-"(Intercept)"
-    DMc<-cbind(rep(1,CH$nocc),DMc)
+    DMc<-cbind(rep(1,CH$nocc*ntraps),DMc)
     colnames(DMc)[1]<-"(Intercept)"
   }
-  rownames(DMp) <- paste0("p[",1:CH$nocc,"]")
-  rownames(DMc) <- paste0("c[",1:CH$nocc,"]")
+  if(any(modterms=="trap")){
+    trapind<-as.numeric(substr(colnames(DMp)[substr(colnames(DMp),1,4)=="trap"],5,ntraps))
+    if(length(trapind)<ntraps){
+      (1:ntraps)[-trapind]
+    }
+  }
+  rownames(DMp) <- paste0("p[",1:CH$nocc,",",rep(1:ntraps,each=CH$nocc),"]")
+  rownames(DMc) <- paste0("c[",1:CH$nocc,",",rep(1:ntraps,each=CH$nocc),"]")
   
   deltattr <- attributes(terms(mod.delta))$term.labels
   if(length(deltattr)){
     if(deltattr!="type") stop("'mod.delta' must be '~1' or '~type'")
   }
   #if(ntraps>1) {
-    return(list(p=DMp,c=DMc,mod.p.h=mod.p.h,mod.p.trap=mod.p.trap,mod.delta=mod.delta))
+    return(list(p=DMp,c=DMc,mod.p.h=mod.p.h,mod.delta=mod.delta,mod.det=detection))
   #} else {
   #  return(list(p=DMp,c=DMc,mod.p.h=mod.p.h,mod.delta=mod.delta))    
   #}
@@ -409,6 +425,110 @@ loglikeClosed<-function(parms,DM,noccas,C,All.hists,gq){
   loglike
 }
 
+loglikeClosedSCR<-function(parms,DM,noccas,ntraps,C,All.hists,spatialInputs){
+  
+  H <- parms$H
+  pbeta <- parms$pbeta
+  if(DM$mod.p.h){
+    zp <- parms$zp
+  } else {
+    zp <- rep(0,length(H))
+  }
+  if(DM$mod.delta != ~NULL){
+    if(DM$mod.delta==formula(~type)){
+      delta_1 <- parms$delta_1
+      delta_2 <- parms$delta_2
+    } else {
+      delta_1 <- delta_2 <- parms$delta
+    }
+    alpha <- parms$alpha
+  } else {
+    delta_1 <- 1.0
+    delta_2 <- 0.0
+    alpha <- 0.0
+  }
+  
+  dexp<-ifelse(DM$mod.det=="half-normal",2,1)
+  
+  Hind <- H[which(H>1)]
+  centers <- parms$centers[which(H>1),]
+  indhist <- All.hists[Hind,]
+  n<-length(Hind)
+  #firstcap<- (C[Hind]>=matrix(rep(1:noccas,each=n),nrow=n,ncol=noccas))
+
+  msk <- matrix(1,nrow=noccas,ncol=ntraps) #currently assumes all traps are active on all occasions
+  msk2 <- array(NA, c(n, noccas, ntraps))
+  for(i in 1:n){
+    msk2[i, 1:noccas, 1:ntraps] <- msk[1:noccas, 1:ntraps]
+  }
+  msk2 <- as.vector(msk2)
+  
+  Yaug <- array(0, dim=c(n, noccas, ntraps))
+  for(j in 1:n){
+    Yaug[j, 1:noccas, 1:ntraps] <- matrix(indhist[j,],nrow=noccas,ncol=ntraps)#byrow=TRUE))#Y[j, 1:nT, 1:ntraps]
+  }  
+  # create covariate of previous capture
+  prevcap <- array(0,c(n,noccas,ntraps))
+  #prevcap2 <- matrix(0,nrow=n,ncol=ntraps*noccas)
+  #dist2mat <- matrix(0,nrow=n,ncol=ntraps*noccas)
+  #dist2<-getdist(centers,spatialInputs$trapCoords)
+  for(i in 1:n){
+    for(j in 1:ntraps){
+      tmp <- Yaug[i, 1:noccas, j]
+      #tmp2 <- indhist[i,(j-1)*noccas+1:noccas]
+      if(any(tmp > 0)){
+        fst <- min( (1:noccas)[tmp > 0] )
+        if(fst < noccas)
+          prevcap[i, (fst+1):noccas, j] <- 1
+      }
+      #if(any(tmp2 > 0)){
+      #  fst <- min( (1:noccas)[tmp2 > 0] )
+      #  if(fst < noccas)
+      #    prevcap2[i, (j-1)*noccas+(fst+1):noccas] <- 1
+      #}
+      #dist2mat[i,(j-1)*noccas+1:noccas]<-dist2[i,j]
+    }
+  }
+  prevcap <- as.vector(prevcap)
+  
+  ## vectorize all the data objects
+  arr.trues <- array(TRUE, c(n,noccas,ntraps))
+  idx <- which(arr.trues, arr.ind = TRUE)
+  y <- as.vector(Yaug)
+  y <- y[msk2==1]
+  prevcap <- prevcap[msk2==1]   #### + 1   ### add 1 if want 1/2 otherwise dummy
+  indid <- idx[msk2==1,1] ## [AMG] Individual IDs
+  repid <- idx[msk2==1,2] ## [AMG] Replicate/Sampling Occasion IDs
+  trapid <- idx[msk2==1,3] ## [AMG] Trap IDs
+  
+  trapgridbig <- spatialInputs$trapCoords[trapid,]   # stretches out the trap coord matrix
+  c1 <- (centers[indid,1] - trapgridbig[,1])^2
+  c2 <- (centers[indid,2] - trapgridbig[,2])^2
+  
+  p <- invcloglogtol(rep(DM$p%*%pbeta,each=n)*(1-prevcap) + rep(DM$c%*%pbeta,each=n)*prevcap - 1./(2*parms$sigma2_zp)*sqrt(c1+c2)^dexp)
+  #p2 <- invcloglogtol(matrix(rep(DM$p%*%pbeta,each=n)*(1-prevcap2)+rep(DM$c%*%pbeta,each=n)*prevcap2,nrow=n,ncol=noccas*ntraps)- 1./(2*parms$sigma2_zp)*(dist2mat)^dexp)
+  
+  loglike <- base::sum( log( (y==0) * (1. - p)
+                             + (y==1) * p * delta_1  
+                             + (y==2) * p * delta_2
+                             + (y==3) * p * (1. - delta_1 - delta_2) * (1. - alpha)
+                             + (y==4) * p * (1. - delta_1 - delta_2) * alpha ))
+  
+  #loglike2 <- base::sum( log( (indhist==0) * (1. - p2)
+  #                           + (indhist==1) * p2 * delta_1  
+  #                           + (indhist==2) * p2 * delta_2
+  #                           + (indhist==3) * p2 * (1. - delta_1 - delta_2) * (1. - alpha)
+  #                           + (indhist==4) * p2 * (1. - delta_1 - delta_2) * alpha ))
+  
+  #if(DM$mod.p.h){
+    pstar <- pstarintegrandSCR(pbeta,parms$sigma2_zp,DM$p,spatialInputs,dexp)
+  #} else {
+  #  pstar <- 1-min(1.-tol,max(tol,prod(1-expit(DM$p%*%pbeta))))
+  #}    
+  loglike <- loglike + dbinom(n,parms$N,pstar,1) - n * log(pstar)  
+  loglike
+}
+
 priorsClosed<-function(parms,DM,priorparms,data_type){
   
   priors <- (base::sum(dnorm(parms$pbeta,priorparms$mu0,sqrt(priorparms$sigma2_mu0),log=TRUE))
@@ -443,6 +563,29 @@ posteriorClosed<-function(parms,DM,mms,priorparms,gq){
     temp<-parms[[ichain]]
     
     loglike <- loglikeClosed(temp,DM,noccas,mms@C,All.hists,gq)
+    
+    if(!is.finite(loglike)) {
+      stop(paste0("initial model likelihood is ",loglike," for chain ",ichain,". Try different initial values."))
+    }
+    
+    posterior <- loglike + priorsClosed(temp,DM,priorparms,mms@data.type)
+    
+    if(!is.finite(posterior)) {
+      stop(paste("initial model posterior is",posterior,"for chain",ichain,". Try different initial values or prior parameters"))
+    }
+  }
+}
+
+posteriorClosedSCR<-function(parms,DM,mms,priorparms,spatialInputs){
+  nchains<-length(parms)
+  ntraps<-nrow(spatialInputs$trapCoords)
+  noccas<-ncol(mms@Enc.Mat)/ntraps
+  M<-nrow(mms@Enc.Mat)
+  All.hists<-matrix(mms@vAll.hists,byrow=TRUE,ncol=noccas*ntraps)
+  for(ichain in 1:nchains){
+    temp<-parms[[ichain]]
+    
+    loglike <- loglikeClosedSCR(temp,DM,noccas,ntraps,mms@C,All.hists,spatialInputs)
     
     if(!is.finite(loglike)) {
       stop(paste0("initial model likelihood is ",loglike," for chain ",ichain,". Try different initial values."))
@@ -517,14 +660,6 @@ checkClosedSCR<-function(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccep
   if(mms@ncolbasis & (maxnumbasis<1 | maxnumbasis>mms@ncolbasis)) stop("'maxnumbasis' must be between 1 and ",mms@ncolbasis)
   if(!all(c(a0delta,a0alpha,b0alpha,a,sigma2_mu0,a0psi,b0psi)>0)) stop("'a0delta', 'a0alpha', 'b0alpha', 'a', 'sigma2_mu0', 'a0psi', and 'b0psi' must be >0")
   
-  mod.p.trap<-DM$mod.p.trap
-  if(any(parms=="all")){
-    if(!mod.p.trap){
-      params<-params[which(params!="ptrap")]
-    }
-  } else {
-    if(!mod.p.trap & (any(params=="ptrap"))) stop("Parameter 'ptrap' only applies to models with trap effects")
-  }
   pdim<-ncol(DM$p)
   if(!pdim) stop("'mod.p' must include at least 1 parameter")
   
@@ -911,7 +1046,7 @@ multimarkClosedSCR<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NUL
   
   if(class(mod.p)!="formula") stop("'mod.p' must be an object of class 'formula'")
   if(class(mod.delta)!="formula") stop("'mod.delta' must be an object of class 'formula'")
-  DM<-get_DMClosed(mod.p,mod.delta,mms@Enc.Mat,covs=mms@covs,ntraps=nrow(spatialInputs$trapCoords),...)
+  DM<-get_DMClosed(mod.p,mod.delta,mms@Enc.Mat,covs=mms@covs,ntraps=nrow(spatialInputs$trapCoords),detection=detection,...)
   
   if(iter>0){
     if(iter<=burnin) stop(paste("'burnin' must be less than ",iter))
@@ -920,9 +1055,9 @@ multimarkClosedSCR<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NUL
   }
   
   if(mod.delta != ~NULL) {
-    parmlist<-c("pbeta","delta","N","sigma2_zp","ptrap","alpha","psi","H","logPosterior","centers")
+    parmlist<-c("pbeta","delta","N","sigma2_zp","alpha","psi","H","logPosterior","centers")
   } else {
-    parmlist<-c("pbeta","N","sigma2_zp","ptrap","logPosterior","centers")    
+    parmlist<-c("pbeta","N","sigma2_zp","logPosterior","centers")    
   }
   params <- checkClosedSCR(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccept,tuneadjust,maxnumbasis,a0delta,a0alpha,b0alpha,a,sigma2_mu0,a0psi,b0psi)
   
@@ -938,7 +1073,7 @@ multimarkClosedSCR<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NUL
   a0delta <- checkvecs(a0delta,ifelse(mod.delta==formula(~type),3,2),"a0delta")
   
   S <- spatialInputs$studyArea # total study area
-  A <- S[S[,"avail"] == 1,c("x","y")]  # available habitat study area
+  A <- subset(S,"avail">0,c("x","y"))  # available habitat study area
   minCoord <- apply(A, 2, min) 
   Arange <- max(apply(A, 2, max) - minCoord)/10 
   

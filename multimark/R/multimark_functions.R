@@ -282,6 +282,15 @@ expittol<-function(x){
   return(expittol)
 }
 
+invcloglogtol<-function(x){
+  l <- dim(x)
+  invcloglogtol <- pmin(pmax(tol,invcloglog(x)),1.-tol)
+  if(!is.null(l)){
+    invcloglogtol <- matrix(invcloglogtol,nrow=l[1],ncol=l[2])
+  }
+  return(invcloglogtol)
+}
+
 rdirichlet<-function (n, alpha) {
   l <- length(alpha)
   x <- matrix(rgamma(l * n, alpha), ncol = l, byrow = TRUE)
@@ -559,7 +568,6 @@ get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0
     initial.values<-inits
   }
   
-  mod.p.trap<-DM$mod.p.trap
   pdim<-ncol(DM$p)
   ntraps<-nrow(spatialInputs$trapCoords)
   
@@ -609,21 +617,6 @@ get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0
     } else {
       inits[[ichain]]$pbeta<-log(-log(1-expit(rnorm(pdim,0,1.6))))
     }
-
-    if(mod.p.trap){
-      if(length(initial.values[[ichain]]$ptrap)){
-        if(length(initial.values[[ichain]]$ptrap)==ntraps){
-          inits[[ichain]]$ptrap<-initial.values[[ichain]]$ptrap
-        } else {
-          stop(paste("initial values for ptrap must be vector of length",ntraps))
-        }
-      } else {
-        inits[[ichain]]$ptrap<-log(-log(1-expit(rnorm(ntraps,0,1.6))))
-      }
-    } else {
-      inits[[ichain]]$ptrap<-rep(0.0,ntraps)
-    }
-    
     inits[[ichain]]$zp<-rep(0.0,M)
     
     if(length(initial.values[[ichain]]$centers)){
@@ -654,7 +647,11 @@ get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0
         #points(spatialInputs$studyArea[centers[i],1],spatialInputs$studyArea[centers[i],2],col=i+1,pch=20)
       }   
       inits[[ichain]]$centers<-spatialInputs$studyArea[centers,] 
-      mmdm <- mean(mdm) # Mean Maximum Distance Moved
+      if(!is.null(mdm)) {
+        mmdm <- mean(mdm) # Mean Maximum Distance Moved
+      } else {
+        mmdm <- sqrt(spatialInputs$A)/ntraps
+      }
     }
     
     if(length(initial.values[[ichain]]$sigma2_zp)){
