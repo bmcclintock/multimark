@@ -28,4 +28,4 @@ importFrom("utils", "flush.console", "setTxtProgressBar", "txtProgressBar")
 importFrom("prodlim","row.match")
 importFrom("sp","points2grid","SpatialPoints")
 
-useDynLib(multimark,ClosedC,ProbitCJSC)
+useDynLib(multimark,ClosedC,ClosedSCRC,ProbitCJSC)

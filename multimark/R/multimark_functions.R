@@ -256,8 +256,16 @@ get_H <- function(mms,x){
   H
 }
 
-get_C <-function(All.hists){
-  as.integer(c(ncol(All.hists)+1,apply(All.hists[-1,]>0,1,which.max)))
+get_C <-function(All.hists,type="Closed"){
+  if(type=="SCR"){
+    zeroind<-which(apply(All.hists,1,sum)>0)
+    C<-integer(nrow(All.hists))
+    C[-zeroind]<-ncol(All.hists)
+    C[zeroind]<-apply(All.hists[zeroind,]>0,1,which.max)
+  } else {
+    C<-c(ncol(All.hists)+1,apply(All.hists[-1,]>0,1,which.max))
+  }
+  as.integer(C)
 }
 
 get_L <-function(All.hists){
@@ -551,9 +559,11 @@ get_inits<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0del
   return(inits)
 }
 
-get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0delta,a0psi,b0psi,DM,spatialInputs=NULL,dexp){
+get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0delta,a0psi,b0psi,DM,spatialInputs=NULL){
   
   inits<-vector("list",nchains)
+  
+  dexp <- ifelse(DM$mod.det=="half-normal",2,1)
   
   if(!is.null(initial.values)){
     for(ichain in 1:length(initial.values)){
@@ -618,6 +628,7 @@ get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0
       inits[[ichain]]$pbeta<-log(-log(1-expit(rnorm(pdim,0,1.6))))
     }
     inits[[ichain]]$zp<-rep(0.0,M)
+    inits[[ichain]]$sigma2_zp<-0.0
     
     if(length(initial.values[[ichain]]$centers)){
       if(length(initial.values[[ichain]]$centers)==M){
@@ -646,7 +657,7 @@ get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0
         }
         #points(spatialInputs$studyArea[centers[i],1],spatialInputs$studyArea[centers[i],2],col=i+1,pch=20)
       }   
-      inits[[ichain]]$centers<-spatialInputs$studyArea[centers,] 
+      inits[[ichain]]$centers<-centers#spatialInputs$studyArea[centers,] 
       if(!is.null(mdm)) {
         mmdm <- mean(mdm) # Mean Maximum Distance Moved
       } else {
@@ -654,14 +665,14 @@ get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0
       }
     }
     
-    if(length(initial.values[[ichain]]$sigma2_zp)){
-      if(length(initial.values[[ichain]]$sigma2_zp)==1 & initial.values[[ichain]]$sigma2_zp>0){
-        inits[[ichain]]$sigma2_zp<-max(initial.values[[ichain]]$sigma2_zp,tol)
+    if(length(initial.values[[ichain]]$sigma2_scr)){
+      if(length(initial.values[[ichain]]$sigma2_scr)==1 & initial.values[[ichain]]$sigma2_scr>0){
+        inits[[ichain]]$sigma2_scr<-max(initial.values[[ichain]]$sigma2_scr,tol)
       } else {
-        stop("initial value for sigma2_zp must be a positive scalar")
+        stop("initial value for sigma2_scr must be a positive scalar")
       }
     } else {
-      inits[[ichain]]$sigma2_zp <- rgamma(1,shape=4,scale=(mmdm/4)/4)
+      inits[[ichain]]$sigma2_scr <- rgamma(1,shape=4,scale=(mmdm/4)/4)
     }
     
     if(!is.null(DM$phi)){
@@ -718,7 +729,7 @@ get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0
           stop(paste0("initial value for N for chain ",ichain," must be positive integer >=",base::sum(inits[[ichain]]$H>1)))
         }
       } else {
-        pstar <- pstarintegrandSCR(inits[[ichain]]$pbeta,inits[[ichain]]$sigma2_zp,DM$p,spatialInputs,dexp)
+        pstar <- pstarintegrandSCR(noccas,inits[[ichain]]$pbeta,inits[[ichain]]$sigma2_scr,DM$p,spatialInputs,dexp)
         inits[[ichain]]$N<-base::sum(inits[[ichain]]$H>1)+rnbinom(1,base::sum(inits[[ichain]]$H>1),pstar)
       }      
     }
