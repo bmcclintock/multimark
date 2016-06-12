@@ -4,7 +4,7 @@
 #'
 #'
 #' @param N True population size or abundance.
-#' @param ntraps The number of traps. If \code{trapCoords=NULL}, the square root of \code{ntraps} must be a whole number in order to create a regular grid of trap coordinates on the unit square.
+#' @param ntraps The number of traps. If \code{trapCoords=NULL}, the square root of \code{ntraps} must be a whole number in order to create a regular grid of trap coordinates on a square.
 #' @param noccas Scaler indicating the number of sampling occasions per trap.
 #' @param pbeta Complementary loglog-scale intercept term for detection probability (p). Must be a scaler or vector of length \code{noccas}.
 #' @param tau Additive complementary loglog-scale behavioral effect term for recapture probability (c).
@@ -23,9 +23,9 @@
 #' @param detection Detection function for detection probability. Must be "\code{half-normal}" or "\code{exponential}".
 #' @param spatialInputs A list of length 3 composed of objects named \code{trapCoords}, \code{studyArea}, and \code{centers}:
 #' 
-#'  \code{trapCoords} is a matrix of dimension \code{ntraps} x 2 indicating the Cartesian coordinates for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. If \code{spatialInputs=NULL} (the default), the traps are placed in a regular grid on the unit square.
+#'  \code{trapCoords} is a matrix of dimension \code{ntraps} x 2 indicating the Cartesian coordinates for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. If \code{spatialInputs=NULL} (the default), the traps are placed in a regular grid on a square.
 #'
-#'  \code{studyArea} is a 3-column matrix defining the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{spatialInputs=NULL} (the default), the study area is assumed to be composed of 4000 grid cells of available habitat over the unit square plus a buffer of 3*\code{sqrt(sigma2_scr)}.
+#'  \code{studyArea} is a 3-column matrix defining the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{spatialInputs=NULL} (the default), the study area is assumed to be composed of 3600 grid cells of available habitat (including a buffer of 3*\code{sqrt(sigma2_scr)} around the trap array).
 #'   
 #'  \code{centers} is a matrix containing the true (latent) coordinates of the activity centers for each individual in the population, where each row corresponds to an individual, the first column the x-coordinate, and the second column the y-coordinate. If \code{spatialInputs=NULL} (the default), the activity centers are randomly placed on the study area.
 #'
@@ -46,7 +46,7 @@
 #' @examples
 #' #simulate data for data.type="sometimes" using defaults
 #' data<-simdataClosedSCR(data.type="sometimes")
-simdataClosedSCR <- function(N=100,ntraps=16,noccas=5,pbeta=log(0.4),tau=0,sigma2_scr=0.1,delta_1=0.4,delta_2=0.4,alpha=0.5,data.type="never",detection="half-normal",spatialInputs=NULL){
+simdataClosedSCR <- function(N=100,ntraps=16,noccas=5,pbeta=log(0.4),tau=0,sigma2_scr=0.5,delta_1=0.4,delta_2=0.4,alpha=0.5,data.type="never",detection="half-normal",spatialInputs=NULL){
   
   if(length(pbeta)==1){
     pbeta=rep(pbeta,noccas)
@@ -67,10 +67,10 @@ simdataClosedSCR <- function(N=100,ntraps=16,noccas=5,pbeta=log(0.4),tau=0,sigma
   if(is.null(spatialInputs)){
     if(sqrt(ntraps)%%1) stop("The square root of 'ntraps' must be a whole number")
     spatialInputs=list()
-    spatialInputs$trapCoords<-as.matrix(expand.grid(seq(0,1,length=sqrt(ntraps)),seq(0,1,length=sqrt(ntraps)))) #trap coordinates on unit square
     buffer <- 3*sqrt(sigma2_scr)
-    #spatialInputs$centers<-cbind(runif(N,0-buffer,1+buffer),runif(N,0-buffer,1+buffer))                    #activity center coordinates on unit square plus buffer
-    studyArea<-as.matrix(expand.grid(seq(0-buffer,1+buffer,length=sqrt(3600)),seq(0-buffer,1+buffer,length=sqrt(3600)))) #study area grid
+    spatialInputs$trapCoords<-as.matrix(expand.grid(seq(0+buffer,10-buffer,length=sqrt(ntraps)),seq(0+buffer,10-buffer,length=sqrt(ntraps)))) #trap coordinates on square
+    #spatialInputs$centers<-cbind(runif(N,0-buffer,1+buffer),runif(N,0-buffer,1+buffer))                    #activity center coordinates on square plus buffer
+    studyArea<-as.matrix(expand.grid(seq(0,10,length=sqrt(3600)),seq(0,10,length=sqrt(3600)))) #study area grid
     spatialInputs$studyArea<-cbind(studyArea,rep(1,3600))
     spatialInputs$centers<-sample.int(nrow(studyArea),N,replace=TRUE)
   } else {
@@ -372,9 +372,9 @@ mcmcClosedSCR<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,ta
                   as.numeric(Prop.sd),as.integer(Prop.center$NNvect),as.integer(Prop.center$numnn),as.numeric(arate),as.numeric(logPosterior),
                   as.integer(length(mms@vAll.hists)/(noccas*ntraps)),as.integer(mms@vAll.hists), as.integer(firstcap), as.integer(mms@indBasis-1), as.integer(mms@ncolbasis), as.integer(mms@knownx), as.numeric(as.vector(t(DMp))), as.numeric(as.vector(t(DMc))),as.integer(pdim),
                   as.integer(iter), as.integer(thin), as.integer(adapt), as.integer(bin), as.numeric(taccept),as.numeric(tuneadjust),as.integer(maxnumbasis),
-                  as.integer(npoints),as.numeric(weights),as.numeric(nodes),as.integer(mod.p.h),as.integer(mms@data.type=="sometimes"),as.integer(any(params=="zp")),as.integer(any(params=="H")),as.integer(any(params=="centers")),as.integer(DM$mod.delta != ~NULL),as.integer(DM$mod.delta==formula(~type)),as.numeric(dexp),as.numeric(spatialInputs$dist2),as.integer(nrow(spatialInputs$studyArea)),as.integer(printlog),NAOK = TRUE) 
+                  as.integer(npoints),as.numeric(weights),as.numeric(nodes),as.integer(mod.p.h),as.integer(mms@data.type=="sometimes"),as.integer(any(params=="zp")),as.integer(any(params=="H")),as.integer(any(params=="centers")),as.integer(DM$mod.delta != ~NULL),as.integer(DM$mod.delta==formula(~type)),as.numeric(dexp),as.numeric(spatialInputs$dist2),as.integer(nrow(spatialInputs$studyArea)),as.numeric(spatialInputs$A),as.integer(printlog),NAOK = TRUE) 
   
-  names(posterior) <- c("ichain","mu_0","sigma2_mu","pbeta", "zp", "sigma2_zp", "sigma2_scr", "delta_1","delta_2","alpha", "x", "N", "psi","H", "centers", "ntraps", "noccas", "M","a0delta", "a0alpha", "b0alpha","a","a0psi","b0psi","Prop.sd", "NNvect", "numnn", "arate","logPosterior","nHists","vAll.hists","firstcap", "indBasis", "ncolBasis","knownx","DMp","DMc","pdim","iter", "thin", "adapt", "bin", "taccept","tuneadjust","maxnumbasis","npoints","weights","nodes","mod.p.h","sometimes?","zp?","H?","centers?","updatedelta?","type?","dexp","dist2","printlog?")
+  names(posterior) <- c("ichain","mu_0","sigma2_mu","pbeta", "zp", "sigma2_zp", "sigma2_scr", "delta_1","delta_2","alpha", "x", "N", "psi","H", "centers", "ntraps", "noccas", "M","a0delta", "a0alpha", "b0alpha","a","a0psi","b0psi","Prop.sd", "NNvect", "numnn", "arate","logPosterior","nHists","vAll.hists","firstcap", "indBasis", "ncolBasis","knownx","DMp","DMc","pdim","iter", "thin", "adapt", "bin", "taccept","tuneadjust","maxnumbasis","npoints","weights","nodes","mod.p.h","sometimes?","zp?","H?","centers?","updatedelta?","type?","dexp","dist2","ncells","Area","printlog?")
   
   g <- posterior$iter
   x <- posterior$x
