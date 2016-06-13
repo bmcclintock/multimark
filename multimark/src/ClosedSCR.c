@@ -118,7 +118,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
       dist2pow[k*supN+i] = pow(dist2[k*ncells+centers[i]],*dexp);
     }
   }
-  
+
   double dist2powcells[K*ncells];
   for(i=0; i<ncells; i++){
     for(k=0; k<K; k++){
@@ -132,6 +132,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
   GETPC(p,c,cloglogp,betas,sigma2_scrs,DMp,DMc,dist2pow,zs,dimp,supN,T,K);
 
   double pstar=GETPSTARSCR(dist2powcells, cloglogp, sigma2_scrs, T, K, ncells);
+
   //Rprintf("pstar %f \n",pstar);
   double proppstar=pstar;
   
@@ -289,7 +290,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
       np=dgamma(sigma_scrs,sha,sca,1) - pgamma(sqrttol,sha,sca,0,1);
       op=log(2.0*dcauchy(sigma_scrs,0.0,*A,0));
       np=log(2.0*dcauchy(sigma_scrstar,0.0,*A,0));
-      
+
       GETPC(propp,propc,cloglogp,betas,sigma2_scrstar,DMp,DMc,dist2pow,zs,dimp,supN,T,K);      
       proppstar=GETPSTARSCR(dist2powcells, cloglogp, sigma2_scrstar, T, K, ncells);
       
