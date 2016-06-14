@@ -23,7 +23,7 @@
 #' @param detection Detection function for detection probability. Must be "\code{half-normal}" or "\code{exponential}".
 #' @param spatialInputs A list of length 3 composed of objects named \code{trapCoords}, \code{studyArea}, and \code{centers}:
 #' 
-#'  \code{trapCoords} is a matrix of dimension \code{ntraps} x 2 indicating the Cartesian coordinates for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. If \code{spatialInputs=NULL} (the default), the traps are placed in a regular grid on a square.
+#'  \code{trapCoords} is a matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating.  If \code{spatialInputs=NULL} (the default), then all traps are assumed to be operating on all occasions.
 #'
 #'  \code{studyArea} is a 3-column matrix defining the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{spatialInputs=NULL} (the default), the study area is assumed to be composed of 3600 grid cells of available habitat (including a buffer of 3*\code{sqrt(sigma2_scr)} around the trap array).
 #'   
@@ -69,6 +69,7 @@ simdataClosedSCR <- function(N=100,ntraps=16,noccas=5,pbeta=log(0.4),tau=0,sigma
     spatialInputs=list()
     buffer <- 3*sqrt(sigma2_scr)
     spatialInputs$trapCoords<-as.matrix(expand.grid(seq(0+buffer,10-buffer,length=sqrt(ntraps)),seq(0+buffer,10-buffer,length=sqrt(ntraps)))) #trap coordinates on square
+    spatialInputs$trapCoords<-cbind(spatialInputs$trapCoords,matrix(1,nrow=ntraps,ncol=noccas)) # assumes all traps are operational on all occasions
     #spatialInputs$centers<-cbind(runif(N,0-buffer,1+buffer),runif(N,0-buffer,1+buffer))                    #activity center coordinates on square plus buffer
     studyArea<-as.matrix(expand.grid(seq(0,10,length=sqrt(3600)),seq(0,10,length=sqrt(3600)))) #study area grid
     spatialInputs$studyArea<-cbind(studyArea,rep(1,3600))
@@ -79,12 +80,18 @@ simdataClosedSCR <- function(N=100,ntraps=16,noccas=5,pbeta=log(0.4),tau=0,sigma
       warning("'ntraps' not equal to the number of rows of spatialInputs$trapCoords; the latter will be used.")
       ntraps<-nrow(spatialInputs$trapCoords)
     }
+    if(noccas!=ncol(spatialInputs$trapCoords[,-c(1,2)])){
+      stop("'spatialInputs$trapCoords' must have ",2+noccas," columns")
+    }
+    if(!all(spatialInputs$trapCoords[,-c(1,2)] %in% c(0,1))){
+      stop("Indicators for each occasion in 'spatialInputs$trapCoords' must be 0 or 1")
+    }
     if(N!=length(spatialInputs$centers)){
       warning("'N' not equal to the length of spatialInputs$centers; the latter will be used.")
       N<-length(spatialInputs$centers)
     }
   }
-  colnames(spatialInputs$trapCoords)<-c("x","y")
+  colnames(spatialInputs$trapCoords)<-c("x","y",paste0("occ",1:noccas))
   rownames(spatialInputs$trapCoords)<-paste0("trap",1:ntraps)
   #colnames(spatialInputs$centers)<-c("x","y")
   #rownames(spatialInputs$centers)<-paste0("center",1:N)
@@ -109,8 +116,8 @@ simdataClosedSCR <- function(N=100,ntraps=16,noccas=5,pbeta=log(0.4),tau=0,sigma
     for(k in 1:ntraps){
       ind<-0
       for(j in 1:noccas){
-        p<-invcloglog(pbeta[j]-1./(2*sigma2_scr)*dist2[i,k]^dexp)
-        c<-invcloglog(pbeta[j]+tau-1./(2*sigma2_scr)*dist2[i,k]^dexp)
+        p<-invcloglog(pbeta[j]-1./(2*sigma2_scr)*dist2[i,k]^dexp)*trapCoords[k,2+j]
+        c<-invcloglog(pbeta[j]+tau-1./(2*sigma2_scr)*dist2[i,k]^dexp)*trapCoords[k,2+j]
         tEnc.Mat[i,(k-1)*noccas+j] <- rbinom(1,1,((1-ind)*p+ind*c) )       #"true" latent histories
         if(tEnc.Mat[i,(k-1)*noccas+j]==1){
           ind<-1
@@ -131,7 +138,7 @@ pstarintegrandSCR<-function(noccas,beta,sigma2,DM,spatialInputs,dexp){
   
   XB <- DM %*% beta
   dist2 <- spatialInputs$dist2
-  detProb<-invcloglogtol(matrix(XB,nrow=dim(dist2)[1],ncol=dim(dist2)[2]*noccas,byrow=TRUE)-1/(2*sigma2)*dist2[,rep(1:dim(dist2)[2],each=noccas)]^dexp)
+  detProb<-invcloglogtol(matrix(XB,nrow=dim(dist2)[1],ncol=dim(dist2)[2]*noccas,byrow=TRUE)-1/(2*sigma2)*dist2[,rep(1:dim(dist2)[2],each=noccas)]^dexp)*rep(c(t(spatialInputs$msk)),each=dim(dist2)[1])
   pdot<-1.-apply(1.-detProb,1,function(x) max(prod(x),tol))
   esa<-sum(pdot)*spatialInputs$a
   esa/spatialInputs$A
@@ -163,7 +170,7 @@ loglikeClosedSCR<-function(parms,DM,noccas,ntraps,C,All.hists,spatialInputs){
   n<-length(Hind)
   #firstcap<- (C[Hind]>=matrix(rep(1:noccas,each=n),nrow=n,ncol=noccas))
 
-  msk <- matrix(1,nrow=noccas,ncol=ntraps) #currently assumes all traps are active on all occasions
+  msk <- t(spatialInputs$msk) #matrix(1,nrow=noccas,ncol=ntraps) 
   msk2 <- array(NA, c(n, noccas, ntraps))
   for(i in 1:n){
     msk2[i, 1:noccas, 1:ntraps] <- msk[1:noccas, 1:ntraps]
@@ -203,16 +210,16 @@ loglikeClosedSCR<-function(parms,DM,noccas,ntraps,C,All.hists,spatialInputs){
   idx <- which(arr.trues, arr.ind = TRUE)
   y <- as.vector(Yaug)
   y <- y[msk2==1]
-  prevcap <- prevcap[msk2==1]   #### + 1   ### add 1 if want 1/2 otherwise dummy
-  indid <- idx[msk2==1,1] ## [AMG] Individual IDs
-  repid <- idx[msk2==1,2] ## [AMG] Replicate/Sampling Occasion IDs
-  trapid <- idx[msk2==1,3] ## [AMG] Trap IDs
+  prevcap <- prevcap[msk2==1]   
+  indid <- idx[msk2==1,1] 
+  repid <- idx[msk2==1,2] 
+  trapid <- idx[msk2==1,3] 
   
-  trapgridbig <- spatialInputs$trapCoords[trapid,]   # stretches out the trap coord matrix
+  trapgridbig <- spatialInputs$trapCoords[trapid,c(1,2)]   
   c1 <- (centers[indid,1] - trapgridbig[,1])^2
   c2 <- (centers[indid,2] - trapgridbig[,2])^2
   
-  p <- invcloglogtol(rep(DM$p%*%pbeta,each=n)*(1-prevcap) + rep(DM$c%*%pbeta,each=n)*prevcap - 1./(2*parms$sigma2_scr)*sqrt(c1+c2)^dexp)
+  p <- invcloglogtol(rep(DM$p%*%pbeta,each=n)[msk2==1]*(1-prevcap) + rep(DM$c%*%pbeta,each=n)[msk2==1]*prevcap - 1./(2*parms$sigma2_scr)*sqrt(c1+c2)^dexp)
   #p2 <- invcloglogtol(matrix(rep(DM$p%*%pbeta,each=n)*(1-prevcap2)+rep(DM$c%*%pbeta,each=n)*prevcap2,nrow=n,ncol=noccas*ntraps)- 1./(2*parms$sigma2_scr)*(dist2mat)^dexp)
   
   loglike <- base::sum( log( (y==0) * (1. - p)
@@ -350,9 +357,9 @@ mcmcClosedSCR<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,ta
                   as.numeric(Prop.sd),as.integer(Prop.center$NNvect-1),as.integer(Prop.center$numnn),as.integer(Prop.center$cumnumnn),as.numeric(arate),as.numeric(logPosterior),
                   as.integer(length(mms@vAll.hists)/(noccas*ntraps)),as.integer(mms@vAll.hists), as.integer(firstcap), as.integer(mms@indBasis-1), as.integer(mms@ncolbasis), as.integer(mms@knownx), as.numeric(as.vector(t(DMp))), as.numeric(as.vector(t(DMc))),as.integer(pdim),
                   as.integer(iter), as.integer(thin), as.integer(adapt), as.integer(bin), as.numeric(taccept),as.numeric(tuneadjust),as.integer(maxnumbasis),
-                  as.integer(mms@data.type=="sometimes"),as.integer(any(params=="H")),as.integer(any(params=="centers")),as.integer(DM$mod.delta != ~NULL),as.integer(DM$mod.delta==formula(~type)),as.numeric(dexp),as.numeric(spatialInputs$dist2),as.integer(nrow(spatialInputs$studyArea)),as.numeric(spatialInputs$A),as.integer(printlog),NAOK = TRUE) 
+                  as.integer(mms@data.type=="sometimes"),as.integer(any(params=="H")),as.integer(any(params=="centers")),as.integer(DM$mod.delta != ~NULL),as.integer(DM$mod.delta==formula(~type)),as.numeric(dexp),as.numeric(spatialInputs$dist2),as.integer(nrow(spatialInputs$studyArea)),as.numeric(spatialInputs$A),as.integer(c(t(spatialInputs$msk))),as.integer(printlog),NAOK = TRUE) 
   
-  names(posterior) <- c("ichain","mu_0","sigma2_mu","pbeta","sigma2_scr", "delta_1","delta_2","alpha", "x", "N", "psi","H", "centers", "ntraps", "noccas", "M","a0delta", "a0alpha", "b0alpha","a","a0psi","b0psi","Prop.sd", "NNvect", "numnn","cumnumnn", "arate","logPosterior","nHists","vAll.hists","firstcap", "indBasis", "ncolBasis","knownx","DMp","DMc","pdim","iter", "thin", "adapt", "bin", "taccept","tuneadjust","maxnumbasis","sometimes?","H?","centers?","updatedelta?","type?","dexp","dist2","ncells","Area","printlog?")
+  names(posterior) <- c("ichain","mu_0","sigma2_mu","pbeta","sigma2_scr", "delta_1","delta_2","alpha", "x", "N", "psi","H", "centers", "ntraps", "noccas", "M","a0delta", "a0alpha", "b0alpha","a","a0psi","b0psi","Prop.sd", "NNvect", "numnn","cumnumnn", "arate","logPosterior","nHists","vAll.hists","firstcap", "indBasis", "ncolBasis","knownx","DMp","DMc","pdim","iter", "thin", "adapt", "bin", "taccept","tuneadjust","maxnumbasis","sometimes?","H?","centers?","updatedelta?","type?","dexp","dist2","ncells","Area","msk","printlog?")
   
   g <- posterior$iter
   x <- posterior$x
@@ -471,13 +478,11 @@ processClosedSCRchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,t
 #'
 #' @param covs A data frame of temporal covariates for detection probabilities (ignored unless \code{mms=NULL}). The number of rows in the data frame must equal the number of sampling occasions. Covariate names cannot be "time", "age", or "h"; these names are reserved for temporal, behavioral, and individual effects when specifying \code{mod.p} and \code{mod.phi}.
 #' @param mms An optional object of class \code{multimarksetup-class}; if \code{NULL} it is created. See \code{\link{processdata}}.
-#' @param spatialInputs A list of length 3 composed of objects named \code{trapCoords}, \code{studyArea}, and \code{centers}:
+#' @param spatialInputs A list including objects named \code{trapCoords} and \code{studyArea}:
 #' 
-#'  \code{trapCoords} is a matrix of dimension \code{ntraps} x 2 indicating the Cartesian coordinates for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. 
+#'  \code{trapCoords} is a matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating.
 #'
 #'  \code{studyArea} is a 3-column matrix containing the coordinates for the centroids a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution.
-#'   
-#'  \code{centers} is an integer vector indicating the grid cell (i.e., the row of \code{studyArea}) that contains the true (latent) coordinates of the activity centers for each individual in the population.
 #'
 #' @param mod.p Model formula for detection probability as a function of distance from activity centers. For example, \code{mod.p=~1} specifies no effects (i.e., intercept only) other than distance, \code{mod.p~time} specifies temporal effects, \code{mod.p~c} specifies behavioral reponse (i.e., trap "happy" or "shy"), and \code{mod.p~time+c} specifies additive temporal and behavioral effects.
 #' @param mod.delta Model formula for conditional probabilities of type 1 (delta_1) and type 2 (delta_2) encounters, given detection. Currently only \code{mod.delta=~1} (i.e., \eqn{\delta_1 = \delta_2}) and \code{mod.delta=~type} (i.e., \eqn{\delta_1 \ne \delta_2}) are implemented.
@@ -579,10 +584,11 @@ multimarkClosedSCR<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NUL
   
   availSpatialInputs=list()
   availSpatialInputs$studyArea <- scale(A, center=minCoord, scale=rep(Arange,2))
-  availSpatialInputs$trapCoords <- scale(spatialInputs$trapCoords, center=minCoord, scale=rep(Arange,2))
+  availSpatialInputs$trapCoords <- scale(spatialInputs$trapCoords[,c(1,2)], center=minCoord, scale=rep(Arange,2))
   availSpatialInputs$a <- sp::points2grid(sp::SpatialPoints(availSpatialInputs$studyArea[,1:2]))@cellsize[1]
   availSpatialInputs$A <- availSpatialInputs$a * sum(spatialInputs$studyArea[,"avail"])
   availSpatialInputs$dist2 <- getdist(availSpatialInputs$studyArea,availSpatialInputs$trapCoords)
+  availSpatialInputs$msk <- spatialInputs$trapCoords[,-c(1,2)]
   
   inits<-get_initsSCR(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0delta,a0psi,b0psi,DM,availSpatialInputs)
   
