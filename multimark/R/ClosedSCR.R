@@ -369,20 +369,20 @@ mcmcClosedSCR<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,ta
   
   posterior <- .C(ClosedSCRC,as.integer(ichain),as.numeric(mu0), as.numeric(sigma2_mu0), as.numeric(pbeta), as.numeric(zp), as.numeric(sigma2_zp), as.numeric(sigma2_scr), as.numeric(delta_1),as.numeric(delta_2),as.numeric(alpha), as.integer(inits[[ichain]]$x), as.numeric(N), as.numeric(psi), as.integer(H), as.integer(centers),
                   as.integer(ntraps),as.integer(noccas), as.integer(M), as.numeric(a0delta), as.numeric(a0alpha), as.numeric(b0alpha), as.numeric(a), as.numeric(a0psi), as.numeric(b0psi),
-                  as.numeric(Prop.sd),as.integer(Prop.center$NNvect),as.integer(Prop.center$numnn),as.numeric(arate),as.numeric(logPosterior),
+                  as.numeric(Prop.sd),as.integer(Prop.center$NNvect-1),as.integer(Prop.center$numnn),as.integer(Prop.center$cumnumnn),as.numeric(arate),as.numeric(logPosterior),
                   as.integer(length(mms@vAll.hists)/(noccas*ntraps)),as.integer(mms@vAll.hists), as.integer(firstcap), as.integer(mms@indBasis-1), as.integer(mms@ncolbasis), as.integer(mms@knownx), as.numeric(as.vector(t(DMp))), as.numeric(as.vector(t(DMc))),as.integer(pdim),
                   as.integer(iter), as.integer(thin), as.integer(adapt), as.integer(bin), as.numeric(taccept),as.numeric(tuneadjust),as.integer(maxnumbasis),
                   as.integer(npoints),as.numeric(weights),as.numeric(nodes),as.integer(mod.p.h),as.integer(mms@data.type=="sometimes"),as.integer(any(params=="zp")),as.integer(any(params=="H")),as.integer(any(params=="centers")),as.integer(DM$mod.delta != ~NULL),as.integer(DM$mod.delta==formula(~type)),as.numeric(dexp),as.numeric(spatialInputs$dist2),as.integer(nrow(spatialInputs$studyArea)),as.numeric(spatialInputs$A),as.integer(printlog),NAOK = TRUE) 
   
-  names(posterior) <- c("ichain","mu_0","sigma2_mu","pbeta", "zp", "sigma2_zp", "sigma2_scr", "delta_1","delta_2","alpha", "x", "N", "psi","H", "centers", "ntraps", "noccas", "M","a0delta", "a0alpha", "b0alpha","a","a0psi","b0psi","Prop.sd", "NNvect", "numnn", "arate","logPosterior","nHists","vAll.hists","firstcap", "indBasis", "ncolBasis","knownx","DMp","DMc","pdim","iter", "thin", "adapt", "bin", "taccept","tuneadjust","maxnumbasis","npoints","weights","nodes","mod.p.h","sometimes?","zp?","H?","centers?","updatedelta?","type?","dexp","dist2","ncells","Area","printlog?")
+  names(posterior) <- c("ichain","mu_0","sigma2_mu","pbeta", "zp", "sigma2_zp", "sigma2_scr", "delta_1","delta_2","alpha", "x", "N", "psi","H", "centers", "ntraps", "noccas", "M","a0delta", "a0alpha", "b0alpha","a","a0psi","b0psi","Prop.sd", "NNvect", "numnn","cumnumnn", "arate","logPosterior","nHists","vAll.hists","firstcap", "indBasis", "ncolBasis","knownx","DMp","DMc","pdim","iter", "thin", "adapt", "bin", "taccept","tuneadjust","maxnumbasis","npoints","weights","nodes","mod.p.h","sometimes?","zp?","H?","centers?","updatedelta?","type?","dexp","dist2","ncells","Area","printlog?")
   
   g <- posterior$iter
   x <- posterior$x
-  if(any(params=="zp")){
-    temp<-cbind(matrix(posterior$pbeta[(floor(burnin/thin)*pdim+1):(max(1,floor(iter/thin))*pdim)],ncol=pdim,byrow=T),matrix(posterior$zp[(floor(burnin/thin)*M+1):(max(1,floor(iter/thin))*M)],ncol=M,byrow=T),posterior$sigma2_scr[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$delta_1[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$delta_2[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$alpha[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$N[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$psi[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))]) 
-    zp <- NULL
+  if(any(params=="centers")){
+    temp<-cbind(matrix(posterior$pbeta[(floor(burnin/thin)*pdim+1):(max(1,floor(iter/thin))*pdim)],ncol=pdim,byrow=T),matrix(posterior$centers[(floor(burnin/thin)*M+1):(max(1,floor(iter/thin))*M)],ncol=M,byrow=T),posterior$sigma2_scr[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$delta_1[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$delta_2[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$alpha[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$N[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$psi[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))]) 
+    centers <- NULL
   } else {
-    zp <- posterior$zp
+    centers <- posterior$centers
     temp<-cbind(matrix(posterior$pbeta[(floor(burnin/thin)*pdim+1):(max(1,floor(iter/thin))*pdim)],ncol=pdim,byrow=T),posterior$sigma2_scr[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$delta_1[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$delta_2[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$alpha[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$N[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$psi[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))])       
   }
   if(any(params=="H")){
@@ -392,7 +392,89 @@ mcmcClosedSCR<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,ta
     H <- posterior$H+1
     posterior<-cbind(temp,posterior$logPosterior[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))])       
   }
-  return(list(posterior=posterior,x=x,H=H,zp=zp,g=g))
+  return(list(posterior=posterior,x=x,H=H,centers=centers,g=g))
+}
+
+processClosedSCRchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin){
+  
+  parms<-params
+  if(any(parms=="pbeta")){
+    parms<-c(paste0("pbeta[",colnames(DM$p),"]"),params[which(params!="pbeta")])
+  }
+  if(any(parms=="delta")){
+    if(DM$mod.delta==formula(~type)){
+      deltaname<-c("delta_1","delta_2")   
+      parms<-c(parms[which(parms!="delta")],"delta_1","delta_2") 
+    } else {
+      deltaname<-c("delta")   
+      parms<-c(parms[which(parms!="delta")],"delta_1") 
+    }
+  } else {
+    deltaname<-NULL
+  }
+  if(any(parms=="centers")){
+    centersname<-paste0("center[",1:M,"]")
+    parms<-c(centersname,parms[which(parms!="centers")])
+  } else {
+    centersname<-NULL
+  }
+  if(any(parms=="H")){
+    Hname<-paste0("H[",1:M,"]")
+    parms<-c(Hname,parms[which(parms!="H")])
+  } else {
+    Hname<-NULL
+  }
+  
+  initial.values <- list()
+  
+  for(ichain in 1:nchains){
+    checkend <- chains[[ichain]]$g
+    if(checkend<iter | !is.finite(chains[[ichain]]$posterior[nrow(chains[[ichain]]$posterior),ncol(chains[[ichain]]$posterior)])) {
+      warning(paste0("chain ",ichain," terminated at iteration ",checkend,"; check log for more information"))
+      if(!checkend & burnin<1){
+        initstemp <- chains[[ichain]]$posterior[1,]
+      } else if(floor(checkend/thin)>floor(burnin/thin)){
+        initstemp <- chains[[ichain]]$posterior[floor(checkend/thin)-floor(burnin/thin),]  
+      } else {
+        initstemp <- chains[[ichain]]$posterior[nrow(chains[[ichain]]$posterior),]
+      }
+    } else {
+      initstemp <- chains[[ichain]]$posterior[nrow(chains[[ichain]]$posterior),]
+    }
+    names(initstemp) <- c(paste0("pbeta[",colnames(DM$p),"]"),centersname,"sigma2_scr","delta_1","delta_2","alpha","N","psi",Hname,"logPosterior")
+    if(any(params=="centers")){
+      initial.values[[ichain]] <- list(pbeta=initstemp[paste0("pbeta[",colnames(DM$p),"]")],centers=initstemp[centersname],sigma2_scr=initstemp["sigma2_scr"],delta_1=initstemp["delta_1"],delta_2=initstemp["delta_2"],alpha=initstemp["alpha"],N=initstemp["N"],psi=initstemp["psi"],x=chains[[ichain]]$x,H=chains[[ichain]]$H)
+    } else {
+      initial.values[[ichain]] <- list(pbeta=initstemp[paste0("pbeta[",colnames(DM$p),"]")],centers=chains[[ichain]]$centers,sigma2_scr=initstemp["sigma2_scr"],delta_1=initstemp["delta_1"],delta_2=initstemp["delta_2"],alpha=initstemp["alpha"],N=initstemp["N"],psi=initstemp["psi"],x=chains[[ichain]]$x,H=chains[[ichain]]$H)
+      names(initial.values[[ichain]]$centers) <- paste0("center[",1:M,"]")
+    }
+    if(any(params=="H")){
+      initial.values[[ichain]]$H <- initstemp[Hname]
+    } else {
+      initial.values[[ichain]]$H <- chains[[ichain]]$H
+      names(initial.values[[ichain]]$H) <- paste0("H[",1:M,"]")
+    }
+    names(initial.values[[ichain]]$x) <- paste0("x[",1:length(initial.values[[ichain]]$x),"]")
+    chains[[ichain]] <- chains[[ichain]]$posterior
+    colnames(chains[[ichain]]) <- names(initstemp)   
+    chains[[ichain]] <- chains[[ichain]][,parms]
+    if(!is.null(deltaname)){
+      if(!is.null(nrow(chains[[ichain]]))) {
+        colnames(chains[[ichain]])[which(substr(colnames(chains[[ichain]]),1,nchar("delta"))=="delta")] <- deltaname
+      } else {
+        names(chains[[ichain]])[which(substr(names(chains[[ichain]]),1,nchar("delta"))=="delta")] <- deltaname     
+      }
+    }
+    chains[[ichain]] <- mcmc(chains[[ichain]],start=1,thin=1)
+    if(burnin<thin){
+      temp=seq(thin,max(1,iter),thin)
+    } else {
+      temp=seq(thin*(floor(burnin/thin)+1),iter,thin)
+    }
+    attributes(chains[[ichain]])$mcpar <- c(head(temp,n=1),tail(temp,n=1),thin)  
+  }
+  chains<-as.mcmc.list(chains)
+  return(list(chains=chains,initial.values=initial.values))  
 }
 
 #' Fit spatially-explicit population abundance models for capture-mark-recapture data consisting of multiple non-invasive marks
@@ -496,9 +578,9 @@ multimarkClosedSCR<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NUL
   }
   
   if(mod.delta != ~NULL) {
-    parmlist<-c("pbeta","delta","N","sigma2_scr","alpha","psi","H","logPosterior","centers")
+    parmlist<-c("pbeta","delta","N","sigma2_scr","alpha","psi","H","centers","logPosterior")
   } else {
-    parmlist<-c("pbeta","N","sigma2_scr","logPosterior","centers")    
+    parmlist<-c("pbeta","N","sigma2_scr","centers","logPosterior")    
   }
   params <- checkClosedSCR(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccept,tuneadjust,maxnumbasis,a0delta,a0alpha,b0alpha,a,sigma2_mu0,a0psi,b0psi)
   
@@ -547,7 +629,8 @@ multimarkClosedSCR<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NUL
     od <- (1:length(od))[od < RAD]
     NN[[i]]<-od
   }
-  Prop.center=list(NNvect=unlist(NN),numnn=lapply(NN,length))
+  Prop.center<-list(NNvect=unlist(NN),numnn=unlist(lapply(NN,length)))
+  Prop.center$cumnumnn<-c(0,cumsum(Prop.center$numnn))[1:length(Prop.center$numnn)]
   
   Prop.sd <- c(propzp,proppbeta,propsigma)
   
@@ -568,6 +651,6 @@ multimarkClosedSCR<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NUL
     gc()
   }
   
-  chains <- processClosedchains(chains,params,DM,M,noccas,nchains,iter,burnin,thin)
+  chains <- processClosedSCRchains(chains,params,DM,M,noccas,nchains,iter,burnin,thin)
   return(list(mcmc=chains$chains,mod.p=mod.p,mod.delta=mod.delta,DM=list(p=DM$p,c=DM$c),initial.values=chains$initial.values,priorparms=priorparms,mms=mms))
 }
