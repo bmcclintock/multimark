@@ -627,8 +627,6 @@ get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0
     } else {
       inits[[ichain]]$pbeta<-log(-log(1-expit(rnorm(pdim,0,1.6))))
     }
-    inits[[ichain]]$zp<-rep(0.0,M)
-    inits[[ichain]]$sigma2_zp<-0.0
     
     if(length(initial.values[[ichain]]$centers)){
       if(length(initial.values[[ichain]]$centers)==M){

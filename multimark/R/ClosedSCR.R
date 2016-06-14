@@ -141,11 +141,6 @@ loglikeClosedSCR<-function(parms,DM,noccas,ntraps,C,All.hists,spatialInputs){
   
   H <- parms$H
   pbeta <- parms$pbeta
-  if(DM$mod.p.h){
-    zp <- parms$zp
-  } else {
-    zp <- rep(0,length(H))
-  }
   if(DM$mod.delta != ~NULL){
     if(DM$mod.delta==formula(~type)){
       delta_1 <- parms$delta_1
@@ -232,11 +227,8 @@ loglikeClosedSCR<-function(parms,DM,noccas,ntraps,C,All.hists,spatialInputs){
   #                           + (indhist==3) * p2 * (1. - delta_1 - delta_2) * (1. - alpha)
   #                           + (indhist==4) * p2 * (1. - delta_1 - delta_2) * alpha ))
   
-  #if(DM$mod.p.h){
-    pstar <- pstarintegrandSCR(noccas,pbeta,parms$sigma2_scr,DM$p,spatialInputs,dexp)
-  #} else {
-  #  pstar <- 1-min(1.-tol,max(tol,prod(1-expit(DM$p%*%pbeta))))
-  #}    
+  pstar <- pstarintegrandSCR(noccas,pbeta,parms$sigma2_scr,DM$p,spatialInputs,dexp)
+   
   loglike <- loglike + dbinom(n,parms$N,pstar,1) - n * log(pstar)  
   loglike
 }
@@ -263,10 +255,6 @@ priorsClosedSCR<-function(parms,DM,priorparms,data_type,spatialInputs){
   
   priors <- priors + length(parms$centers)*log(1./spatialInputs$A)
   
-  if(DM$mod.p.h){
-    priors <- priors + (base::sum(dnorm(parms$zp,0.0,sqrt(parms$sigma2_zp),log=TRUE))
-                        + log(2.0*dcauchy(sqrt(parms$sigma2_zp),0.0,priorparms$a,log=FALSE)))
-  }        
   priors
 }
 
@@ -323,27 +311,19 @@ checkClosedSCR<-function(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccep
 }
 
 mcmcClosedSCR<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,Prop.center,spatialInputs,maxnumbasis,a0delta,a0alpha,b0alpha,a,mu0,sigma2_mu0,a0psi,b0psi,printlog){
-  
-  gq<-gauss.quad(500,kind="hermite")
-  weights<-gq$weights
-  nodes<-gq$nodes
-  npoints<-length(weights)
-  
+
   ntraps<-nrow(spatialInputs$trapCoords)
   noccas<-ncol(mms@Enc.Mat)/ntraps
   M<-nrow(mms@Enc.Mat)
   DMp<-DM$p
   DMc<-DM$c
-  mod.p.h<-DM$mod.p.h
   pdim<-ncol(DMp)
   dexp<-ifelse(DM$mod.det=="half-normal",2,1)
   firstcap<-get_C(matrix(mms@vAll.hists,byrow=TRUE,ncol=noccas),type="SCR")
   
   #declare and initialize parameters
   pbeta<-rep(NA,max(1,floor(iter/thin))*(pdim))
-  zp<-rep(NA,ifelse(any(params=="zp"),max(1,floor(iter/thin))*M,M))
   H<-rep(NA,ifelse(any(params=="H"),max(1,floor(iter/thin))*M,M))
-  sigma2_zp<-rep(NA,max(1,floor(iter/thin)))
   centers<-rep(NA,ifelse(any(params=="centers"),max(1,floor(iter/thin))*M,M)) 
   sigma2_scr<-rep(NA,max(1,floor(iter/thin)))
   alpha<-rep(NA,max(1,floor(iter/thin)))
@@ -354,9 +334,7 @@ mcmcClosedSCR<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,ta
   logPosterior<-rep(NA,max(1,floor(iter/thin)))
   
   pbeta[1:pdim] <- inits[[ichain]]$pbeta
-  zp[1:M] <- inits[[ichain]]$zp
   H[1:M] <- inits[[ichain]]$H-1
-  sigma2_zp[1] <- inits[[ichain]]$sigma2_zp
   centers[1:M] <- inits[[ichain]]$centers-1
   sigma2_scr[1] <- inits[[ichain]]$sigma2_scr
   alpha[1] <- inits[[ichain]]$alpha
@@ -367,14 +345,14 @@ mcmcClosedSCR<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,ta
   
   arate<-numeric(M+pdim+1)
   
-  posterior <- .C(ClosedSCRC,as.integer(ichain),as.numeric(mu0), as.numeric(sigma2_mu0), as.numeric(pbeta), as.numeric(zp), as.numeric(sigma2_zp), as.numeric(sigma2_scr), as.numeric(delta_1),as.numeric(delta_2),as.numeric(alpha), as.integer(inits[[ichain]]$x), as.numeric(N), as.numeric(psi), as.integer(H), as.integer(centers),
+  posterior <- .C(ClosedSCRC,as.integer(ichain),as.numeric(mu0), as.numeric(sigma2_mu0), as.numeric(pbeta), as.numeric(sigma2_scr), as.numeric(delta_1),as.numeric(delta_2),as.numeric(alpha), as.integer(inits[[ichain]]$x), as.numeric(N), as.numeric(psi), as.integer(H), as.integer(centers),
                   as.integer(ntraps),as.integer(noccas), as.integer(M), as.numeric(a0delta), as.numeric(a0alpha), as.numeric(b0alpha), as.numeric(a), as.numeric(a0psi), as.numeric(b0psi),
                   as.numeric(Prop.sd),as.integer(Prop.center$NNvect-1),as.integer(Prop.center$numnn),as.integer(Prop.center$cumnumnn),as.numeric(arate),as.numeric(logPosterior),
                   as.integer(length(mms@vAll.hists)/(noccas*ntraps)),as.integer(mms@vAll.hists), as.integer(firstcap), as.integer(mms@indBasis-1), as.integer(mms@ncolbasis), as.integer(mms@knownx), as.numeric(as.vector(t(DMp))), as.numeric(as.vector(t(DMc))),as.integer(pdim),
                   as.integer(iter), as.integer(thin), as.integer(adapt), as.integer(bin), as.numeric(taccept),as.numeric(tuneadjust),as.integer(maxnumbasis),
-                  as.integer(npoints),as.numeric(weights),as.numeric(nodes),as.integer(mod.p.h),as.integer(mms@data.type=="sometimes"),as.integer(any(params=="zp")),as.integer(any(params=="H")),as.integer(any(params=="centers")),as.integer(DM$mod.delta != ~NULL),as.integer(DM$mod.delta==formula(~type)),as.numeric(dexp),as.numeric(spatialInputs$dist2),as.integer(nrow(spatialInputs$studyArea)),as.numeric(spatialInputs$A),as.integer(printlog),NAOK = TRUE) 
+                  as.integer(mms@data.type=="sometimes"),as.integer(any(params=="H")),as.integer(any(params=="centers")),as.integer(DM$mod.delta != ~NULL),as.integer(DM$mod.delta==formula(~type)),as.numeric(dexp),as.numeric(spatialInputs$dist2),as.integer(nrow(spatialInputs$studyArea)),as.numeric(spatialInputs$A),as.integer(printlog),NAOK = TRUE) 
   
-  names(posterior) <- c("ichain","mu_0","sigma2_mu","pbeta", "zp", "sigma2_zp", "sigma2_scr", "delta_1","delta_2","alpha", "x", "N", "psi","H", "centers", "ntraps", "noccas", "M","a0delta", "a0alpha", "b0alpha","a","a0psi","b0psi","Prop.sd", "NNvect", "numnn","cumnumnn", "arate","logPosterior","nHists","vAll.hists","firstcap", "indBasis", "ncolBasis","knownx","DMp","DMc","pdim","iter", "thin", "adapt", "bin", "taccept","tuneadjust","maxnumbasis","npoints","weights","nodes","mod.p.h","sometimes?","zp?","H?","centers?","updatedelta?","type?","dexp","dist2","ncells","Area","printlog?")
+  names(posterior) <- c("ichain","mu_0","sigma2_mu","pbeta","sigma2_scr", "delta_1","delta_2","alpha", "x", "N", "psi","H", "centers", "ntraps", "noccas", "M","a0delta", "a0alpha", "b0alpha","a","a0psi","b0psi","Prop.sd", "NNvect", "numnn","cumnumnn", "arate","logPosterior","nHists","vAll.hists","firstcap", "indBasis", "ncolBasis","knownx","DMp","DMc","pdim","iter", "thin", "adapt", "bin", "taccept","tuneadjust","maxnumbasis","sometimes?","H?","centers?","updatedelta?","type?","dexp","dist2","ncells","Area","printlog?")
   
   g <- posterior$iter
   x <- posterior$x
@@ -512,21 +490,20 @@ processClosedSCRchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,t
 #' @param thin Thinning interval for monitored parameters.
 #' @param burnin Number of burn-in iterations (\code{0 <= burnin < iter}).
 #' @param taccept Target acceptance rate during adaptive phase (\code{0 < taccept <= 1}). Acceptance rate is monitored every \code{bin} iterations. Default is \code{taccept = 0.44}.
-#' @param tuneadjust Adjustment term during adaptive phase (\code{0 < tuneadjust <= 1}). If acceptance rate is less than \code{taccept}, then proposal term (\code{proppbeta}, \code{propzp}, or \code{propsigma}) is multiplied by \code{tuneadjust}. If acceptance rate is greater than or equal to \code{taccept}, then proposal term is divided by \code{tuneadjust}. Default is \code{tuneadjust = 0.95}.
+#' @param tuneadjust Adjustment term during adaptive phase (\code{0 < tuneadjust <= 1}). If acceptance rate is less than \code{taccept}, then proposal term (\code{proppbeta} or \code{propsigma}) is multiplied by \code{tuneadjust}. If acceptance rate is greater than or equal to \code{taccept}, then proposal term is divided by \code{tuneadjust}. Default is \code{tuneadjust = 0.95}.
 #' @param proppbeta Scaler or vector (of length k) specifying the initial standard deviation of the Normal(pbeta[j], proppbeta[j]) proposal distribution. If \code{proppbeta} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{proppbeta = 0.1}.
-#' @param propzp Scaler or vector (of length M) specifying the initial standard deviation of the Normal(zp[i], propzp[i]) proposal distribution. If \code{propzp} is a scaler, then this value is used for all i = 1, ..., M individuals. Default is \code{propzp = 1}.
 #' @param propsigma Scaler specifying the initial Gamma(shape = 1/\code{propsigma}, scale = sigma_scr * \code{propsigma}) proposal distribution for sigma_scr = sqrt(sigma2_scr). Default is \code{propsigma=1}.
 #' @param propcenter Scaler specifying the neighborhood distance (on re-scaled coordinates between 0 and \code{scalemax}) when proposing updates to activity centers. When \code{propcenter=NULL} (the default), then propcenter = a*10, where a is the re-scaled cell size for the study area grid.  When \code{propcenter=NULL} and \code{scalemax=10} (the default), each cell has approximately 300 neighbors (at most). 
 #' @param maxnumbasis Maximum number of basis vectors to use when proposing latent history frequency updates. Default is \code{maxnumbasis = 1}, but higher values can potentially improve mixing.
 #' @param a0delta Scaler or vector (of length d) specifying the prior for the conditional (on detection) probability of type 1 (delta_1), type 2 (delta_2), and both type 1 and type 2 encounters (1-delta_1-delta_2). If \code{a0delta} is a scaler, then this value is used for all a0delta[j] for j = 1, ..., d. For \code{mod.delta=~type}, d=3 with [delta_1, delta_2, 1-delta_1-delta_2] ~ Dirichlet(a0delta) prior. For \code{mod.delta=~1}, d=2 with [tau] ~ Beta(a0delta[1],a0delta[2]) prior, where (delta_1,delta_2,1-delta_1-delta_2) = (tau/2,tau/2,1-tau). See McClintock et al. (2013) for more details.
 #' @param a0alpha Specifies "shape1" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{a0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1).
 #' @param b0alpha Specifies "shape2" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{b0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1).
-#' @param a Scale parameter for [sigma_z] ~ half-Cauchy(a) prior for the detection function term sigma_scr = sqrt(sigma2_scr). Default is ``uninformative'' \code{a = 25}.
+#' @param a Scale parameter for [sigma_rho] ~ half-Cauchy(a) prior for the detection function term sigma_scr = sqrt(sigma2_scr). Default is ``uninformative'' \code{a = 25}.
 #' @param mu0 Scaler or vector (of length k) specifying mean of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{mu0 = 0}.
 #' @param sigma2_mu0 Scaler or vector (of length k) specifying variance of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{sigma2_mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{sigma2_mu0 = 1.75}.
 #' @param a0psi Specifies "shape1" parameter for [psi] ~ Beta(a0psi,b0psi) prior. Default is \code{a0psi = 1}.
 #' @param b0psi Specifies "shape2" parameter for [psi] ~ Beta(a0psi,b0psi) prior. Default is \code{b0psi = 1}.
-#' @param initial.values Optional list of \code{nchain} list(s) specifying initial values for parameters and latent variables. Default is \code{initial.values = NULL}, which causes initial values to be generated automatically. In addition to the parameters ("\code{pbeta}", "\code{N}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_scr}", "\code{zp}", and "\code{psi}"), initial values can be specified for the initial latent history frequencies ("\code{x}") and initial individual encounter history indices ("\code{H}").
+#' @param initial.values Optional list of \code{nchain} list(s) specifying initial values for parameters and latent variables. Default is \code{initial.values = NULL}, which causes initial values to be generated automatically. In addition to the parameters ("\code{pbeta}", "\code{N}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_scr}", "\code{centers}", and "\code{psi}"), initial values can be specified for the initial latent history frequencies ("\code{x}") and initial individual encounter history indices ("\code{H}").
 #' @param known Optional integer vector indicating whether the encounter history of an individual is known with certainty (i.e., the observed encounter history is the true encounter history). Encounter histories with at least one type 4 encounter are automatically assumed to be known, and \code{known} does not need to be specified unless there exist encounter histories that do not contain a type 4 encounter that happen to be known with certainty (e.g., from independent telemetry studies). If specified, \code{known = c(v_1,v_2,...,v_M)} must be a vector of length \code{M = nrow(Enc.Mat)} where \code{v_i = 1} if the encounter history for individual \code{i} is known (\code{v_i = 0} otherwise). Note that known all-zero encounter histories (e.g., `000') are ignored.
 #' @param scalemax Upper bound for internal re-scaling of grid cell centroid coordinates. Default is \code{scalemax=10}, which re-scales the centroids to be between 0 and 10.  Re-scaling is done internally to avoid numerical overflows during model fitting.
 #' @param printlog Logical indicating whether to print the progress of chains and any errors to a log file in the working directory. Ignored when \code{nchains=1}. Updates are printed to log file as 1\% increments of \code{iter} of each chain are completed. With >1 chains, setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.
@@ -538,7 +515,7 @@ processClosedSCRchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,t
 #' \item{mod.p}{Model formula for detection probability (as specified by \code{mod.p} above).}
 #' \item{mod.delta}{Model formula for conditional probability of type 1 or type 2 encounter, given detection (as specified by \code{mod.delta} above).}
 #' \item{DM}{A list of design matrices for detection probability generated for model \code{mod.p}, where DM$p is the design matrix for initial capture probability (p) and DM$c is the design matrix for recapture probability (c).}
-#' \item{initial.values}{A list containing the parameter and latent variable values at iteration \code{iter} for each chain. Values are provided for "\code{pbeta}", "\code{N}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_scr}", "\code{zp}", "\code{psi}", "\code{x}", and "\code{H}".}
+#' \item{initial.values}{A list containing the parameter and latent variable values at iteration \code{iter} for each chain. Values are provided for "\code{pbeta}", "\code{N}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_scr}", "\code{centers}", "\code{psi}", "\code{x}", and "\code{H}".}
 #' \item{mms}{An object of class \code{multimarksetup}}
 #' @author Brett T. McClintock
 #' @seealso \code{\link{bobcat}}, \code{\link{processdata}}, \code{\link{multimodelClosed}}
@@ -561,7 +538,7 @@ processClosedSCRchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,t
 #' #Posterior summary for monitored parameters
 #' summary(bobcat.dot$mcmc)
 #' plot(bobcat.dot$mcmc)}
-multimarkClosedSCR<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,spatialInputs=NULL,mod.p=~1,mod.delta=~type,detection="half-normal",parms=c("pbeta","delta","N","sigma2_scr"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigma=1,propcenter=NULL,maxnumbasis=1,a0delta=1,a0alpha=1,b0alpha=1,a=25,mu0=0,sigma2_mu0=1.75,a0psi=1,b0psi=1,initial.values=NULL,known=integer(),scalemax=10,printlog=FALSE,...){
+multimarkClosedSCR<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,spatialInputs=NULL,mod.p=~1,mod.delta=~type,detection="half-normal",parms=c("pbeta","delta","N","sigma2_scr"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propsigma=1,propcenter=NULL,maxnumbasis=1,a0delta=1,a0alpha=1,b0alpha=1,a=25,mu0=0,sigma2_mu0=1.75,a0psi=1,b0psi=1,initial.values=NULL,known=integer(),scalemax=10,printlog=FALSE,...){
   
   if(is.null(mms)) mms <- processdata(Enc.Mat,data.type,covs,known)
   if(class(mms)!="multimarksetup") stop("'mms' must be an object of class 'multimarksetup'")
@@ -618,7 +595,6 @@ multimarkClosedSCR<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NUL
   message("\nInitializing model \n")
   posteriorClosedSCR(inits,DM,mms,priorparms,availSpatialInputs)
   
-  propzp <- checkvecs(propzp,M,"propzp")
   proppbeta <- checkvecs(proppbeta,pdim,"proppbeta")
   if(length(propsigma)!=1) stop("'propsigma' must be a scaler")
   
@@ -632,7 +608,7 @@ multimarkClosedSCR<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NUL
   Prop.center<-list(NNvect=unlist(NN),numnn=unlist(lapply(NN,length)))
   Prop.center$cumnumnn<-c(0,cumsum(Prop.center$numnn))[1:length(Prop.center$numnn)]
   
-  Prop.sd <- c(propzp,proppbeta,propsigma)
+  Prop.sd <- c(proppbeta,propsigma)
   
   message("Updating...",ifelse(printlog | nchains==1,"","set 'printlog=TRUE' to follow progress of chains in a working directory log file"),"\n",sep="")
   if(printlog & nchains==1) printlog<-FALSE

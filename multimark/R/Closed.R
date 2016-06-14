@@ -159,11 +159,11 @@ get_DMClosed<-function(mod.p,mod.delta,Enc.Mat,covs,type="Closed",ntraps=1,detec
   if(length(deltattr)){
     if(deltattr!="type") stop("'mod.delta' must be '~1' or '~type'")
   }
-  #if(ntraps>1) {
-    return(list(p=DMp,c=DMc,mod.p.h=mod.p.h,mod.delta=mod.delta,mod.det=detection))
-  #} else {
-  #  return(list(p=DMp,c=DMc,mod.p.h=mod.p.h,mod.delta=mod.delta))    
-  #}
+  if(!is.null(detection)) {
+    return(list(p=DMp,c=DMc,mod.delta=mod.delta,mod.det=detection))
+  } else {
+    return(list(p=DMp,c=DMc,mod.p.h=mod.p.h,mod.delta=mod.delta))    
+  }
 }
 
 pstarintegrand<-function(beta,sigma,DM,gq){
