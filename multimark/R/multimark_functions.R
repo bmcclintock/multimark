@@ -45,6 +45,38 @@ setClass("multimarksetup", representation=list(Enc.Mat="matrix",data.type="chara
          prototype=list(Enc.Mat=matrix(0,0,0),data.type=character(),vAll.hists=integer(),Aprime=Matrix(0,0,0),indBasis=integer(),ncolbasis=integer(),knownx=integer(),C=integer(),L=integer(),naivex=integer(),covs=data.frame()),
          package="multimark")
 
+#' Class \code{"multimarkSCRsetup"}
+#'
+#' A class of spatial 'mulitmark' model inputs
+#'
+#'
+#' @section Objects from the Class:
+#' Objects can be created by calls of the form \code{processdata(Enc.Mat, ...)} or \code{new("multimarkSCRsetup", ...)}.
+#' @slot Enc.Mat Object of class \code{"matrix"}. The observed encounter histories (with rows corresponding to individuals and columns corresponding to sampling occasions).
+#' @slot data.type Object of class \code{"character"}. The encounter history data type ("never", "sometimes", or "always").
+#' @slot vAll.hists Object of class \code{"integer"}. An ordered vector containing all possible encounter histories in sequence.
+#' @slot Aprime Object of class \code{"sparseMatrix"}. Transpose of the A matrix mapping latent encounter histories to observed histories.
+#' @slot indBasis Object of class \code{"numeric"}.An ordered vector of the indices of the three encounter histories updated by each basis vector.
+#' @slot ncolbasis Object of class \code{"integer"}. The number of needed basis vectors.
+#' @slot knownx Object of class \code{"integer"}. Frequencies of known encounter histories.
+#' @slot C Object of class \code{"integer"}. Sampling occasion of first capture for each encounter history.
+#' @slot L Object of class \code{"integer"}. Sampling occasion of last capture for each encounter history.
+#' @slot naivex Object of class \code{"integer"}. ``Naive'' latent history frequencies assuming a one-to-one mapping with \code{Enc.Mat}.
+#' @slot covs Object of class \code{"data.frame"}. Temporal covariates for detection probability (the number of rows in the data frame must equal the number of sampling occasions).
+#' @slot spatialInputs Object of class \code{"list"}. List is of length 2 containing \code{trapCoords} and \code{studyArea} after re-scaling coordinates based on \code{maxscale}.
+#' 
+#' @section Methods:
+#' No methods defined with class "multimarkSCRsetup".
+#' @author Brett T. McClintock
+#' @seealso \code{\link{processdataSCR}}
+#' @examples
+#' showClass("multimarkSCRsetup")
+#' @keywords classes
+setClass("multimarkSCRsetup", representation=list(Enc.Mat="matrix",data.type="character",vAll.hists="integer",Aprime="sparseMatrix",indBasis="integer",ncolbasis="integer",knownx="integer",C="integer",L="integer",naivex="integer",covs="data.frame",spatialInputs="list"),
+         prototype=list(Enc.Mat=matrix(0,0,0),data.type=character(),vAll.hists=integer(),Aprime=Matrix(0,0,0),indBasis=integer(),ncolbasis=integer(),knownx=integer(),C=integer(),L=integer(),naivex=integer(),covs=data.frame(),spatialInputs=list(trapCoords=matrix(0,0,0),studyArea=matrix(0,0,0))),
+         package="multimark")
+
+
 tol <- 1.e-6
 
 getfreq<-function(Enc.Mat,vAll.hists,data.type){
@@ -630,9 +662,17 @@ get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0
     
     if(length(initial.values[[ichain]]$centers)){
       if(length(initial.values[[ichain]]$centers)==M){
-        inits[[ichain]]$centers<-initial.values[[ichain]]$centers
+        if(any(initial.values[[ichain]]$centers<1) | any(initial.values[[ichain]]$centers>nrow(spatialInputs$origStudyArea))){
+          stop("initial values for activity centers must be between 1 and ",nrow(spatialInputs$origStudyArea))
+        }  
+        if(any(spatialInputs$origStudyArea[initial.values[[ichain]]$centers,3]==0)){
+          stop("initial values for activity centers must be grid cells of available habitat")
+        }
+        centers<-mapCenters(initial.values[[ichain]]$centers,spatialInputs$centermap1,spatialInputs$centermap2,1)
+        #checkSpatialInputs(spatialInputs$trapCoords,spatialInputs$studyArea,centers=initial.values[[ichain]]$centers)
+        inits[[ichain]]$centers<-centers
       } else {
-        stop(paste("initial values for centers must be vector of length",M))
+        stop(paste("initial values for activity centers must be vector of length",M))
       }
     } else {
       centers <- rep(NA,M)
@@ -892,6 +932,149 @@ processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer(
     indBasis<-as.vector(which(Basis!=0)-J*rep(seq(0,ncolbasis-1),each=3),mode="integer")
   }
   mms<-new(Class="multimarksetup",Enc.Mat=Enc.Mat,data.type=data.type,vAll.hists=A$vAll.hists,Aprime=A$Aprime,indBasis=indBasis,ncolbasis=ncolbasis,knownx=knownx,C=C,L=L,naivex=naivex,covs=covs)  
+  return(mms)
+}
+
+#' Generate model inputs for fitting spatial 'multimark' models
+#'
+#' This function generates an object of class \code{multimarkSCRsetup} that is required to fit spatial `multimark' models. 
+#'
+#'
+#' @param Enc.Mat A matrix of observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions (ignored unless \code{mms=NULL}).
+#' @param trapCoords A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating.
+#' @param studyArea is a 3-column matrix containing the coordinates for the centroids a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{studyArea=NULL} (the default), then a square study area grid composed of 3600 cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}.
+#' @param buffer A scaler in same units as \code{trapCoords} indicating the buffer around the bounding box of \code{trapCoords} for defining the study area when \code{studyArea=NULL}.  Ignored unless \code{studyArea=NULL}.
+#' @param data.type Specifies the encounter history data type. All data types include non-detections (type 0 encounter), type 1 encounter (e.g., left-side), and type 2 encounters (e.g., right-side). When both type 1 and type 2 encounters occur for the same individual within a sampling occasion, these can either be "non-simultaneous" (type 3 encounter) or "simultaneous" (type 4 encounter). Three data types are currently permitted:
+#' 
+#'  \code{data.type="never"} indicates both type 1 and type 2 encounters are never observed for the same individual within a sampling occasion, and observed encounter histories therefore include only type 1 or type 2 encounters (e.g., only left- and right-sided photographs were collected). Observed encounter histories can consist of non-detections (0), type 1 encounters (1), and type 2 encounters (2). See \code{\link{bobcat}}. Latent encounter histories consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 3 encounters (3).
+#'
+#'  \code{data.type="sometimes"} indicates both type 1 and type 2 encounters are sometimes observed (e.g., both-sided photographs are sometimes obtained, but not necessarily for all individuals). Observed encounter histories can consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), type 3 encounters (3), and type 4 encounters (4). Type 3 encounters can only be observed when an individual has at least one type 4 encounter. Latent encounter histories consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), type 3 encounters (3), and type 4 encounters (4). 
+#'
+#'  \code{data.type="always"} indicates both type 1 and type 2 encounters are always observed, but some encounter histories may still include only type 1 or type 2 encounters. Observed encounter histories can consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4). Latent encounter histories consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4).
+#'
+#' @param covs A data frame of temporal covariates for detection probabilities (ignored unless \code{mms=NULL}). The number of rows in the data frame must equal the number of sampling occasions. Covariate names cannot be "time", "age", or "h"; these names are reserved for temporal, behavioral, and individual effects when specifying \code{mod.p} and \code{mod.phi}.
+#' @param known Optional integer vector indicating whether the encounter history of an individual is known with certainty (i.e., the observed encounter history is the true encounter history). Encounter histories with at least one type 4 encounter are automatically assumed to be known, and \code{known} does not need to be specified unless there exist encounter histories that do not contain a type 4 encounter that happen to be known with certainty (e.g., from independent telemetry studies). If specified, \code{known = c(v_1,v_2,...,v_M)} must be a vector of length \code{M = nrow(Enc.Mat)} where \code{v_i = 1} if the encounter history for individual \code{i} is known (\code{v_i = 0} otherwise). Note that known all-zero encounter histories (e.g., `000') are ignored.
+#' @param scalemax Upper bound for internal re-scaling of grid cell centroid coordinates. Default is \code{scalemax=10}, which re-scales the centroids to be between 0 and 10.  Re-scaling is done internally to avoid numerical overflows during model fitting.
+#'
+#' @return An object of class \code{multimarkSCRsetup}.
+#' @author Brett T. McClintock
+#' @seealso \code{\link{multimarkSCRsetup-class}}, \code{\link{multimarkSCRClosed}}
+#' @references
+#' Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.
+#' 
+#' McClintock, B. T., Conn, P. B., Alonso, R. S., and Crooks, K. R. 2013. Integrated modeling of bilateral photo-identification data in mark-recapture analyses. \emph{Ecology} 94: 1464-1471.
+#' @examples
+#' \dontshow{
+#' sim.data<-simdataClosedSCR()
+#' Enc.Mat <- sim.data$Enc.Mat
+#' trapCoords <- sim.data$spatialInputs$trapCoords
+#' studyArea <- sim.data$spatialInputs$studyArea
+#' setup <- processdataSCR(Enc.Mat,trapCoords,studyArea)}
+#' \donttest{
+#' # This example is excluded from testing to reduce package check time
+#' # Example uses unrealistically low values for nchain, iter, and burnin
+#' 
+#' #Generate object of class "multimarksetup" from simulated data
+#' sim.data<-simdataClosedSCR()
+#' Enc.Mat <- sim.data$Enc.Mat
+#' trapCoords <- sim.data$spatialInputs$trapCoords
+#' studyArea <- sim.data$spatialInputs$studyArea
+#' setup <- processdataSCR(Enc.Mat,trapCoords,studyArea)
+#' 
+#' #Run single chain using the default model for simulated data
+#' example.dot<-multimarkSCRClosed(mms=setup)}
+#' 
+processdataSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,data.type="never",covs=data.frame(),known=integer(),scalemax=10){
+  
+  if(!is.matrix(Enc.Mat)) stop("'Enc.Mat' must be a matrix")
+  
+  if(data.type=="never"){
+    if(!all(match(unique(c(Enc.Mat)),c(0,1,2,3),nomatch=0))) stop("Encounter histories for 'never' data type can only include 0, 1, 2, and 3 entries")
+    if(any(Enc.Mat==3)) warning("Data type is 'never' but includes type 3 encounters")
+  } else if(data.type=="always"){
+    if(!all(match(unique(c(Enc.Mat)),c(0,1,2,4),nomatch=0))) stop("Encounter histories for 'always' data type can only include 0, 1, 2, and 4 entries")
+    if(!any(Enc.Mat==4)) warning("Encounter histories contain no simulataneous encounters -- should you be using the 'never' data type?")
+  } else if(data.type=="sometimes"){
+    if(!all(match(unique(c(Enc.Mat)),c(0,1,2,3,4),nomatch=0))) stop("Encounter histories for 'sometimes' data type can only include 0, 1, 2, 3, and 4 entries")
+    temp.check <- which(rowSums(Enc.Mat==3)>0 & rowSums(Enc.Mat==4)==0)
+    if(length(temp.check)) warning(paste("Encounter history",temp.check,"includes a type 3 encounter but no type 4 encounter\n  "))
+    if(!any(Enc.Mat==4)) warning("Encounter histories contain no simulataneous encounters -- should you be using the 'never' data type?")
+  } else {
+    stop("Data type ('data.type') must be 'never', 'sometimes', or 'always'")
+  }
+  
+  noccas<-ncol(trapCoords[,-c(1,2)])
+  ntraps<-nrow(trapCoords)
+  if(ncol(Enc.Mat)!=noccas*ntraps) stop("Dimensions of 'Enc.Mat' and 'trapCoords' are not consistent")
+  
+  if(is.null(studyArea)){
+    if(is.null(buffer)){
+      stop("'buffer' or 'studyArea' must be provided")
+    }
+    if(length(buffer)!=1 | buffer<0){
+      stop("'buffer' must be a non-negative scaler")
+    }
+    trapbbox<-bbox(trapCoords[,1:2])
+    studyArea<-as.matrix(expand.grid(seq(trapbbox[1,1]-buffer,trapbbox[1,2]+buffer,length=sqrt(3600)),seq(trapbbox[2,1]-buffer,trapbbox[2,2]+buffer,length=sqrt(3600)))) #study area grid
+    studyArea<-cbind(studyArea,rep(1,3600))
+  }
+
+  checkSpatialInputs(trapCoords,studyArea)
+  
+  colnames(trapCoords)<-c("x","y",paste0("occ",1:noccas))
+  rownames(trapCoords)<-paste0("trap",1:ntraps)
+  colnames(studyArea)<-c("x","y","avail")
+  rownames(studyArea)<-paste0("cell",1:nrow(studyArea))
+  
+  S <- studyArea[,c("x","y")] # total study area
+  #G <- subset(S,"avail">0,c("x","y"))  # available habitat study area
+  #minCoord <- apply(G, 2, min) 
+  #Grange <- max(apply(G, 2, max) - minCoord)/scalemax 
+  minCoord <- apply(S, 2, min) 
+  Srange <- max(apply(S, 2, max) - minCoord)/scalemax 
+  
+  spatialInputs=list()
+  #availSpatialInputs$studyArea <- scale(G, center=minCoord, scale=rep(Grange,2))
+  spatialInputs$studyArea <- studyArea
+  spatialInputs$studyArea[,c("x","y")] <- scale(S, center=minCoord, scale=rep(Srange,2))
+  spatialInputs$trapCoords <- trapCoords
+  spatialInputs$trapCoords[,c("x","y")] <- scale(trapCoords[,c(1,2)], center=minCoord, scale=rep(Srange,2))
+  #availSpatialInputs$a <- sp::points2grid(sp::SpatialPoints(availSpatialInputs$studyArea[,1:2]))@cellsize[1]
+  #availSpatialInputs$A <- availSpatialInputs$a * sum(studyArea[,"avail"])
+  #availSpatialInputs$dist2 <- getdist(availSpatialInputs$studyArea,availSpatialInputs$trapCoords)
+  #availSpatialInputs$msk <- trapCoords[,-c(1,2)]
+  
+  M<-nrow(Enc.Mat)
+  ntraps<-nrow(trapCoords)
+  noccas<-ncol(Enc.Mat)/ntraps
+  
+  if(!is.data.frame(covs)) stop("covariates ('covs') must be a data frame")
+  
+  if(length(covs)){
+    if(nrow(covs)!=noccas*ntraps){
+      stop(paste("covariates (covs) must contain an entry for each occasion"))
+    }
+    nonames <- c("group","time","Time","c","h","type")
+    if(any(match(colnames(covs),nonames,nomatch=0)>0)) stop(paste0("'",nonames[match(colnames(covs),nonames,nomatch=0)],"' cannot be used for covariate ('covs') names. "))
+  }
+  
+  A<- get_A(Enc.Mat,data.type)
+  J<-ncol(A$Aprime)
+  naivex<-getfreq(Enc.Mat,A$vAll.hists,data.type)
+  knownx<-get_known(known,Enc.Mat,A$vAll.hists,data.type)
+  C<-get_C(matrix(A$vAll.hists,byrow=TRUE,ncol=noccas),type="SCR")
+  L<-get_L(matrix(A$vAll.hists,byrow=TRUE,ncol=noccas*ntraps))
+  Basis<-get_basis_vectors(A$Aprime,A$ivect,data.type=data.type)
+  if(is.null(dim(Basis)) | sum(knownx)==M){
+    ncolbasis<-integer(1)
+    indBasis<-integer()    
+  } else {
+    Basis <- Basis[,-1]
+    ncolbasis<-ncol(Basis)
+    indBasis<-as.vector(which(Basis!=0)-J*rep(seq(0,ncolbasis-1),each=3),mode="integer")
+  }
+  
+  mms<-new(Class="multimarkSCRsetup",Enc.Mat=Enc.Mat,data.type=data.type,vAll.hists=A$vAll.hists,Aprime=A$Aprime,indBasis=indBasis,ncolbasis=ncolbasis,knownx=knownx,C=C,L=L,naivex=naivex,covs=covs,spatialInputs=spatialInputs)  
   return(mms)
 }
 
