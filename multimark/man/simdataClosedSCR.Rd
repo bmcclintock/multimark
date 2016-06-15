@@ -61,7 +61,7 @@ A list containing the following:
 This function generates encounter histories from spatially-explicit capture-mark-recapture data consisting of multiple non-invasive marks.
 }
 \details{
-Please be very careful when specifying your own \code{spatialInputs}; \code{\link{multimarkClosedSCR}} does not verify that these make sense during model fitting.
+Please be very careful when specifying your own \code{spatialInputs}; \code{\link{multimarkClosedSCR}} does little to verify that these make sense during model fitting.
 }
 \examples{
 #simulate data for data.type="sometimes" using defaults
@@ -73,9 +73,9 @@ Brett T. McClintock
 \references{
 Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.
 
-King. R., B. T. McClintock, D. Kidney, and D. Borchers. 2016. Capture-recapture abundance estimation using a semi-complete data likelihood approach. The Annals of Applied Statistics 10: 264-285.
-
 McClintock, B. T., Conn, P. B., Alonso, R. S., and Crooks, K. R. 2013. Integrated modeling of bilateral photo-identification data in mark-recapture analyses. \emph{Ecology} 94: 1464-1471.
+
+Royle, J.A., Karanth, K.U., Gopalaswamy, A.M. and Kumar, N.S. 2009. Bayesian inference in camera trapping studies for a class of spatial capture-recapture models.  \emph{Ecology} 90: 3233-3244.
 }
 \seealso{
 \code{\link{processdataSCR}}, \code{\link{multimarkClosedSCR}}

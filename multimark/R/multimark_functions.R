@@ -63,7 +63,7 @@ setClass("multimarksetup", representation=list(Enc.Mat="matrix",data.type="chara
 #' @slot L Object of class \code{"integer"}. Sampling occasion of last capture for each encounter history.
 #' @slot naivex Object of class \code{"integer"}. ``Naive'' latent history frequencies assuming a one-to-one mapping with \code{Enc.Mat}.
 #' @slot covs Object of class \code{"data.frame"}. Temporal covariates for detection probability (the number of rows in the data frame must equal the number of sampling occasions).
-#' @slot spatialInputs Object of class \code{"list"}. List is of length 2 containing \code{trapCoords} and \code{studyArea} after re-scaling coordinates based on \code{maxscale}.
+#' @slot spatialInputs Object of class \code{"list"}. List is of length 3 containing \code{trapCoords} and \code{studyArea} after re-scaling coordinates based on \code{maxscale}, as well as the original (no re-scaled) grid cell resolution (\code{origCellRes}).
 #' 
 #' @section Methods:
 #' No methods defined with class "multimarkSCRsetup".
@@ -73,7 +73,7 @@ setClass("multimarksetup", representation=list(Enc.Mat="matrix",data.type="chara
 #' showClass("multimarkSCRsetup")
 #' @keywords classes
 setClass("multimarkSCRsetup", representation=list(Enc.Mat="matrix",data.type="character",vAll.hists="integer",Aprime="sparseMatrix",indBasis="integer",ncolbasis="integer",knownx="integer",C="integer",L="integer",naivex="integer",covs="data.frame",spatialInputs="list"),
-         prototype=list(Enc.Mat=matrix(0,0,0),data.type=character(),vAll.hists=integer(),Aprime=Matrix(0,0,0),indBasis=integer(),ncolbasis=integer(),knownx=integer(),C=integer(),L=integer(),naivex=integer(),covs=data.frame(),spatialInputs=list(trapCoords=matrix(0,0,0),studyArea=matrix(0,0,0))),
+         prototype=list(Enc.Mat=matrix(0,0,0),data.type=character(),vAll.hists=integer(),Aprime=Matrix(0,0,0),indBasis=integer(),ncolbasis=integer(),knownx=integer(),C=integer(),L=integer(),naivex=integer(),covs=data.frame(),spatialInputs=list(trapCoords=matrix(0,0,0),studyArea=matrix(0,0,0),origCellRes=numeric())),
          package="multimark")
 
 
@@ -612,6 +612,7 @@ get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0
   
   pdim<-ncol(DM$p)
   ntraps<-nrow(spatialInputs$trapCoords)
+  noccas<-ncol(spatialInputs$msk)
   
   for(ichain in 1:nchains){
     
@@ -940,7 +941,7 @@ processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer(
 #' This function generates an object of class \code{multimarkSCRsetup} that is required to fit spatial `multimark' models. 
 #'
 #'
-#' @param Enc.Mat A matrix of observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions (ignored unless \code{mms=NULL}).
+#' @param Enc.Mat A matrix containing the observed encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc. Ignored unless \code{mms=NULL}.
 #' @param trapCoords A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating.
 #' @param studyArea is a 3-column matrix containing the coordinates for the centroids a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{studyArea=NULL} (the default), then a square study area grid composed of 3600 cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}.
 #' @param buffer A scaler in same units as \code{trapCoords} indicating the buffer around the bounding box of \code{trapCoords} for defining the study area when \code{studyArea=NULL}.  Ignored unless \code{studyArea=NULL}.
@@ -958,11 +959,16 @@ processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer(
 #'
 #' @return An object of class \code{multimarkSCRsetup}.
 #' @author Brett T. McClintock
-#' @seealso \code{\link{multimarkSCRsetup-class}}, \code{\link{multimarkSCRClosed}}
+#' @seealso \code{\link{multimarkSCRsetup-class}}, \code{\link{multimarkClosedSCR}}
 #' @references
 #' Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.
 #' 
+#' Gopalaswamy, A.M., Royle, J.A., Hines, J.E., Singh, P., Jathanna, D., Kumar, N. and Karanth, K.U. 2012. Program SPACECAP: software for estimating animal density using spatially explicit capture-recapture models. \emph{Methods in Ecology and Evolution} 3:1067-1072.
+#'
 #' McClintock, B. T., Conn, P. B., Alonso, R. S., and Crooks, K. R. 2013. Integrated modeling of bilateral photo-identification data in mark-recapture analyses. \emph{Ecology} 94: 1464-1471.
+#' 
+#' Royle, J.A., Karanth, K.U., Gopalaswamy, A.M. and Kumar, N.S. 2009. Bayesian inference in camera trapping studies for a class of spatial capture-recapture models.  \emph{Ecology} 90: 3233-3244.
+#'
 #' @examples
 #' \dontshow{
 #' sim.data<-simdataClosedSCR()
@@ -982,7 +988,7 @@ processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer(
 #' setup <- processdataSCR(Enc.Mat,trapCoords,studyArea)
 #' 
 #' #Run single chain using the default model for simulated data
-#' example.dot<-multimarkSCRClosed(mms=setup)}
+#' example.dot<-multimarkClosedSCR(mms=setup)}
 #' 
 processdataSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,data.type="never",covs=data.frame(),known=integer(),scalemax=10){
   
@@ -1039,6 +1045,7 @@ processdataSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,data.type
   spatialInputs$studyArea[,c("x","y")] <- scale(S, center=minCoord, scale=rep(Srange,2))
   spatialInputs$trapCoords <- trapCoords
   spatialInputs$trapCoords[,c("x","y")] <- scale(trapCoords[,c(1,2)], center=minCoord, scale=rep(Srange,2))
+  spatialInputs$origCellRes <- sp::points2grid(sp::SpatialPoints(studyArea[,1:2]))@cellsize[1]
   #availSpatialInputs$a <- sp::points2grid(sp::SpatialPoints(availSpatialInputs$studyArea[,1:2]))@cellsize[1]
   #availSpatialInputs$A <- availSpatialInputs$a * sum(studyArea[,"avail"])
   #availSpatialInputs$dist2 <- getdist(availSpatialInputs$studyArea,availSpatialInputs$trapCoords)

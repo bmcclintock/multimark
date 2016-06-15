@@ -152,8 +152,14 @@ get_DMClosed<-function(mod.p,mod.delta,Enc.Mat,covs,type="Closed",ntraps=1,detec
       (1:ntraps)[-trapind]
     }
   }
-  rownames(DMp) <- paste0("p[",1:CH$nocc,",",rep(1:ntraps,each=CH$nocc),"]")
-  rownames(DMc) <- paste0("c[",1:CH$nocc,",",rep(1:ntraps,each=CH$nocc),"]")
+  
+  if(is.null(detection)){
+    rownames(DMp) <- paste0("p[",1:CH$nocc,"]")
+    rownames(DMc) <- paste0("c[",1:CH$nocc,"]")
+  } else {
+    rownames(DMp) <- paste0("p[",1:CH$nocc,",",rep(1:ntraps,each=CH$nocc),"]")
+    rownames(DMc) <- paste0("c[",1:CH$nocc,",",rep(1:ntraps,each=CH$nocc),"]")
+  }
   
   deltattr <- attributes(terms(mod.delta))$term.labels
   if(length(deltattr)){

@@ -9,7 +9,7 @@ processdataSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
   scalemax = 10)
 }
 \arguments{
-\item{Enc.Mat}{A matrix of observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions (ignored unless \code{mms=NULL}).}
+\item{Enc.Mat}{A matrix containing the observed encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc. Ignored unless \code{mms=NULL}.}
 
 \item{trapCoords}{A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating.}
 
@@ -56,7 +56,7 @@ studyArea <- sim.data$spatialInputs$studyArea
 setup <- processdataSCR(Enc.Mat,trapCoords,studyArea)
 
 #Run single chain using the default model for simulated data
-example.dot<-multimarkSCRClosed(mms=setup)}
+example.dot<-multimarkClosedSCR(mms=setup)}
 }
 \author{
 Brett T. McClintock
@@ -64,9 +64,13 @@ Brett T. McClintock
 \references{
 Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.
 
+Gopalaswamy, A.M., Royle, J.A., Hines, J.E., Singh, P., Jathanna, D., Kumar, N. and Karanth, K.U. 2012. Program SPACECAP: software for estimating animal density using spatially explicit capture-recapture models. \emph{Methods in Ecology and Evolution} 3:1067-1072.
+
 McClintock, B. T., Conn, P. B., Alonso, R. S., and Crooks, K. R. 2013. Integrated modeling of bilateral photo-identification data in mark-recapture analyses. \emph{Ecology} 94: 1464-1471.
+
+Royle, J.A., Karanth, K.U., Gopalaswamy, A.M. and Kumar, N.S. 2009. Bayesian inference in camera trapping studies for a class of spatial capture-recapture models.  \emph{Ecology} 90: 3233-3244.
 }
 \seealso{
-\code{\link{multimarkSCRsetup-class}}, \code{\link{multimarkSCRClosed}}
+\code{\link{multimarkSCRsetup-class}}, \code{\link{multimarkClosedSCR}}
 }
 

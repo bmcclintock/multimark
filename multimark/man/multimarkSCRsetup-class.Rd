@@ -32,7 +32,7 @@ A class of spatial 'mulitmark' model inputs
 
 \item{\code{covs}}{Object of class \code{"data.frame"}. Temporal covariates for detection probability (the number of rows in the data frame must equal the number of sampling occasions).}
 
-\item{\code{spatialInputs}}{Object of class \code{"list"}. List is of length 2 containing \code{trapCoords} and \code{studyArea} after re-scaling coordinates based on \code{maxscale}.}
+\item{\code{spatialInputs}}{Object of class \code{"list"}. List is of length 3 containing \code{trapCoords} and \code{studyArea} after re-scaling coordinates based on \code{maxscale}, as well as the original (no re-scaled) grid cell resolution (\code{origCellRes}).}
 }}
 \section{Objects from the Class}{
 

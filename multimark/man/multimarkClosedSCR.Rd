@@ -112,12 +112,15 @@ The first time \code{multimarkSCRClosed} is called, it will likely produce a fir
 \examples{
 \dontshow{
 sim.data<-simdataClosedSCR(N=30,noccas=5,ntraps=4)
-test<-multimarkClosedSCR(Enc.Mat=sim.data$Enc.Mat,trapCoords=sim.data$trapCoords,studyArea=sim.data$studyArea,iter=10,burnin=0,bin=5)}
+Enc.Mat <- sim.data$Enc.Mat
+trapCoords <- sim.data$spatialInputs$trapCoords
+studyArea <- sim.data$spatialInputs$studyArea
+test<-multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,iter=10,burnin=0,bin=5)}
 \donttest{
 # This example is excluded from testing to reduce package check time
 # Example uses unrealistically low values for nchain, iter, and burnin
 
-#Generate object of class "multimarksetup" from simulated data
+#Generate object of class "multimarkSCRsetup" from simulated data
 sim.data<-simdataClosedSCR()
 Enc.Mat <- sim.data$Enc.Mat
 trapCoords <- sim.data$spatialInputs$trapCoords
@@ -136,9 +139,15 @@ Brett T. McClintock
 \references{
 Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.
 
+Gopalaswamy, A.M., Royle, J.A., Hines, J.E., Singh, P., Jathanna, D., Kumar, N. and Karanth, K.U. 2012. Program SPACECAP: software for estimating animal density using spatially explicit capture-recapture models. \emph{Methods in Ecology and Evolution} 3:1067-1072.
+
+King, R., McClintock, B. T., Kidney, D., and Borchers, D. L. 2016. Capture-recapture abundance estimation using a semi-complete data likelihood approach. \emph{The Annals of Applied Statistics} 10: 264-285
+
 McClintock, B. T., Conn, P. B., Alonso, R. S., and Crooks, K. R. 2013. Integrated modeling of bilateral photo-identification data in mark-recapture analyses. \emph{Ecology} 94: 1464-1471.
 
 McClintock, B. T., Bailey, L. L., Dreher, B. P., and Link, W. A. 2014. Probit models for capture-recapture data subject to imperfect detection, individual heterogeneity and misidentification. \emph{The Annals of Applied Statistics} 8: 2461-2484.
+
+Royle, J.A., Karanth, K.U., Gopalaswamy, A.M. and Kumar, N.S. 2009. Bayesian inference in camera trapping studies for a class of spatial capture-recapture models.  \emph{Ecology} 90: 3233-3244.
 }
 \seealso{
 \code{\link{processdataSCR}}.

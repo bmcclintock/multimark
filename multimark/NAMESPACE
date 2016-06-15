@@ -10,7 +10,9 @@ export(
   simdataClosedSCR,
   simdataCJS,
   getprobsClosed,
+  getprobsClosedSCR,
   getprobsCJS,
+  getdensityClosedSCR,
   multimodelClosed,
   multimodelCJS
 )

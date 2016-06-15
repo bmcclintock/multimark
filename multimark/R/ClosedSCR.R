@@ -29,7 +29,7 @@
 #'   
 #'  \code{centers} is a \code{N}-vector indicating the grid cell (i.e., the row of \code{studyArea}) that contains the true (latent) activity centers for each individual in the population. If \code{spatialInputs=NULL} (the default), the activity centers are randomly placed within grid cells of the study area.
 #'
-#' @details Please be very careful when specifying your own \code{spatialInputs}; \code{\link{multimarkClosedSCR}} does not verify that these make sense during model fitting.  
+#' @details Please be very careful when specifying your own \code{spatialInputs}; \code{\link{multimarkClosedSCR}} does little to verify that these make sense during model fitting.  
 #'
 #' @return A list containing the following:
 #' \item{Enc.Mat}{Matrix containing the observed encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc.}
@@ -45,9 +45,9 @@
 #' @references
 #' Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.
 #' 
-#' King. R., B. T. McClintock, D. Kidney, and D. Borchers. 2016. Capture-recapture abundance estimation using a semi-complete data likelihood approach. The Annals of Applied Statistics 10: 264-285.
-#' 
 #' McClintock, B. T., Conn, P. B., Alonso, R. S., and Crooks, K. R. 2013. Integrated modeling of bilateral photo-identification data in mark-recapture analyses. \emph{Ecology} 94: 1464-1471.
+#' 
+#' Royle, J.A., Karanth, K.U., Gopalaswamy, A.M. and Kumar, N.S. 2009. Bayesian inference in camera trapping studies for a class of spatial capture-recapture models.  \emph{Ecology} 90: 3233-3244.
 #' @examples
 #' #simulate data for data.type="sometimes" using defaults
 #' data<-simdataClosedSCR(data.type="sometimes")
@@ -503,6 +503,19 @@ processClosedSCRchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,t
   return(list(chains=chains,initial.values=initial.values))  
 }
 
+getSpatialInputs<-function(mms){
+  spatialInputs=list()
+  spatialInputs$studyArea <- subset(mms@spatialInputs$studyArea,"avail">0,c("x","y"))  # available habitat study area
+  spatialInputs$trapCoords <- mms@spatialInputs$trapCoords[,c(1,2)]
+  spatialInputs$a <- sp::points2grid(sp::SpatialPoints(mms@spatialInputs$studyArea[,1:2]))@cellsize[1]
+  spatialInputs$A <- spatialInputs$a * nrow(spatialInputs$studyArea)
+  spatialInputs$dist2 <- getdist(spatialInputs$studyArea,spatialInputs$trapCoords)
+  spatialInputs$msk <- mms@spatialInputs$trapCoords[,-c(1,2)]
+  spatialInputs$centermap1 <- cumsum(mms@spatialInputs$studyArea[,"avail"]==0)
+  spatialInputs$centermap2 <- cumsum(mms@spatialInputs$studyArea[,"avail"]==1)
+  spatialInputs
+}
+
 #' Fit spatially-explicit population abundance models for capture-mark-recapture data consisting of multiple non-invasive marks
 #'
 #' This function fits spatially-explicit population abundance models for capture-mark-recapture data consisting of multiple non-invasive marks using Bayesian analysis methods. Markov chain Monte Carlo (MCMC) is used to draw samples from the joint posterior distribution. 
@@ -565,18 +578,28 @@ processClosedSCRchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,t
 #' @references
 #' Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.
 #' 
+#' Gopalaswamy, A.M., Royle, J.A., Hines, J.E., Singh, P., Jathanna, D., Kumar, N. and Karanth, K.U. 2012. Program SPACECAP: software for estimating animal density using spatially explicit capture-recapture models. \emph{Methods in Ecology and Evolution} 3:1067-1072.
+#'
+#' King, R., McClintock, B. T., Kidney, D., and Borchers, D. L. 2016. Capture-recapture abundance estimation using a semi-complete data likelihood approach. \emph{The Annals of Applied Statistics} 10: 264-285 
+#' 
 #' McClintock, B. T., Conn, P. B., Alonso, R. S., and Crooks, K. R. 2013. Integrated modeling of bilateral photo-identification data in mark-recapture analyses. \emph{Ecology} 94: 1464-1471.
 #' 
 #' McClintock, B. T., Bailey, L. L., Dreher, B. P., and Link, W. A. 2014. Probit models for capture-recapture data subject to imperfect detection, individual heterogeneity and misidentification. \emph{The Annals of Applied Statistics} 8: 2461-2484.
+#' 
+#' Royle, J.A., Karanth, K.U., Gopalaswamy, A.M. and Kumar, N.S. 2009. Bayesian inference in camera trapping studies for a class of spatial capture-recapture models.  \emph{Ecology} 90: 3233-3244.
+#'
 #' @examples
 #' \dontshow{
 #' sim.data<-simdataClosedSCR(N=30,noccas=5,ntraps=4)
-#' test<-multimarkClosedSCR(Enc.Mat=sim.data$Enc.Mat,trapCoords=sim.data$trapCoords,studyArea=sim.data$studyArea,iter=10,burnin=0,bin=5)}
+#' Enc.Mat <- sim.data$Enc.Mat
+#' trapCoords <- sim.data$spatialInputs$trapCoords
+#' studyArea <- sim.data$spatialInputs$studyArea
+#' test<-multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,iter=10,burnin=0,bin=5)}
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
 #' # Example uses unrealistically low values for nchain, iter, and burnin
 #' 
-#' #Generate object of class "multimarksetup" from simulated data
+#' #Generate object of class "multimarkSCRsetup" from simulated data
 #' sim.data<-simdataClosedSCR()
 #' Enc.Mat <- sim.data$Enc.Mat
 #' trapCoords <- sim.data$spatialInputs$trapCoords
@@ -622,16 +645,7 @@ multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,data.
   sigma2_mu0 <- checkvecs(sigma2_mu0,pdim,"sigma2_mu0")
   a0delta <- checkvecs(a0delta,ifelse(mod.delta==formula(~type),3,2),"a0delta")
   
-  spatialInputs=list()
-  spatialInputs$origStudyArea <- mms@spatialInputs$studyArea
-  spatialInputs$studyArea <- subset(mms@spatialInputs$studyArea,"avail">0,c("x","y"))  # available habitat study area
-  spatialInputs$trapCoords <- mms@spatialInputs$trapCoords[,c(1,2)]
-  spatialInputs$a <- sp::points2grid(sp::SpatialPoints(mms@spatialInputs$studyArea[,1:2]))@cellsize[1]
-  spatialInputs$A <- spatialInputs$a * nrow(spatialInputs$studyArea)
-  spatialInputs$dist2 <- getdist(spatialInputs$studyArea,spatialInputs$trapCoords)
-  spatialInputs$msk <- mms@spatialInputs$trapCoords[,-c(1,2)]
-  spatialInputs$centermap1 <- cumsum(mms@spatialInputs$studyArea[,"avail"]==0)
-  spatialInputs$centermap2 <- cumsum(mms@spatialInputs$studyArea[,"avail"]==1)
+  spatialInputs <- getSpatialInputs(mms)
   
   inits<-get_initsSCR(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0delta,a0psi,b0psi,DM,spatialInputs)
   
@@ -678,4 +692,145 @@ multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,data.
   
   chains <- processClosedSCRchains(chains,params,DM,M,noccas,nchains,iter,burnin,thin)
   return(list(mcmc=chains$chains,mod.p=mod.p,mod.delta=mod.delta,DM=list(p=DM$p,c=DM$c),initial.values=chains$initial.values,priorparms=priorparms,mms=mms))
+}
+
+#' Calculate posterior capture and recapture probabilities
+#'
+#' This function calculates posterior spatial capture (\eqn{p}) and recapture (\eqn{c}) probabilities (at zero distance from an activity center) for each sampling occasion from \code{\link{multimarkClosedSCR}} output. 
+#'
+#'
+#' @param out List of output returned by \code{\link{multimarkClosedSCR}}.
+#' @param link Link function for detection probability. Must be "\code{cloglog}". Note that \code{\link{multimarkClosedSCR}} is currently implemented for the cloglog link only.
+#' @return An object of class \code{\link[coda]{mcmc.list}} containing the following:
+#' \item{p}{Posterior samples for capture probability (\eqn{p}) for each sampling occasion (first index) and trap (second index).}
+#' \item{c}{Posterior samples for recapture probability (\eqn{c}) for each sampling occasion (first index) and trap (second index).}
+#' @author Brett T. McClintock
+#' @seealso \code{\link{multimarkClosedSCR}}
+#' @examples
+#' \dontshow{
+#' sim.data<-simdataClosedSCR()
+#' Enc.Mat<-sim.data$Enc.Mat
+#' trapCoords<-sim.data$spatialInputs$trapCoords
+#' studyArea<-sim.data$spatialInputs$studyArea
+#' test<-getprobsClosedSCR(multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,iter=10,burnin=0,bin=5))}
+#' \donttest{
+#' # This example is excluded from testing to reduce package check time
+#' # Example uses unrealistically low values for nchain, iter, and burnin
+#' 
+#' #Run behavior model for simulated data with constant detection probability (i.e., mod.p=~c)
+#' sim.data<-simdataClosedSCR()
+#' Enc.Mat<-sim.data$Enc.Mat
+#' trapCoords<-sim.data$spatialInputs$trapCoords
+#' studyArea<-sim.data$spatialInputs$studyArea
+#' example.c <- multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,mod.p=~c)
+#'   
+#' #Calculate capture and recapture probabilities
+#' pc <- getprobsClosedSCR(example.c)
+#' summary(pc)}
+getprobsClosedSCR<-function(out,link="cloglog"){
+  
+  DMp<-out$DM$p
+  DMc<-out$DM$c
+  
+  ntraps<-nrow(out$mms@spatialInputs$trapCoords)
+  noccas<-ncol(out$mms@Enc.Mat)/ntraps
+  
+  if(noccas*ntraps<2) stop("must have >1 sampling occasion or >1 trap")
+  
+  pbetanames<-paste0("pbeta[",colnames(DMp),"]")
+  nchains<-length(out$mcmc)
+  
+  pc<-vector("list",nchains)
+  
+  varind <- is.null(varnames(out$mcmc))
+  if(!varind){
+    vars <- varnames(out$mcmc)
+  } else {
+    vars <- names(out$mcmc[[1]])    
+  }
+  if(!any(match(pbetanames,vars,nomatch=0))) stop("'pbeta' parameters not found")
+  
+  for(ichain in 1:nchains){
+    
+    if(!varind){
+      pbeta<-as.matrix(out$mcmc[[ichain]][,pbetanames])   
+    } else {
+      pbeta<-matrix(out$mcmc[[ichain]][pbetanames],nrow=1) 
+    }
+    
+    if(link=="cloglog"){
+      p <- matrix(invcloglog(apply(pbeta,1,function(x) DMp%*%x)),byrow=T,ncol=noccas*ntraps)
+      rc <- matrix(invcloglog(apply(pbeta,1,function(x) DMc%*%x)),byrow=T,ncol=noccas*ntraps)
+    } else {
+      stop("link function must be 'cloglog'")
+    }
+    
+    if(dim(rc)[1]==1){
+      rc <- matrix(rc[,-seq(1,ntraps*noccas,noccas)],nrow=1)
+    } else if(ntraps*noccas<3){
+      rc <- matrix(rc[,-1],ncol=1)      
+    } else {
+      rc <- rc[,-seq(1,ntraps*noccas,noccas)]
+    }
+    colnames(p)  <- paste0("p[",1:noccas,",",rep(1:ntraps,each=noccas),"]")
+    colnames(rc)  <- paste0("c[",2:noccas,",",rep(1:ntraps,each=noccas-1),"]")
+    pc[[ichain]]<- mcmc(cbind(p,rc),start=start(out$mcmc),end=end(out$mcmc),thin=attributes(out$mcmc[[ichain]])$mcpar[3])
+  }
+  return(as.mcmc.list(pc))
+}
+
+#' Calculate population density estimates
+#'
+#' This function calculates posterior population density estimates from \code{\link{multimarkClosedSCR}} output as D = N/A, where D is density, N is abundance, and A is the area of available habitat within the study area. 
+#'
+#'
+#' @param out List of output returned by \code{\link{multimarkClosedSCR}}.
+#' @return An object of class \code{\link[coda]{mcmc.list}} containing the following:
+#' \item{D}{Posterior samples for density.}
+#' @author Brett T. McClintock
+#' @seealso \code{\link{multimarkClosedSCR}}
+#' @examples
+#' \dontshow{
+#' sim.data<-simdataClosedSCR()
+#' Enc.Mat<-sim.data$Enc.Mat
+#' trapCoords<-sim.data$spatialInputs$trapCoords
+#' studyArea<-sim.data$spatialInputs$studyArea
+#' test<-getdensityClosedSCR(multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,iter=10,burnin=0,bin=5))}
+#' \donttest{
+#' # This example is excluded from testing to reduce package check time
+#' # Example uses unrealistically low values for nchain, iter, and burnin
+#' 
+#' #Run behavior model for simulated data with constant detection probability (i.e., mod.p=~c)
+#' sim.data<-simdataClosedSCR()
+#' Enc.Mat<-sim.data$Enc.Mat
+#' trapCoords<-sim.data$spatialInputs$trapCoords
+#' studyArea<-sim.data$spatialInputs$studyArea
+#' example.dot <- multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,mod.p=~1)
+#'   
+#' #Calculate capture and recapture probabilities
+#' D <- getdensityClosedSCR(example.dot)
+#' summary(D)}
+getdensityClosedSCR<-function(out){
+  
+  nchains<-length(out$mcmc)
+    
+  spatialInputs<-getSpatialInputs(out$mms)
+  
+  A <- out$mms@spatialInputs$origCellRes * nrow(spatialInputs$studyArea)
+  
+  varind <- is.null(varnames(out$mcmc))
+  if(!varind){
+    vars <- varnames(out$mcmc)
+  } else {
+    vars <- names(out$mcmc[[1]])    
+  }
+  if(!any(match("N",vars,nomatch=0))) stop("'N' parameter not found")
+  
+  D <- vector("list",nchains)
+  
+  for(ichain in 1:nchains){
+    iD <- out$mcmc[[ichain]][,"N"]/A
+    D[[ichain]]<- mcmc(iD,start=start(out$mcmc),end=end(out$mcmc),thin=attributes(out$mcmc[[ichain]])$mcpar[3])
+  }
+  return(as.mcmc.list(D))
 }
