@@ -402,7 +402,7 @@ mcmcClosedSCR<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,ta
   
   g <- posterior$iter
   x <- posterior$x
-  posterior$centers<-mapCenters(posterior$centers,spatialInputs$centermap1,spatialInputs$centermap2,0)
+  posterior$centers<-mapCenters(posterior$centers+1,spatialInputs$centermap1,spatialInputs$centermap2,0)
   
   if(any(params=="centers")){
     temp<-cbind(matrix(posterior$pbeta[(floor(burnin/thin)*pdim+1):(max(1,floor(iter/thin))*pdim)],ncol=pdim,byrow=T),matrix(posterior$centers[(floor(burnin/thin)*M+1):(max(1,floor(iter/thin))*M)],ncol=M,byrow=T),posterior$sigma2_scr[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$delta_1[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$delta_2[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$alpha[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$N[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$psi[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))]) 
@@ -895,7 +895,7 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
       
       DM <- DMlist[[imod]]
       DM$mod.delta <- deltalist[[imod]]
-      DM$mod.det <- detlist[[M.cur]]
+      DM$mod.det <- detlist[[imod]]
       DM$mod.p.h <- mod.p.h[[imod]]
       
       cur.parms.list[[1]]$pbeta <- cur.parms[paste0("pbeta[",colnames(DM$p),"]")]
@@ -920,6 +920,7 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
     
     DM <- DMlist[[M.cur]]
     DM$mod.delta <- deltalist[[M.cur]]
+    DM$mod.det <- detlist[[M.cur]]
     DM$mod.p.h <- mod.p.h[[M.cur]]
     
     cur.parms.list <- getcurClosedSCRparmslist(cur.parms,DM,M,noccas,data_type,alpha,spatialInputs$centermap1,spatialInputs$centermap2)
@@ -927,8 +928,8 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
     if(iiter>mburnin & !iiter%%mthin){
       multimodel[iiter/mthin-floor(mburnin/mthin),"M"] <- M.cur
       multimodel[iiter/mthin-floor(mburnin/mthin),commonparms] <- cur.parms[commonparms]
-      multimodel[iiter/mthin-floor(mburnin/mthin),monitorparms$namesp] <- monitorparms$getlogitp(DM$mod.p.h,DM$p,cur.parms.list[[1]]$pbeta,cur.parms.list[[1]]$sigma2_zp)
-      multimodel[iiter/mthin-floor(mburnin/mthin),monitorparms$namesc] <- monitorparms$getlogitc(DM$mod.p.h,DM$c,cur.parms.list[[1]]$pbeta,cur.parms.list[[1]]$sigma2_zp)[-1]
+      #multimodel[iiter/mthin-floor(mburnin/mthin),monitorparms$namesp] <- monitorparms$getlogitp(DM$mod.p.h,DM$p,cur.parms.list[[1]]$pbeta,cur.parms.list[[1]]$sigma2_zp)
+      #multimodel[iiter/mthin-floor(mburnin/mthin),monitorparms$namesc] <- monitorparms$getlogitc(DM$mod.p.h,DM$c,cur.parms.list[[1]]$pbeta,cur.parms.list[[1]]$sigma2_zp)[-1]
     }
     
     if(!(iiter%%(miter/ min(miter,100)))) {
