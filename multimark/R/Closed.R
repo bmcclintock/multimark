@@ -734,7 +734,7 @@ getprobsClosed<-function(out,link="logit"){
   return(as.mcmc.list(pc))
 }
 
-checkparmsClosed <- function(mms,modlist,params,parmlist,M){    
+checkparmsClosed <- function(mms,modlist,params,parmlist,M,type=""){    
   deltatypeind <- which(lapply(modlist,function(x) any("~type"==x$mod.delta))==TRUE)
   if(length(deltatypeind)){
     if(!all(lapply(params[deltatypeind],function(x) base::sum(match(x,c("delta_1","delta_2"),nomatch=0)))==base::sum(1:length(1:2)))) stop("required parameters not found for all models")
@@ -748,12 +748,12 @@ checkparmsClosed <- function(mms,modlist,params,parmlist,M){
     if(mms@data.type=="sometimes"){
       parmlist<-c(parmlist,"alpha")
     }
-    if((length(deltatypeind)+length(delta1ind))!=length(modlist)) stop("Cannot perform multimodel inference using both 'multimarkClosed()' and 'markClosed()' models")
+    if((length(deltatypeind)+length(delta1ind))!=length(modlist)) stop("Cannot perform multimodel inference using both 'multimarkClosed",type,"()' and 'markClosed",type,"()' models")
   }
   hind <- which(lapply(modlist,function(x) any("h"==attributes(terms(x$mod.p))$term.labels))==TRUE)  
   if(!length(hind)){
     if(!all(lapply(params,function(x) base::sum(match(x,parmlist,nomatch=0)))==base::sum(1:length(parmlist)))) stop("required parameters not found for all models")
-  } else {
+  } else if(type==""){
     if(!all(lapply(params[-hind],function(x) base::sum(match(x,parmlist,nomatch=0)))==base::sum(1:length(parmlist)))) stop("required parameters not found for all models")
     parmlist<-c(parmlist,"sigma2_zp",paste0("zp[",1:M,"]"))
     if(!all(lapply(params[hind],function(x) base::sum(match(x,parmlist,nomatch=0)))==base::sum(1:length(parmlist))))  stop("required parameters not found for all models")
@@ -788,11 +788,15 @@ monitorparmsClosed <- function(parms,parmlist,noccas){
   list(commonparms=commonparms,parms=parms,namesp=namesp,namesc=namesc,getlogitp=getlogitp,getlogitc=getlogitc)
 }
 
-checkmmClosedinput<-function(mmslist,modlist,nmod,nchains,iter,miter,mburnin,mthin,modprior,M1){
-  if(!all(match(unlist(unique(lapply(modlist,names))),c("mcmc","mod.p","mod.delta","DM","initial.values","priorparms","mms"),nomatch=0))) stop("each object in 'modlist' must be a list returned by multimarkClosed() or markClosed()")
+checkmmClosedinput<-function(mmslist,modlist,nmod,nchains,iter,miter,mburnin,mthin,modprior,M1,type=""){
+  if(type==""){
+    if(!all(match(unlist(unique(lapply(modlist,names))),c("mcmc","mod.p","mod.delta","DM","initial.values","priorparms","mms"),nomatch=0))) stop("each object in 'modlist' must be a list returned by multimarkClosed",type,"() or markClosed",type,"()")
+  } else {
+    if(!all(match(unlist(unique(lapply(modlist,names))),c("mcmc","mod.p","mod.delta","mod.det","DM","initial.values","priorparms","mms"),nomatch=0))) stop("each object in 'modlist' must be a list returned by multimarkClosed",type,"() or markClosed",type,"()")
+  }
   if(!all(lapply(modlist,function(x) is.mcmc.list(x$mcmc))==TRUE)) stop("mcmc output for each model must be an object of type 'mcmc.list'")
   if(nmod<2) stop("'modlist' must contain at least two models")
-  if(length(mmslist)!=1) stop("'multimarksetup' (mms) object must be identical for each model")
+  if(length(mmslist)!=1) stop("'multimark",type,"setup' (mms) object must be identical for each model")
   if(length(nchains)!=1) stop("all models must have same number of chains")
   if(length(iter)!=1) stop("all chains must have same number of iterations")
   if(miter<=mburnin) stop("'mburnin' must be less than ",miter)
@@ -801,7 +805,7 @@ checkmmClosedinput<-function(mmslist,modlist,nmod,nchains,iter,miter,mburnin,mth
   if(length(M1)!=nchains) stop("'M1' must be an integer vector of length ",nchains)
   if(!all(match(M1,1:nmod,nomatch=0))) stop("'M1' must be an integer vector of length ",nchains," with values ranging from 1 to ",nmod)
   mms<-mmslist[[1]]
-  if(class(mms)!="multimarksetup") stop("'mms' for each model must be an object of class 'multimarksetup'")
+  if(class(mms)!=paste0("multimark",type,"setup")) stop("'mms' for each model must be an object of class 'multimark",type,"setup'")
   return(mms)
 }
 

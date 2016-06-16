@@ -168,26 +168,26 @@ loglikeClosedSCR<-function(parms,DM,noccas,ntraps,C,All.hists,spatialInputs){
   Hind <- H[which(H>1)]
   centers <- spatialInputs$studyArea[parms$centers[which(H>1)],]
   indhist <- All.hists[Hind,]
-  M<-length(Hind)
-  #firstcap<- (C[Hind]>=matrix(rep(1:noccas,each=M),nrow=M,ncol=noccas))
+  n<-length(Hind)
+  #firstcap<- (C[Hind]>=matrix(rep(1:noccas,each=n),nrow=n,ncol=noccas))
 
   msk <- t(spatialInputs$msk) #matrix(1,nrow=noccas,ncol=ntraps) 
-  msk2 <- array(NA, c(M, noccas, ntraps))
-  for(i in 1:M){
+  msk2 <- array(NA, c(n, noccas, ntraps))
+  for(i in 1:n){
     msk2[i, 1:noccas, 1:ntraps] <- msk[1:noccas, 1:ntraps]
   }
   msk2 <- as.vector(msk2)
   
-  Yaug <- array(0, dim=c(M, noccas, ntraps))
-  for(j in 1:M){
+  Yaug <- array(0, dim=c(n, noccas, ntraps))
+  for(j in 1:n){
     Yaug[j, 1:noccas, 1:ntraps] <- matrix(indhist[j,],nrow=noccas,ncol=ntraps)#byrow=TRUE))#Y[j, 1:nT, 1:ntraps]
   }  
   # create covariate of previous capture
-  prevcap <- array(0,c(M,noccas,ntraps))
-  #prevcap2 <- matrix(0,nrow=M,ncol=ntraps*noccas)
-  #dist2mat <- matrix(0,nrow=M,ncol=ntraps*noccas)
+  prevcap <- array(0,c(n,noccas,ntraps))
+  #prevcap2 <- matrix(0,nrow=n,ncol=ntraps*noccas)
+  #dist2mat <- matrix(0,nrow=n,ncol=ntraps*noccas)
   #dist2<-getdist(centers,spatialInputs$trapCoords)
-  for(i in 1:M){
+  for(i in 1:n){
     for(j in 1:ntraps){
       tmp <- Yaug[i, 1:noccas, j]
       #tmp2 <- indhist[i,(j-1)*noccas+1:noccas]
@@ -207,7 +207,7 @@ loglikeClosedSCR<-function(parms,DM,noccas,ntraps,C,All.hists,spatialInputs){
   prevcap <- as.vector(prevcap)
   
   ## vectorize all the data objects
-  arr.trues <- array(TRUE, c(M,noccas,ntraps))
+  arr.trues <- array(TRUE, c(n,noccas,ntraps))
   idx <- which(arr.trues, arr.ind = TRUE)
   y <- as.vector(Yaug)
   y <- y[msk2==1]
@@ -220,8 +220,8 @@ loglikeClosedSCR<-function(parms,DM,noccas,ntraps,C,All.hists,spatialInputs){
   c1 <- (centers[indid,1] - trapgridbig[,1])^2
   c2 <- (centers[indid,2] - trapgridbig[,2])^2
   
-  p <- invcloglogtol(rep(DM$p%*%pbeta,each=M)[msk2==1]*(1-prevcap) + rep(DM$c%*%pbeta,each=M)[msk2==1]*prevcap - 1./(2*parms$sigma2_scr)*sqrt(c1+c2)^dexp)
-  #p2 <- invcloglogtol(matrix(rep(DM$p%*%pbeta,each=M)*(1-prevcap2)+rep(DM$c%*%pbeta,each=M)*prevcap2,nrow=M,ncol=noccas*ntraps)- 1./(2*parms$sigma2_scr)*(dist2mat)^dexp)
+  p <- invcloglogtol(rep(DM$p%*%pbeta,each=n)[msk2==1]*(1-prevcap) + rep(DM$c%*%pbeta,each=n)[msk2==1]*prevcap - 1./(2*parms$sigma2_scr)*sqrt(c1+c2)^dexp)
+  #p2 <- invcloglogtol(matrix(rep(DM$p%*%pbeta,each=n)*(1-prevcap2)+rep(DM$c%*%pbeta,each=n)*prevcap2,nrow=n,ncol=noccas*ntraps)- 1./(2*parms$sigma2_scr)*(dist2mat)^dexp)
   
   loglike <- base::sum( log( (y==0) * (1. - p)
                              + (y==1) * p * delta_1  
@@ -237,7 +237,7 @@ loglikeClosedSCR<-function(parms,DM,noccas,ntraps,C,All.hists,spatialInputs){
   
   pstar <- pstarintegrandSCR(noccas,pbeta,parms$sigma2_scr,DM$p,spatialInputs,dexp)
    
-  loglike <- loglike + dbinom(M,parms$N,pstar,1) - M * log(pstar)  
+  loglike <- loglike + dbinom(n,parms$N,pstar,1) - n * log(pstar)  
   loglike
 }
 
@@ -554,7 +554,7 @@ getSpatialInputs<-function(mms){
 #' @param a0delta Scaler or vector (of length d) specifying the prior for the conditional (on detection) probability of type 1 (delta_1), type 2 (delta_2), and both type 1 and type 2 encounters (1-delta_1-delta_2). If \code{a0delta} is a scaler, then this value is used for all a0delta[j] for j = 1, ..., d. For \code{mod.delta=~type}, d=3 with [delta_1, delta_2, 1-delta_1-delta_2] ~ Dirichlet(a0delta) prior. For \code{mod.delta=~1}, d=2 with [tau] ~ Beta(a0delta[1],a0delta[2]) prior, where (delta_1,delta_2,1-delta_1-delta_2) = (tau/2,tau/2,1-tau). See McClintock et al. (2013) for more details.
 #' @param a0alpha Specifies "shape1" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{a0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1).
 #' @param b0alpha Specifies "shape2" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{b0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1).
-#' @param a Scale parameter for [sigma_rho] ~ half-Cauchy(a) prior for the detection function term sigma_scr = sqrt(sigma2_scr). Default is ``uninformative'' \code{a = 25}.
+#' @param a Scale parameter for [sigma_scr] ~ half-Cauchy(a) prior for the detection function term sigma_scr = sqrt(sigma2_scr). Default is ``uninformative'' \code{a = 25}.
 #' @param mu0 Scaler or vector (of length k) specifying mean of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{mu0 = 0}.
 #' @param sigma2_mu0 Scaler or vector (of length k) specifying variance of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{sigma2_mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{sigma2_mu0 = 1.75}.
 #' @param a0psi Specifies "shape1" parameter for [psi] ~ Beta(a0psi,b0psi) prior. Default is \code{a0psi = 1}.
@@ -570,6 +570,7 @@ getSpatialInputs<-function(mms){
 #' \item{mcmc}{Markov chain Monte Carlo object of class \code{\link[coda]{mcmc.list}}.}
 #' \item{mod.p}{Model formula for detection probability (as specified by \code{mod.p} above).}
 #' \item{mod.delta}{Model formula for conditional probability of type 1 or type 2 encounter, given detection (as specified by \code{mod.delta} above).}
+#' \item{mod.delta}{Model formula for detection function (as specified by \code{detection} above).}
 #' \item{DM}{A list of design matrices for detection probability generated for model \code{mod.p}, where DM$p is the design matrix for initial capture probability (p) and DM$c is the design matrix for recapture probability (c).}
 #' \item{initial.values}{A list containing the parameter and latent variable values at iteration \code{iter} for each chain. Values are provided for "\code{pbeta}", "\code{N}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_scr}", "\code{centers}", "\code{psi}", "\code{x}", and "\code{H}".}
 #' \item{mms}{An object of class \code{multimarkSCRsetup}}
@@ -691,7 +692,7 @@ multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,data.
   }
   
   chains <- processClosedSCRchains(chains,params,DM,M,noccas,nchains,iter,burnin,thin)
-  return(list(mcmc=chains$chains,mod.p=mod.p,mod.delta=mod.delta,DM=list(p=DM$p,c=DM$c),initial.values=chains$initial.values,priorparms=priorparms,mms=mms))
+  return(list(mcmc=chains$chains,mod.p=mod.p,mod.delta=mod.delta,mod.det=detection,DM=list(p=DM$p,c=DM$c),initial.values=chains$initial.values,priorparms=priorparms,mms=mms))
 }
 
 #' Calculate posterior capture and recapture probabilities
@@ -833,4 +834,270 @@ getdensityClosedSCR<-function(out){
     D[[ichain]]<- mcmc(iD,start=start(out$mcmc),end=end(out$mcmc),thin=attributes(out$mcmc[[ichain]])$mcpar[3])
   }
   return(as.mcmc.list(D))
+}
+
+getcurClosedSCRparmslist<-function(cur.parms,DM,M,noccas,data_type,alpha,centermap1,centermap2){
+  
+  parmslist=vector('list',1)
+  parmslist[[1]]$H<-cur.parms[paste0("H[",1:M,"]")]
+  parmslist[[1]]$N <- cur.parms["N"]
+  parmslist[[1]]$pbeta <- cur.parms[paste0("pbeta[",colnames(DM$p),"]")]
+  parmslist[[1]]$centers <- mapCenters(cur.parms[paste0("center[",1:M,"]")],centermap1,centermap2)
+  names(parmslist[[1]]$centers) <- paste0("center[",1:M,"]")
+  parmslist[[1]]$sigma2_scr <- cur.parms["sigma2_scr"]
+  
+  parmslist[[1]]$psi <- cur.parms["psi"]
+  parmslist[[1]]$delta_1 <- cur.parms["delta_1"]
+  parmslist[[1]]$delta_2 <- cur.parms["delta_2"]
+  parmslist[[1]]$delta <- cur.parms["delta"]
+
+  if(data_type=="sometimes"){
+    parmslist[[1]]$alpha <- cur.parms["alpha"]
+  } else {
+    parmslist[[1]]$alpha <- alpha   
+  }
+  parmslist
+}
+
+rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,alpha,C,All.hists,modlist,DMlist,deltalist,detlist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,printlog){
+  
+  multimodel <- matrix(0,nrow=(max(1,floor(miter/mthin)))-(floor(mburnin/mthin)),ncol=length(monitorparms$parms)+1,dimnames=list(NULL,c(monitorparms$parms,"M")))
+  
+  nmod <- length(modlist)
+  mod.prob.brob <- as.brob(numeric(nmod))
+  
+  commonparms <- monitorparms$commonparms
+  
+  if(any(deltalist==~NULL)){
+    H<-get_H(mms,mms@naivex)
+    names(H)<-paste0("H[",1:M,"]")
+  } else {
+    H<-NULL
+  }
+  
+  M.cur<- M1
+  
+  modmissingparms <- drawmissingClosed(M.cur,missing,pbetapropsd,sigppropshape,sigppropscale)
+  cur.parms <- c(modlist[[M.cur]][sample(iter,1),],modmissingparms,H)
+  
+  DM <- DMlist[[M.cur]]
+  DM$mod.delta <- deltalist[[M.cur]]
+  DM$mod.det <- detlist[[M.cur]]
+  DM$mod.p.h <- mod.p.h[[M.cur]]
+  
+  cur.parms.list <- getcurClosedSCRparmslist(cur.parms,DM,M,noccas,data_type,alpha,spatialInputs$centermap1,spatialInputs$centermap2)  
+  
+  for(iiter in 1:miter){
+    
+    mod.prob.brob[M.cur] <- getbrobprobClosed(M.cur,modprior,cur.parms["logPosterior"],cur.parms,missing,pbetapropsd,sigppropshape,sigppropscale)
+    
+    for(imod in (1:nmod)[-M.cur]){ 
+      
+      DM <- DMlist[[imod]]
+      DM$mod.delta <- deltalist[[imod]]
+      DM$mod.det <- detlist[[M.cur]]
+      DM$mod.p.h <- mod.p.h[[imod]]
+      
+      cur.parms.list[[1]]$pbeta <- cur.parms[paste0("pbeta[",colnames(DM$p),"]")]
+      
+      loglike <- loglikeClosedSCR(cur.parms.list[[1]],DM,noccas,ntraps,C,All.hists,spatialInputs)
+      
+      posterior <- loglike + priorsClosedSCR(cur.parms.list[[1]],DM,priorlist[[imod]],data_type,spatialInputs)
+      
+      mod.prob.brob[imod] <- getbrobprobClosed(imod,modprior,posterior,cur.parms,missing,pbetapropsd,sigppropshape,sigppropscale)
+    }
+    
+    if(any(is.na(as.numeric(mod.prob.brob)))){
+      warning(paste0("'NA' posterior for model '","p(",pmodnames[is.na(as.numeric(mod.prob.brob))],")delta(",deltamodnames[is.na(as.numeric(mod.prob.brob))],")' at iteration ",iiter,"; model move rejected."))
+      flush.console()
+    } else {       
+      mod.prob <- as.numeric(mod.prob.brob/Brobdingnag::sum(mod.prob.brob))
+      M.cur <- (1:nmod)[rmultinom(1, 1, mod.prob)==1]
+    }
+    
+    modmissingparms <- drawmissingClosed(M.cur,missing,pbetapropsd,sigppropshape,sigppropscale)
+    cur.parms <- c(modlist[[M.cur]][sample(iter,1),],modmissingparms,H)
+    
+    DM <- DMlist[[M.cur]]
+    DM$mod.delta <- deltalist[[M.cur]]
+    DM$mod.p.h <- mod.p.h[[M.cur]]
+    
+    cur.parms.list <- getcurClosedSCRparmslist(cur.parms,DM,M,noccas,data_type,alpha,spatialInputs$centermap1,spatialInputs$centermap2)
+    
+    if(iiter>mburnin & !iiter%%mthin){
+      multimodel[iiter/mthin-floor(mburnin/mthin),"M"] <- M.cur
+      multimodel[iiter/mthin-floor(mburnin/mthin),commonparms] <- cur.parms[commonparms]
+      multimodel[iiter/mthin-floor(mburnin/mthin),monitorparms$namesp] <- monitorparms$getlogitp(DM$mod.p.h,DM$p,cur.parms.list[[1]]$pbeta,cur.parms.list[[1]]$sigma2_zp)
+      multimodel[iiter/mthin-floor(mburnin/mthin),monitorparms$namesc] <- monitorparms$getlogitc(DM$mod.p.h,DM$c,cur.parms.list[[1]]$pbeta,cur.parms.list[[1]]$sigma2_zp)[-1]
+    }
+    
+    if(!(iiter%%(miter/ min(miter,100)))) {
+      if(printlog){
+        cat("Chain ",ichain," is ",100*(iiter/miter),"% complete \n",sep="")        
+      } else{
+        cat("\rChain ",ichain," is ",100*(iiter/miter),"% complete",sep="")
+      }
+    }
+  }
+  return(multimodel)
+}
+
+#' Multimodel inference for 'multimark' spatial population abundance models
+#'
+#' This function performs Bayesian multimodel inference for a set of 'multimark' spatial population abundance models using the reversible jump Markov chain Monte Carlo (RJMCMC) algorithm proposed by Barker & Link (2013).
+#'
+#'
+#' @param modlist A list of individual model output lists returned by \code{\link{multimarkClosedSCR}}. The models must have the same number of chains and MCMC iterations.
+#' @param modprior Vector of length \code{length(modlist)} containing prior model probabilities. Default is \code{modprior = rep(1/length(modlist), length(modlist))}.
+#' @param monparms Parameters to monitor. Only parameters common to all models can be monitored (e.g., "\code{pbeta[(Intercept)]}", "\code{N}", "\code{psi}"), but derived capture ("\code{p}") and recapture ("\code{c}") probabilities can also be monitored. Default is \code{monparms = "N"}.
+#' @param miter The number of RJMCMC iterations per chain. If \code{NULL}, then the number of MCMC iterations for each individual model chain is used.
+#' @param mburnin Number of burn-in iterations (\code{0 <= mburnin < miter}).
+#' @param mthin Thinning interval for monitored parameters.
+#' @param M1 Integer vector indicating the initial model for each chain, where \code{M1_j=i} initializes the RJMCMC algorithm for chain j in the model corresponding to \code{modlist[[i]]} for i=1,...,  \code{length(modlist)}. If \code{NULL}, the algorithm for all chains is initialized in the most general model. Default is \code{M1=NULL}.
+#' @param pbetapropsd Scaler specifying the standard deviation of the Normal(0, pbetapropsd) proposal distribution for "\code{pbeta}"  parameters. Default is \code{pbetapropsd=1}. See Barker & Link (2013) for more details.
+#' @param sigppropshape Scaler specifying the shape parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}". Only applies if at least one (but not all) model(s) includes spatial effects in detection function. Default is \code{sigppropshape=6}. See Barker & Link (2013) for more details.
+#' @param sigppropscale Scaler specifying the scale parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}". Only applies if at least one (but not all) model(s) includes spatial effects in detection function. Default is \code{sigppropscale=4}. See Barker & Link (2013) for more details.
+#' @param printlog Logical indicating whether to print the progress of chains and any errors to a log file in the working directory. Ignored when \code{nchains=1}. Updates are printed to log file as 1\% increments of \code{iter} of each chain are completed. With >1 chains, setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.
+#' @details Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosedSCR}} models to be included in \code{modlist}.
+#' @return A list containing the following:
+#' \item{rjmcmc}{Reversible jump Markov chain Monte Carlo object of class \code{\link[coda]{mcmc.list}}. Includes RJMCMC output for monitored parameters and the current model at each iteration ("\code{M}").}
+#' \item{pos.prob}{A list of calculated posterior model probabilities for each chain, including the overall posterior model probabilities across all chains.}
+#' @author Brett T. McClintock
+#' @seealso \code{\link{multimarkClosedSCR}}, \code{\link{processdataSCR}}
+#' @references
+#' Barker, R. J. and Link. W. A. 2013. Bayesian multimodel inference by RJMCMC: a Gibbs sampling approach. The American Statistician 67: 150-156.
+#' @examples
+#' \dontshow{
+#' sim.data<-simdataClosedSCR()
+#' Enc.Mat<-sim.data$Enc.Mat
+#' trapCoords<-sim.data$spatialInputs$trapCoords
+#' studyArea<-sim.data$spatialInputs$studyArea
+#' setup<-processdataSCR(Enc.Mat,trapCoords,studyArea)
+#' test.dot<-multimarkClosedSCR(mms=setup,parms="all",iter=10,burnin=0,bin=5)
+#' test<-multimodelClosedSCR(modlist=list(mod1=test.dot,mod2=test.dot))
+#' }
+#' \donttest{
+#' # This example is excluded from testing to reduce package check time
+#' # Example uses unrealistically low values for nchain, iter, and burnin
+#' 
+#' #Generate object of class "multimarkSCRsetup"
+#' sim.data<-simdataClosedSCR()
+#' Enc.Mat<-sim.data$Enc.Mat
+#' trapCoords<-sim.data$spatialInputs$trapCoords
+#' studyArea<-sim.data$spatialInputs$studyArea
+#' setup<-processdataSCR(Enc.Mat,trapCoords,studyArea)
+#'  
+#' #Run single chain using the default model for simulated data. Note parms="all".
+#' example.dot <- multimarkClosedSCR(mms=setup,parms="all")
+#' 
+#' #Run single chain for simulated data with behavior effects. Note parms="all".
+#' example.c <- multimarkClosedSCR(mms=setup,mod.p=~c,parms="all")
+#' 
+#' #Perform RJMCMC using defaults
+#' modlist <- list(mod1=example.dot,mod2=example.c)
+#' example.M <- multimodelClosedSCR(modlist=modlist,monparms=c("N","sigma2_scr"))
+#' 
+#' #Posterior model probabilities
+#' example.M$pos.prob
+#'  
+#' #multimodel posterior summary for abundance
+#' summary(example.M$rjmcmc[,"N"])}
+multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modlist)),monparms="N",miter=NULL,mburnin=0,mthin=1,M1=NULL,pbetapropsd=1,sigppropshape=6,sigppropscale=4,printlog=FALSE){
+  
+  nmod <- length(modlist)
+  iter <- unlist(unique(lapply(modlist,function(x) unique(lapply(x$mcmc,nrow)))))
+  nchains <- unlist(unique(lapply(modlist,function(x) length(x$mcmc))))
+  mmslist <- unlist(unique(lapply(modlist, function(x) {x$mms@covs<-data.frame();x$mms})))
+  
+  params <- lapply(modlist,function(x) varnames(x$mcmc))
+  
+  if(is.null(M1)) M1 <- rep(which.max(lapply(params,length))[1],nchains)
+  
+  if(is.null(miter)) miter <- iter
+  
+  mms<-checkmmClosedinput(mmslist,modlist,nmod,nchains,iter,miter,mburnin,mthin,modprior,M1,type="SCR")
+  
+  spatialInputs<-getSpatialInputs(mms)
+
+  noccas<-ncol(mms@spatialInputs$trapCoords[,-c(1,2)])
+  ntraps<-nrow(mms@spatialInputs$trapCoords)
+  M<-nrow(mms@Enc.Mat)
+  All.hists<-matrix(mms@vAll.hists,byrow=TRUE,ncol=noccas*ntraps)
+  C<-mms@C
+  
+  checkparmsClosed(mms,modlist,params,parmlist=c("pbeta[(Intercept)]","sigma2_scr","N","logPosterior"),M,type="SCR")
+  
+  pmodnames <- unlist(lapply(modlist,function(x) x$mod.p)) 
+  deltamodnames <- unlist(lapply(modlist,function(x) x$mod.delta)) 
+  
+  message("\nPerforming spatial population abundance Bayesian multimodel inference by RJMCMC \n")
+  if(all(deltamodnames!=~NULL)) {
+    message(paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")\n"))
+  } else if(all(deltamodnames==~NULL)){
+    message(paste0("mod",1:nmod,": ","p(",pmodnames,")\n"))
+  }
+  
+  missing <- missingparmnamesClosed(params,M,noccas,NULL) 
+  
+  monitorparms <- monitorparmsClosed(monparms,missing$commonparms,noccas)
+  
+  DMlist <- lapply(modlist,function(x) x$DM)
+  deltalist <- lapply(modlist,function(x) x$mod.delta)
+  detlist <- lapply(modlist,function(x) x$mod.det)
+  priorlist <- lapply(modlist,function(x) x$priorparms) 
+  mod.p.h <- unlist(lapply(modlist,function(x) any("h"==attributes(terms(x$mod.p))$term.labels)))
+  
+  data_type <- mms@data.type
+  if(data_type=="never"){
+    alpha <- 0
+  } else if(data_type=="always"){
+    alpha <- 1
+  } else {
+    alpha <- numeric(0)
+  }
+ 
+
+  message("Updating...",ifelse(printlog | nchains==1,"","set 'printlog=TRUE' to follow progress of chains in a working directory log file"),"\n",sep="")
+  if(printlog & nchains==1) printlog<-FALSE
+  
+  if(nchains>1){
+    if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
+    cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimodelClosed_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
+    clusterExport(cl,list("rjmcmcClosed"),envir=environment())
+    multimodel <- parLapply(cl,1:nchains, function(ichain) rjmcmcClosedSCR(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,detlist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1[ichain],monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,printlog))
+    stopCluster(cl)
+    gc()
+  } else {
+    multimodel <- vector('list',nchains)
+    multimodel[[nchains]] <- rjmcmcClosedSCR(nchains,mms,M,noccas,ntraps,spatialInputs,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[nchains]]),DMlist,deltalist,detlist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,printlog)
+    gc()
+  }
+  
+  if(mburnin<mthin){
+    temp=seq(mthin,max(1,miter),mthin)
+  } else {
+    temp=seq(mthin*(floor(mburnin/mthin)+1),miter,mthin)
+  }
+  
+  pos.prob <- vector('list',nchains)
+  for(ichain in 1:nchains){
+    pos.prob[[ichain]] <-hist(multimodel[[ichain]][,"M"],plot=F,breaks=0:nmod)$density
+    if(all(deltamodnames!=~NULL)){
+      names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")") 
+    } else {
+      names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")")
+    }
+    multimodel[[ichain]] <- mcmc(multimodel[[ichain]])
+    attributes(multimodel[[ichain]])$mcpar <- c(head(temp,n=1),tail(temp,n=1),mthin)
+  }  
+  
+  multimodel <- as.mcmc.list(multimodel)
+  names(pos.prob) <- paste0("chain",1:nchains)
+  pos.prob[["overall"]]<- hist(unlist(multimodel[, "M"]),plot = F, breaks = 0:nmod)$density
+  if(all(deltamodnames!=~NULL)){
+    names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")") 
+  } else {
+    names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")")
+  }
+  list(rjmcmc=multimodel,pos.prob=pos.prob) 
 }

@@ -74,7 +74,7 @@ multimarkClosedSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
 
 \item{b0alpha}{Specifies "shape2" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{b0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1).}
 
-\item{a}{Scale parameter for [sigma_rho] ~ half-Cauchy(a) prior for the detection function term sigma_scr = sqrt(sigma2_scr). Default is ``uninformative'' \code{a = 25}.}
+\item{a}{Scale parameter for [sigma_scr] ~ half-Cauchy(a) prior for the detection function term sigma_scr = sqrt(sigma2_scr). Default is ``uninformative'' \code{a = 25}.}
 
 \item{mu0}{Scaler or vector (of length k) specifying mean of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{mu0 = 0}.}
 
@@ -99,6 +99,7 @@ A list containing the following:
 \item{mcmc}{Markov chain Monte Carlo object of class \code{\link[coda]{mcmc.list}}.}
 \item{mod.p}{Model formula for detection probability (as specified by \code{mod.p} above).}
 \item{mod.delta}{Model formula for conditional probability of type 1 or type 2 encounter, given detection (as specified by \code{mod.delta} above).}
+\item{mod.delta}{Model formula for detection function (as specified by \code{detection} above).}
 \item{DM}{A list of design matrices for detection probability generated for model \code{mod.p}, where DM$p is the design matrix for initial capture probability (p) and DM$c is the design matrix for recapture probability (c).}
 \item{initial.values}{A list containing the parameter and latent variable values at iteration \code{iter} for each chain. Values are provided for "\code{pbeta}", "\code{N}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_scr}", "\code{centers}", "\code{psi}", "\code{x}", and "\code{H}".}
 \item{mms}{An object of class \code{multimarkSCRsetup}}
