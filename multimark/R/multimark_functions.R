@@ -943,8 +943,9 @@ processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer(
 #'
 #' @param Enc.Mat A matrix containing the observed encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc. Ignored unless \code{mms=NULL}.
 #' @param trapCoords A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating.
-#' @param studyArea is a 3-column matrix containing the coordinates for the centroids a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{studyArea=NULL} (the default), then a square study area grid composed of 3600 cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}.
+#' @param studyArea is a 3-column matrix containing the coordinates for the centroids a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{studyArea=NULL} (the default), then a square study area grid composed of \code{ncells} cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}.
 #' @param buffer A scaler in same units as \code{trapCoords} indicating the buffer around the bounding box of \code{trapCoords} for defining the study area when \code{studyArea=NULL}.  Ignored unless \code{studyArea=NULL}.
+#' @param ncells The number of grid cells in the study area when \code{studyArea=NULL}. The square root of \code{ncells} must be a whole number. Default is \code{ncells=1024}. Ignored unless \code{studyArea=NULL}.
 #' @param data.type Specifies the encounter history data type. All data types include non-detections (type 0 encounter), type 1 encounter (e.g., left-side), and type 2 encounters (e.g., right-side). When both type 1 and type 2 encounters occur for the same individual within a sampling occasion, these can either be "non-simultaneous" (type 3 encounter) or "simultaneous" (type 4 encounter). Three data types are currently permitted:
 #' 
 #'  \code{data.type="never"} indicates both type 1 and type 2 encounters are never observed for the same individual within a sampling occasion, and observed encounter histories therefore include only type 1 or type 2 encounters (e.g., only left- and right-sided photographs were collected). Observed encounter histories can consist of non-detections (0), type 1 encounters (1), and type 2 encounters (2). See \code{\link{bobcat}}. Latent encounter histories consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 3 encounters (3).
@@ -990,7 +991,7 @@ processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer(
 #' #Run single chain using the default model for simulated data
 #' example.dot<-multimarkClosedSCR(mms=setup)}
 #' 
-processdataSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,data.type="never",covs=data.frame(),known=integer(),scalemax=10){
+processdataSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=NULL,data.type="never",covs=data.frame(),known=integer(),scalemax=10){
   
   if(!is.matrix(Enc.Mat)) stop("'Enc.Mat' must be a matrix")
   
@@ -1014,15 +1015,16 @@ processdataSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,data.type
   if(ncol(Enc.Mat)!=noccas*ntraps) stop("Dimensions of 'Enc.Mat' and 'trapCoords' are not consistent")
   
   if(is.null(studyArea)){
-    if(is.null(buffer)){
-      stop("'buffer' or 'studyArea' must be provided")
+    if(is.null(buffer) | is.null(ncells)){
+      stop("'studyArea' or both 'buffer' and 'ncells' must be provided")
     }
     if(length(buffer)!=1 | buffer<0){
       stop("'buffer' must be a non-negative scaler")
     }
+    if(sqrt(ncells)%%1) stop("The square root of 'ncells' must be a whole number")
     trapbbox<-bbox(trapCoords[,1:2])
-    studyArea<-as.matrix(expand.grid(seq(trapbbox[1,1]-buffer,trapbbox[1,2]+buffer,length=sqrt(3600)),seq(trapbbox[2,1]-buffer,trapbbox[2,2]+buffer,length=sqrt(3600)))) #study area grid
-    studyArea<-cbind(studyArea,rep(1,3600))
+    studyArea<-as.matrix(expand.grid(seq(trapbbox[1,1]-buffer,trapbbox[1,2]+buffer,length=sqrt(ncells)),seq(trapbbox[2,1]-buffer,trapbbox[2,2]+buffer,length=sqrt(ncells)))) #study area grid
+    studyArea<-cbind(studyArea,rep(1,ncells))
   }
 
   checkSpatialInputs(trapCoords,studyArea)

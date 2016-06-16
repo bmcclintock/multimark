@@ -5,14 +5,14 @@
 \title{Fit spatially-explicit population abundance models for capture-mark-recapture data consisting of multiple non-invasive marks}
 \usage{
 multimarkClosedSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
-  data.type = "never", covs = data.frame(), mms = NULL, mod.p = ~1,
-  mod.delta = ~type, detection = "half-normal", parms = c("pbeta",
-  "delta", "N", "sigma2_scr"), nchains = 1, iter = 12000, adapt = 1000,
-  bin = 50, thin = 1, burnin = 2000, taccept = 0.44,
-  tuneadjust = 0.95, proppbeta = 0.1, propsigma = 1, propcenter = NULL,
-  maxnumbasis = 1, a0delta = 1, a0alpha = 1, b0alpha = 1, a = 25,
-  mu0 = 0, sigma2_mu0 = 1.75, a0psi = 1, b0psi = 1,
-  initial.values = NULL, known = integer(), scalemax = 10,
+  ncells = 1024, data.type = "never", covs = data.frame(), mms = NULL,
+  mod.p = ~1, mod.delta = ~type, detection = "half-normal",
+  parms = c("pbeta", "delta", "N", "sigma2_scr"), nchains = 1,
+  iter = 12000, adapt = 1000, bin = 50, thin = 1, burnin = 2000,
+  taccept = 0.44, tuneadjust = 0.95, proppbeta = 0.1, propsigma = 1,
+  propcenter = NULL, maxnumbasis = 1, a0delta = 1, a0alpha = 1,
+  b0alpha = 1, a = 25, mu0 = 0, sigma2_mu0 = 1.75, a0psi = 1,
+  b0psi = 1, initial.values = NULL, known = integer(), scalemax = 10,
   printlog = FALSE, ...)
 }
 \arguments{
@@ -20,9 +20,11 @@ multimarkClosedSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
 
 \item{trapCoords}{A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating. Ignored unless \code{mms=NULL}.}
 
-\item{studyArea}{is a 3-column matrix containing the coordinates for the centroids a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{studyArea=NULL} (the default) and  \code{mms=NULL}, then a square study area grid composed of 3600 cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}. Ignored unless \code{mms=NULL}.}
+\item{studyArea}{is a 3-column matrix containing the coordinates for the centroids a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{studyArea=NULL} (the default) and  \code{mms=NULL}, then a square study area grid composed of \code{ncells} cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}. Ignored unless \code{mms=NULL}.}
 
-\item{buffer}{A scaler in same units as \code{trapCoords} indicating the buffer around the bounding box of \code{trapCoords} for defining the study area when \code{studyArea=NULL}.  Ignored unless \code{studyArea=NULL}.}
+\item{buffer}{A scaler in same units as \code{trapCoords} indicating the buffer around the bounding box of \code{trapCoords} for defining the study area when \code{studyArea=NULL}.  Ignored unless \code{studyArea=NULL} and \code{mms=NULL}.}
+
+\item{ncells}{The number of grid cells in the study area when \code{studyArea=NULL}. The square root of \code{ncells} must be a whole number. Default is \code{ncells=1024}. Ignored unless \code{studyArea=NULL} and \code{mms=NULL}.}
 
 \item{data.type}{Specifies the encounter history data type. All data types include non-detections (type 0 encounter), type 1 encounter (e.g., left-side), and type 2 encounters (e.g., right-side). When both type 1 and type 2 encounters occur for the same individual within a sampling occasion, these can either be "non-simultaneous" (type 3 encounter) or "simultaneous" (type 4 encounter). Three data types are currently permitted:
 
@@ -32,11 +34,11 @@ multimarkClosedSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
 
  \code{data.type="always"} indicates both type 1 and type 2 encounters are always observed, but some encounter histories may still include only type 1 or type 2 encounters. Observed encounter histories can consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4). Latent encounter histories consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4).}
 
-\item{covs}{A data frame of temporal covariates for detection probabilities (ignored unless \code{mms=NULL}). The number of rows in the data frame must equal the number of sampling occasions. Covariate names cannot be "time", "age", or "h"; these names are reserved for temporal, behavioral, and individual effects when specifying \code{mod.p} and \code{mod.phi}.}
+\item{covs}{A data frame of temporal covariates for detection probabilities (ignored unless \code{mms=NULL}). The number of rows in the data frame must equal the number of sampling occasions. Covariate names cannot be "time", "c", or "h"; these names are reserved.}
 
 \item{mms}{An optional object of class \code{multimarkSCRsetup-class}; if \code{NULL} it is created. See \code{\link{processdataSCR}}.}
 
-\item{mod.p}{Model formula for detection probability as a function of distance from activity centers. For example, \code{mod.p=~1} specifies no effects (i.e., intercept only) other than distance, \code{mod.p~time} specifies temporal effects, \code{mod.p~c} specifies behavioral reponse (i.e., trap "happy" or "shy"), and \code{mod.p~time+c} specifies additive temporal and behavioral effects.}
+\item{mod.p}{Model formula for detection probability as a function of distance from activity centers. For example, \code{mod.p=~1} specifies no effects (i.e., intercept only) other than distance, \code{mod.p~time} specifies temporal effects, \code{mod.p~c} specifies behavioral reponse (i.e., trap "happy" or "shy"), \code{mod.p~trap} specifies trap effects, and \code{mod.p~time+c} specifies additive temporal and behavioral effects.}
 
 \item{mod.delta}{Model formula for conditional probabilities of type 1 (delta_1) and type 2 (delta_2) encounters, given detection. Currently only \code{mod.delta=~1} (i.e., \eqn{\delta_1 = \delta_2}) and \code{mod.delta=~type} (i.e., \eqn{\delta_1 \ne \delta_2}) are implemented.}
 
@@ -99,7 +101,7 @@ A list containing the following:
 \item{mcmc}{Markov chain Monte Carlo object of class \code{\link[coda]{mcmc.list}}.}
 \item{mod.p}{Model formula for detection probability (as specified by \code{mod.p} above).}
 \item{mod.delta}{Model formula for conditional probability of type 1 or type 2 encounter, given detection (as specified by \code{mod.delta} above).}
-\item{mod.delta}{Model formula for detection function (as specified by \code{detection} above).}
+\item{mod.det}{Model formula for detection function (as specified by \code{detection} above).}
 \item{DM}{A list of design matrices for detection probability generated for model \code{mod.p}, where DM$p is the design matrix for initial capture probability (p) and DM$c is the design matrix for recapture probability (c).}
 \item{initial.values}{A list containing the parameter and latent variable values at iteration \code{iter} for each chain. Values are provided for "\code{pbeta}", "\code{N}", "\code{delta_1}", "\code{delta_2}", "\code{alpha}", "\code{sigma2_scr}", "\code{centers}", "\code{psi}", "\code{x}", and "\code{H}".}
 \item{mms}{An object of class \code{multimarkSCRsetup}}

@@ -21,11 +21,12 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
               int *iter, int *thin, int *adapt, int *bin, double *taccept, double *tuneadjust, int *numbasis,
               int *data_type, int *Hind, int *centerind, int *updatedelta, int *delta_type, double *dexp, double *dist2, int *ncell, double *Area, int *msk, int *printlog)
 {
-  
+
   GetRNGstate(); 
 
   /* Declare functions */
   double invcloglog();
+  //double getdist();
   double LIKESCR();
   double POSTERIORSCR();
   double FREQSUM();
@@ -103,18 +104,22 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
     knownxs[j]= knownx[j];
   }
   int xind;
+
+  //int NNvect[(cumnumnn[ncells-1]+numnn[ncells-1])];
+  
+  //double dist2[K*ncells], dist2powcells[K*ncells];
+  double dist2powcells[K*ncells];
+  for(i=0; i<ncells; i++){
+    for(k=0; k<K; k++){
+      //dist2[k*ncells+i] = getdist(studyArea[i],studyArea[ncells+i],trapCoords[k],trapCoords[K+k]);
+      dist2powcells[k*ncells+i] = pow(dist2[k*ncells+i],*dexp);
+    }
+  }
   
   double dist2pow[K*supN], diststar[K];
   for(k=0; k<K; k++){
     for(i=0; i<supN; i++){
       dist2pow[k*supN+i] = pow(dist2[k*ncells+centers[i]],*dexp);
-    }
-  }
-
-  double dist2powcells[K*ncells];
-  for(i=0; i<ncells; i++){
-    for(k=0; k<K; k++){
-      dist2powcells[k*ncells+i] = pow(dist2[k*ncells+i],*dexp);
     }
   }
   
@@ -520,6 +525,12 @@ double invcloglog(double x)
 {
   double invcloglog = fmin(1.-tol,fmax(tol,1.0-exp(-exp(x))));
   return(invcloglog);
+}
+
+double getdist(double x1, double y1, double x2, double y2)
+{
+  double dist = sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
+  return(dist);
 }
 
 double GETcellprob(int indhist, double *prob, double delta_1, double delta_2, double da3, double da4, int T, int K, int t, int k, int i)

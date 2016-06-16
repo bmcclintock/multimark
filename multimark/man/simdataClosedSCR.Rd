@@ -7,7 +7,7 @@
 simdataClosedSCR(N = 30, ntraps = 9, noccas = 5, pbeta = 0.25,
   tau = 0, sigma2_scr = 0.75, delta_1 = 0.4, delta_2 = 0.4,
   alpha = 0.5, data.type = "never", detection = "half-normal",
-  spatialInputs = NULL)
+  spatialInputs = NULL, ncells = 1024)
 }
 \arguments{
 \item{N}{True population size or abundance.}
@@ -40,11 +40,15 @@ simdataClosedSCR(N = 30, ntraps = 9, noccas = 5, pbeta = 0.25,
 
 \item{spatialInputs}{A list of length 3 composed of objects named \code{trapCoords}, \code{studyArea}, and \code{centers}:
 
- \code{trapCoords} is a matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating.  If \code{spatialInputs=NULL} (the default), then all traps are assumed to be operating on all occasions.
+ \code{trapCoords} is a matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating.
 
- \code{studyArea} is a 3-column matrix defining the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{spatialInputs=NULL} (the default), the study area is assumed to be composed of 3600 grid cells of available habitat (including a buffer of 3*\code{sqrt(sigma2_scr)} around the trap array).
+ \code{studyArea} is a 3-column matrix defining the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution.
 
- \code{centers} is a \code{N}-vector indicating the grid cell (i.e., the row of \code{studyArea}) that contains the true (latent) activity centers for each individual in the population. If \code{spatialInputs=NULL} (the default), the activity centers are randomly placed within grid cells of the study area.}
+ \code{centers} is a \code{N}-vector indicating the grid cell (i.e., the row of \code{studyArea}) that contains the true (latent) activity centers for each individual in the population.
+
+If \code{spatialInputs=NULL} (the default), then all traps are assumed to be operating on all occasions, the study area is assumed to be composed of \code{ncells} grid cells of available habitat (including a buffer of 3*\code{sqrt(sigma2_scr)} around the trap array), and the activity centers are randomly assigned to grid cells within the study area..}
+
+\item{ncells}{The number of grid cells in the study area when \code{studyArea=NULL}. The square root of \code{ncells} must be a whole number. Default is \code{ncells=1024}. Ignored unless \code{spatialInputs=NULL}.}
 }
 \value{
 A list containing the following:
