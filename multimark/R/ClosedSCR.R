@@ -20,18 +20,19 @@
 #'
 #'  \code{data.type="always"} indicates both type 1 and type 2 encounters are always observed, but some encounter histories may still include only type 1 or type 2 encounters. Observed encounter histories can consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4). Latent encounter histories consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4).
 #'
-#' @param detection Detection function for detection probability. Must be "\code{half-normal}" or "\code{exponential}".
+#' @param detection Model for detection probability as a function of distance from activity centers. Must be "\code{half-normal}" (of the form \eqn{\exp{(-d^2 / (2*\sigma^2))}}, where \eqn{d} is distance) or "\code{exponential}" (of the form \eqn{\exp{(-d / \sigma^2)}}).
 #' @param spatialInputs A list of length 3 composed of objects named \code{trapCoords}, \code{studyArea}, and \code{centers}:
 #' 
-#'  \code{trapCoords} is a matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating.  
+#'  \code{trapCoords} is a matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate (``x''), and the second column the y-coordinate (``y''). The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating.  
 #'
-#'  \code{studyArea} is a 3-column matrix defining the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution.
+#'  \code{studyArea} is a 3-column matrix defining the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns (``x'' and ``y'') indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column (``avail'') indicates whether the cell is available habitat (=1) or not (=0). All grid cells must have the same resolution.
 #'   
 #'  \code{centers} is a \code{N}-vector indicating the grid cell (i.e., the row of \code{studyArea}) that contains the true (latent) activity centers for each individual in the population. 
 #'
 #' If \code{spatialInputs=NULL} (the default), then all traps are assumed to be operating on all occasions, the study area is assumed to be composed of \code{ncells} grid cells of available habitat (including a buffer of 3*\code{sqrt(sigma2_scr)} around the trap array), and the activity centers are randomly assigned to grid cells within the study area..
 #' @param ncells The number of grid cells in the study area when \code{studyArea=NULL}. The square root of \code{ncells} must be a whole number. Default is \code{ncells=1024}. Ignored unless \code{spatialInputs=NULL}.
-#' @details Please be very careful when specifying your own \code{spatialInputs}; \code{\link{multimarkClosedSCR}} does little to verify that these make sense during model fitting.  
+#' @param plot Logical indicating whether to plot the simulated trap coordinates, study area, and activity centers using \code{\link{plotSpatialData}}.  Default is \code{plot=FALSE}
+#' @details Please be very careful when specifying your own \code{spatialInputs}; \code{\link{multimarkClosedSCR}} and \code{\link{markClosedSCR}} do little to verify that these make sense during model fitting.  
 #'
 #' @return A list containing the following:
 #' \item{Enc.Mat}{Matrix containing the observed encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc.}
@@ -43,7 +44,7 @@
 #'  \code{studyArea} is a 3-column matrix containing the coordinates for the centroids a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution.}
 #' \item{centers}{\code{N}-vector indicating the grid cell (i.e., the row of \code{spatialInputs$studyArea}) that contains the true (latent) activity centers for each individual in the population.}
 #' @author Brett T. McClintock 
-#' @seealso \code{\link{processdataSCR}}, \code{\link{multimarkClosedSCR}}
+#' @seealso \code{\link{processdataSCR}}, \code{\link{multimarkClosedSCR}}, \code{\link{markClosedSCR}}
 #' @references
 #' Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.
 #' 
@@ -53,7 +54,7 @@
 #' @examples
 #' #simulate data for data.type="sometimes" using defaults
 #' data<-simdataClosedSCR(data.type="sometimes")
-simdataClosedSCR <- function(N=30,ntraps=9,noccas=5,pbeta=0.25,tau=0,sigma2_scr=0.75,delta_1=0.4,delta_2=0.4,alpha=0.5,data.type="never",detection="half-normal",spatialInputs=NULL,ncells=1024){
+simdataClosedSCR <- function(N=30,ntraps=9,noccas=5,pbeta=0.25,tau=0,sigma2_scr=0.75,delta_1=0.4,delta_2=0.4,alpha=0.5,data.type="never",detection="half-normal",spatialInputs=NULL,ncells=1024,plot=FALSE){
   
   if(length(pbeta)==1){
     pbeta=rep(pbeta,noccas)
@@ -97,12 +98,13 @@ simdataClosedSCR <- function(N=30,ntraps=9,noccas=5,pbeta=0.25,tau=0,sigma2_scr=
   }
   checkSpatialInputs(spatialInputs$trapCoords,spatialInputs$studyArea,centers=spatialInputs$centers)
     
-  #colnames(spatialInputs$trapCoords)<-c("x","y",paste0("occ",1:noccas))
-  #rownames(spatialInputs$trapCoords)<-paste0("trap",1:ntraps)
-  #colnames(spatialInputs$studyArea)<-c("x","y","avail")
-  #rownames(spatialInputs$studyArea)<-paste0("cell",1:nrow(spatialInputs$studyArea))
+  colnames(spatialInputs$trapCoords)<-c("x","y",paste0("occ",1:noccas))
+  rownames(spatialInputs$trapCoords)<-paste0("trap",1:ntraps)
+  colnames(spatialInputs$studyArea)<-c("x","y","avail")
+  rownames(spatialInputs$studyArea)<-paste0("cell",1:nrow(spatialInputs$studyArea))
+  
   trapCoords<-spatialInputs$trapCoords
-  centers<-spatialInputs$studyArea[spatialInputs$centers,] 
+  centers<-spatialInputs$studyArea[spatialInputs$centers,1:2] 
   
   tEnc.Mat<-matrix(0,nrow=N,ncol=noccas*ntraps)        #"true" latent histories
   
@@ -120,8 +122,8 @@ simdataClosedSCR <- function(N=30,ntraps=9,noccas=5,pbeta=0.25,tau=0,sigma2_scr=
     for(k in 1:ntraps){
       ind<-0
       for(j in 1:noccas){
-        p<-invcloglog(pbeta[j]-1./(2*sigma2_scr)*dist2[i,k]^dexp)*trapCoords[k,2+j]
-        c<-invcloglog(pbeta[j]+tau-1./(2*sigma2_scr)*dist2[i,k]^dexp)*trapCoords[k,2+j]
+        p<-invcloglog(pbeta[j]-1./(dexp*sigma2_scr)*dist2[i,k]^dexp)*trapCoords[k,2+j]
+        c<-invcloglog(pbeta[j]+tau-1./(dexp*sigma2_scr)*dist2[i,k]^dexp)*trapCoords[k,2+j]
         tEnc.Mat[i,(k-1)*noccas+j] <- rbinom(1,1,((1-ind)*p+ind*c) )       #"true" latent histories
         if(tEnc.Mat[i,(k-1)*noccas+j]==1){
           ind<-1
@@ -135,14 +137,80 @@ simdataClosedSCR <- function(N=30,ntraps=9,noccas=5,pbeta=0.25,tau=0,sigma2_scr=
   tEnc.Mat[which(tEnc.Mat==4)] <- tEnc.Mat[which(tEnc.Mat==4)]-(runif(base::sum(tEnc.Mat==4))<(1-alpha))   # unobserved type 1 and type 2 encounters
   
   Enc.Mat <- get_Enc(tEnc.Mat,data.type)
+  if(plot) plotSpatialData(tEnc.Mat,trapCoords=spatialInputs$trapCoords,studyArea=spatialInputs$studyArea,centers=spatialInputs$centers,trapLines=TRUE)
   return(list(Enc.Mat=Enc.Mat,trueEnc.Mat=tEnc.Mat,spatialInputs=spatialInputs))
+}
+
+#' Plot spatial capture-mark-recapture data
+#'
+#' This function plots the study area grid, available habitat, and trap coordinates for spatial capture-recapture studies.  Activity centers and capture locations can also be plotted. 
+#'
+#'
+#' @param mms An optional object of class \code{multimarkSCRsetup-class}.
+#' @param trapCoords A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating. Ignored unless \code{mms=NULL}.  
+#' @param studyArea A 3-column matrix defining the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. Ignored unless \code{mms=NULL}.
+#' @param centers An optional vector indicating the grid cell (i.e., the row of \code{studyArea}) that contains the true (latent) activity centers for each individual. If \code{mms} is provided, then \code{centers} must be of length \code{nrow(Enc.Mat)} (i.e., a center must be provided for each observed individual). 
+#' @param trapLines Logical indicating whether to draw lines from activity centers to respective traps at which each individual was captured. Default is \code{trapLines=FALSE}. Ignored when \code{mms=NULL} or \code{centers=NULL}. 
+#' @author Brett T. McClintock 
+#' @examples
+#' #Plot the ``traditional'' tiger example data
+#' plotSpatialData(trapCoords=tiger$trapCoords,studyArea=tiger$studyArea)
+plotSpatialData<-function(mms=NULL,trapCoords,studyArea,centers=NULL,trapLines=FALSE){
+  if(!is.null(mms)){
+    if(class(mms)=="multimarkSCRsetup"){
+      studyArea<-mms@spatialInputs$studyArea
+      trapCoords<-mms@spatialInputs$trapCoords
+      Enc.Mat<-mms@Enc.Mat
+    } else {
+      Enc.Mat<-mms
+    }
+  }
+  checkSpatialInputs(trapCoords,studyArea,centers)
+
+  sAgrid<-SpatialGrid(points2grid(SpatialPoints(studyArea[,c("x","y")])))
+  e<-extent(sAgrid)
+  cells.dim<-attributes(sAgrid)$grid@cells.dim
+  r<-raster(e,nrow=cells.dim["y"],ncol=cells.dim["x"])
+  x<-rasterize(coordinates(sAgrid),r,studyArea[,3],fun=max)
+  breakpoints <- c(0,0.5,1)
+  colors <- c("white","green","green")
+  sp::plot(x,breaks=breakpoints,col=colors,legend=FALSE)
+  sp::plot(sAgrid,add=TRUE,col=gray(.75))
+
+  if(is.null(centers)){
+    tmp<-legend(x="top",legend=c("traps                          ","available habitat"),pch=c(17,15),col=c(1,"green"),box.col="white",bty="o",bg="white",cex=.8)
+  } else {
+    M<-ifelse(!is.null(mms),nrow(Enc.Mat),length(centers))
+    rainColors<-grDevices::rainbow(M)
+    ntraps<-nrow(trapCoords)
+    noccas<-ncol(trapCoords[,-c(1,2)])
+    if(length(centers)!=M) stop("'centers' must be of length ",M)
+    for(i in 1:M){
+      points(studyArea[centers[i],"x"],studyArea[centers[i],"y"],pch=20,col=rainColors[i])
+      if(!is.null(mms) & trapLines){
+        for(k in 1:ntraps){
+          for(j in 1:noccas){
+            if(Enc.Mat[i,(k-1)*noccas+j]>0){
+              wig1<-rnorm(1,0,0.01)
+              wig2<-rnorm(1,0,0.01)
+              points(studyArea[centers[i],"x"],studyArea[centers[i],"y"],pch=20,col=rainColors[i])
+              #points(trapCoords[k,"x"]+wig1,trapCoords[k,"y"]+wig2,2,pch=17)
+              lines(rbind(trapCoords[k,c("x","y")]+c(wig1,wig2),studyArea[centers[i],c("x","y")]),col=rainColors[i],lty=2,lwd=.5)
+            }
+          }
+        }
+      }
+    }
+    tmp<-legend(x="top",legend=c("traps                          ","available habitat", "activity centers"),pch=c(17,15,1),col=c(1,"green"),box.col="white",bty="o",bg="white",cex=.8)
+  }
+  points(trapCoords[,c("x","y")],pch=17)
 }
 
 pstarintegrandSCR<-function(noccas,beta,sigma2,DM,spatialInputs,dexp){
   msk2 <- which(c(t(spatialInputs$msk))==1)
   XB <- as.matrix(DM[msk2,]) %*% beta
   dist2 <- spatialInputs$dist2
-  detProb<-invcloglogtol(matrix(XB,nrow=dim(dist2)[1],ncol=length(msk2),byrow=TRUE)-1/(2*sigma2)*dist2[,rep(1:dim(dist2)[2],times=apply(spatialInputs$msk,1,sum))]^dexp)
+  detProb<-invcloglogtol(matrix(XB,nrow=dim(dist2)[1],ncol=length(msk2),byrow=TRUE)-1/(dexp*sigma2)*dist2[,rep(1:dim(dist2)[2],times=apply(spatialInputs$msk,1,sum))]^dexp)
   pdot<-1.-apply(1.-detProb,1,function(x) max(prod(x),tol))
   esa<-sum(pdot)*spatialInputs$a
   esa/spatialInputs$A
@@ -223,7 +291,7 @@ loglikeClosedSCR<-function(parms,DM,noccas,ntraps,C,All.hists,spatialInputs){
   c1 <- (centers[indid,1] - trapgridbig[,1])^2
   c2 <- (centers[indid,2] - trapgridbig[,2])^2
   
-  p <- invcloglogtol(rep(DM$p%*%pbeta,each=n)[msk2==1]*(1-prevcap) + rep(DM$c%*%pbeta,each=n)[msk2==1]*prevcap - 1./(2*parms$sigma2_scr)*sqrt(c1+c2)^dexp)
+  p <- invcloglogtol(rep(DM$p%*%pbeta,each=n)[msk2==1]*(1-prevcap) + rep(DM$c%*%pbeta,each=n)[msk2==1]*prevcap - 1./(dexp*parms$sigma2_scr)*sqrt(c1+c2)^dexp)
   #p2 <- invcloglogtol(matrix(rep(DM$p%*%pbeta,each=n)*(1-prevcap2)+rep(DM$c%*%pbeta,each=n)*prevcap2,nrow=n,ncol=noccas*ntraps)- 1./(2*parms$sigma2_scr)*(dist2mat)^dexp)
   
   loglike <- base::sum( log( (y==0) * (1. - p)
@@ -531,7 +599,7 @@ getSpatialInputs<-function(mms){
 #' @param ncells The number of grid cells in the study area when \code{studyArea=NULL}. The square root of \code{ncells} must be a whole number. Default is \code{ncells=1024}. Ignored unless \code{studyArea=NULL} and \code{mms=NULL}.
 #' @param covs A data frame of temporal covariates for detection probabilities. The number of rows in the data frame must equal the number of sampling occasions. Covariate names cannot be "time", "c", or "h"; these names are reserved.
 #' @param mod.p Model formula for detection probability. For example, \code{mod.p=~1} specifies no effects (i.e., intercept only), \code{mod.p~time} specifies temporal effects, \code{mod.p~c} specifies behavioral reponse (i.e., trap "happy" or "shy"), \code{mod.p~trap} specifies trap effects, and \code{mod.p~time+c} specifies additive temporal and behavioral effects.
-#' @param detection Detection function for detection probability. Must be "\code{half-normal}" or "\code{exponential}".
+#' @param detection Model for detection probability as a function of distance from activity centers . Must be "\code{half-normal}" (of the form \eqn{\exp{(-d^2 / (2*\sigma^2))}}, where \eqn{d} is distance) or "\code{exponential}" (of the form \eqn{\exp{(-d / \sigma^2)}}).
 #' @param parms A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are cloglog-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), cloglog-scale variance term for the detection function ("\code{sigma2_scr}"), and the probability that a randomly selected individual from the \code{M = nrow(Enc.Mat)} observed individuals belongs to the \eqn{n} unique individuals encountered at least once ("\code{psi}"). Individual activity centers ("\code{centers}"), and the log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.
 #' @param nchains The number of parallel MCMC chains for the model.
 #' @param iter The number of MCMC iterations.
@@ -620,7 +688,7 @@ markClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=102
 #' @param mms An optional object of class \code{multimarkSCRsetup-class}; if \code{NULL} it is created. See \code{\link{processdataSCR}}.
 #' @param mod.p Model formula for detection probability as a function of distance from activity centers. For example, \code{mod.p=~1} specifies no effects (i.e., intercept only) other than distance, \code{mod.p~time} specifies temporal effects, \code{mod.p~c} specifies behavioral reponse (i.e., trap "happy" or "shy"), \code{mod.p~trap} specifies trap effects, and \code{mod.p~time+c} specifies additive temporal and behavioral effects.
 #' @param mod.delta Model formula for conditional probabilities of type 1 (delta_1) and type 2 (delta_2) encounters, given detection. Currently only \code{mod.delta=~1} (i.e., \eqn{\delta_1 = \delta_2}) and \code{mod.delta=~type} (i.e., \eqn{\delta_1 \ne \delta_2}) are implemented.
-#' @param detection Detection function for detection probability. Must be "\code{half-normal}" or "\code{exponential}".
+#' @param detection Model for detection probability as a function of distance from activity centers . Must be "\code{half-normal}" (of the form \eqn{\exp{(-d^2 / (2*\sigma^2))}}, where \eqn{d} is distance) or "\code{exponential}" (of the form \eqn{\exp{(-d / \sigma^2)}}).
 #' @param parms A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are cloglog-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), conditional probability of type 1 or type 2 encounter, given detection ("\code{delta})", probability of simultaneous type 1 and type 2 detection, given both types encountered ("\code{alpha}"), cloglog-scale variance term for the detection function ("\code{sigma2_scr}"), and the probability that a randomly selected individual from the \code{M = nrow(Enc.Mat)} observed individuals belongs to the \eqn{n} unique individuals encountered at least once ("\code{psi}"). Individual activity centers ("\code{centers}"), encounter history indices ("\code{H}"), and the log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.
 #' @param nchains The number of parallel MCMC chains for the model.
 #' @param iter The number of MCMC iterations.
@@ -919,6 +987,39 @@ getdensityClosedSCR<-function(out){
   return(as.mcmc.list(D))
 }
 
+monitorparmsClosedSCR <- function(parms,parmlist,noccas,ntraps){ 
+  
+  if(!all(match(parms,parmlist,nomatch=0))) stop(paste0("monitored parameters ('monparms') can only include: ",paste(parmlist[-length(parmlist)],collapse=", "),", or ",parmlist[length(parmlist)]))
+  
+  commonparms <- parms
+  
+  if(any(parms=="D")){
+    namesD <- "D"
+  } else {
+    namesD <- NULL
+  }
+  getcloglogp <- derivedcloglogfun(parms,"p")
+  getcloglogc <- derivedcloglogfun(parms,"c")  
+  
+  if(any(parms=="p")){
+    namesp <- paste0("p[",1:noccas,",",rep(1:ntraps,each=noccas),"]")
+    commonparms <- commonparms[-which(parms=="p")]
+    parms <- parms[-which(parms=="p")]
+    parms <- c(parms,namesp)
+  } else {
+    namesp <- NULL
+  }
+  if(any(parms=="c")){
+    namesc <- paste0("c[",2:noccas,",",rep(1:ntraps,each=noccas-1),"]") 
+    commonparms <- commonparms[-which(parms=="c")]
+    parms <- parms[-which(parms=="c")]
+    parms <- c(parms,namesc)
+  } else {
+    namesc <- NULL
+  }
+  list(commonparms=commonparms,parms=parms,namesD=namesD,namesp=namesp,namesc=namesc,getcloglogp=getcloglogp,getcloglogc=getcloglogc)
+}
+
 getcurClosedSCRparmslist<-function(cur.parms,DM,M,noccas,data_type,alpha,centermap1,centermap2){
   
   parmslist=vector('list',1)
@@ -957,6 +1058,8 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
   } else {
     H<-NULL
   }
+  
+  A <- mms@spatialInputs$origCellRes * nrow(spatialInputs$studyArea)
   
   M.cur<- M1
   
@@ -1011,8 +1114,9 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
     if(iiter>mburnin & !iiter%%mthin){
       multimodel[iiter/mthin-floor(mburnin/mthin),"M"] <- M.cur
       multimodel[iiter/mthin-floor(mburnin/mthin),commonparms] <- cur.parms[commonparms]
-      #multimodel[iiter/mthin-floor(mburnin/mthin),monitorparms$namesp] <- monitorparms$getlogitp(DM$mod.p.h,DM$p,cur.parms.list[[1]]$pbeta,cur.parms.list[[1]]$sigma2_zp)
-      #multimodel[iiter/mthin-floor(mburnin/mthin),monitorparms$namesc] <- monitorparms$getlogitc(DM$mod.p.h,DM$c,cur.parms.list[[1]]$pbeta,cur.parms.list[[1]]$sigma2_zp)[-1]
+      multimodel[iiter/mthin-floor(mburnin/mthin),monitorparms$namesD] <- cur.parms["N"] / A
+      multimodel[iiter/mthin-floor(mburnin/mthin),monitorparms$namesp] <- monitorparms$getcloglogp(DM$p,cur.parms.list[[1]]$pbeta)
+      multimodel[iiter/mthin-floor(mburnin/mthin),monitorparms$namesc] <- monitorparms$getcloglogc(DM$c,cur.parms.list[[1]]$pbeta)[-seq(1,ntraps*noccas,noccas)]
     }
     
     if(!(iiter%%(miter/ min(miter,100)))) {
@@ -1031,9 +1135,9 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
 #' This function performs Bayesian multimodel inference for a set of 'multimark' spatial population abundance models using the reversible jump Markov chain Monte Carlo (RJMCMC) algorithm proposed by Barker & Link (2013).
 #'
 #'
-#' @param modlist A list of individual model output lists returned by \code{\link{multimarkClosedSCR}}. The models must have the same number of chains and MCMC iterations.
+#' @param modlist A list of individual model output lists returned by \code{\link{multimarkClosedSCR}} or \code{\link{markClosedSCR}}. The models must have the same number of chains and MCMC iterations.
 #' @param modprior Vector of length \code{length(modlist)} containing prior model probabilities. Default is \code{modprior = rep(1/length(modlist), length(modlist))}.
-#' @param monparms Parameters to monitor. Only parameters common to all models can be monitored (e.g., "\code{pbeta[(Intercept)]}", "\code{N}", "\code{psi}"), but derived capture ("\code{p}") and recapture ("\code{c}") probabilities can also be monitored. Default is \code{monparms = "N"}.
+#' @param monparms Parameters to monitor. Only parameters common to all models can be monitored (e.g., "\code{pbeta[(Intercept)]}", "\code{N}", "\code{sigma2_scr}"), but derived density ("\code{D}") as well as capture ("\code{p}") and recapture ("\code{c}") probabilities (at distance zero from activity centers) can also be monitored. Default is \code{monparms = "N"}.
 #' @param miter The number of RJMCMC iterations per chain. If \code{NULL}, then the number of MCMC iterations for each individual model chain is used.
 #' @param mburnin Number of burn-in iterations (\code{0 <= mburnin < miter}).
 #' @param mthin Thinning interval for monitored parameters.
@@ -1042,7 +1146,7 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
 #' @param sigppropshape Scaler specifying the shape parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}". Only applies if at least one (but not all) model(s) includes spatial effects in detection function. Default is \code{sigppropshape=6}. See Barker & Link (2013) for more details.
 #' @param sigppropscale Scaler specifying the scale parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}". Only applies if at least one (but not all) model(s) includes spatial effects in detection function. Default is \code{sigppropscale=4}. See Barker & Link (2013) for more details.
 #' @param printlog Logical indicating whether to print the progress of chains and any errors to a log file in the working directory. Ignored when \code{nchains=1}. Updates are printed to log file as 1\% increments of \code{iter} of each chain are completed. With >1 chains, setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.
-#' @details Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosedSCR}} models to be included in \code{modlist}.
+#' @details Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosedSCR}} or \code{\link{markClosedSCR}} models to be included in \code{modlist}. Note also that it does not make much sense to try and interpret model-averaged \code{sigma2_scr} unless the detection function (``half-normal'' or ``exponential'') is the same for all of the models in \code{modlist}.
 #' @return A list containing the following:
 #' \item{rjmcmc}{Reversible jump Markov chain Monte Carlo object of class \code{\link[coda]{mcmc.list}}. Includes RJMCMC output for monitored parameters and the current model at each iteration ("\code{M}").}
 #' \item{pos.prob}{A list of calculated posterior model probabilities for each chain, including the overall posterior model probabilities across all chains.}
@@ -1123,7 +1227,7 @@ multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modl
   
   missing <- missingparmnamesClosed(params,M,noccas,NULL) 
   
-  monitorparms <- monitorparmsClosed(monparms,missing$commonparms,noccas)
+  monitorparms <- monitorparmsClosedSCR(monparms,c(missing$commonparms,"p","c","D"),noccas,ntraps)
   
   DMlist <- lapply(modlist,function(x) x$DM)
   deltalist <- lapply(modlist,function(x) x$mod.delta)

@@ -16,7 +16,8 @@ export(
   getdensityClosedSCR,
   multimodelClosed,
   multimodelClosedSCR,
-  multimodelCJS
+  multimodelCJS,
+  plotSpatialData
 )
 
 import(parallel,Matrix,coda)
@@ -31,6 +32,8 @@ importFrom("methods", "setClass", "new", "validObject")
 importFrom("stats", "dbeta", "dbinom", "dcauchy", "dnorm", "dunif", "end", "formula", "integrate", "model.matrix", "pnorm", "rbeta", "rbinom", "rgamma", "rmultinom", "rnbinom", "rnorm", "runif", "start", "terms")
 importFrom("utils", "flush.console", "setTxtProgressBar", "txtProgressBar")
 importFrom("prodlim","row.match")
-importFrom("sp","points2grid","SpatialPoints","bbox","gridded","SpatialGrid","over")
+importFrom("sp","points2grid","SpatialPoints","bbox","gridded","SpatialGrid","over","coordinates")
+importFrom("raster","extent","raster","rasterize")
+importFrom("grDevices","rainbow")
 
 useDynLib(multimark,ClosedC,ClosedSCRC,ProbitCJSC)

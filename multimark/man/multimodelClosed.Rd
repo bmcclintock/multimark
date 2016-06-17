@@ -10,11 +10,11 @@ multimodelClosed(modlist, modprior = rep(1/length(modlist), length(modlist)),
   sigppropscale = 4, printlog = FALSE)
 }
 \arguments{
-\item{modlist}{A list of individual model output lists returned by \code{\link{multimarkClosed}}. The models must have the same number of chains and MCMC iterations.}
+\item{modlist}{A list of individual model output lists returned by \code{\link{multimarkClosed}} or \code{\link{markClosed}}. The models must have the same number of chains and MCMC iterations.}
 
 \item{modprior}{Vector of length \code{length(modlist)} containing prior model probabilities. Default is \code{modprior = rep(1/length(modlist), length(modlist))}.}
 
-\item{monparms}{Parameters to monitor. Only parameters common to all models can be monitored (e.g., "\code{pbeta[(Intercept)]}", "\code{N}", "\code{psi}"), but derived capture ("\code{p}") and recapture ("\code{c}") probabilities can also be monitored. Default is \code{monparms = "N"}.}
+\item{monparms}{Parameters to monitor. Only parameters common to all models can be monitored (e.g., "\code{pbeta[(Intercept)]}", "\code{N}"), but derived capture ("\code{p}") and recapture ("\code{c}") probabilities can also be monitored. Default is \code{monparms = "N"}.}
 
 \item{miter}{The number of RJMCMC iterations per chain. If \code{NULL}, then the number of MCMC iterations for each individual model chain is used.}
 
@@ -43,7 +43,7 @@ A list containing the following:
 This function performs Bayesian multimodel inference for a set of 'multimark' closed population abundance models using the reversible jump Markov chain Monte Carlo (RJMCMC) algorithm proposed by Barker & Link (2013).
 }
 \details{
-Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosed}} models to be included in \code{modlist}.
+Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosed}} or \code{\link{markClosed}} models to be included in \code{modlist}.
 }
 \examples{
 \dontshow{
@@ -81,6 +81,6 @@ Brett T. McClintock
 Barker, R. J. and Link. W. A. 2013. Bayesian multimodel inference by RJMCMC: a Gibbs sampling approach. The American Statistician 67: 150-156.
 }
 \seealso{
-\code{\link{multimarkClosed}}, \code{\link{processdata}}
+\code{\link{multimarkClosed}}, \code{\link{markClosed}}, \code{\link{processdata}}
 }
 

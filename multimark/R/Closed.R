@@ -981,9 +981,9 @@ rjmcmcClosed <- function(ichain,mms,M,noccas,data_type,alpha,C,All.hists,modlist
 #' This function performs Bayesian multimodel inference for a set of 'multimark' closed population abundance models using the reversible jump Markov chain Monte Carlo (RJMCMC) algorithm proposed by Barker & Link (2013).
 #'
 #'
-#' @param modlist A list of individual model output lists returned by \code{\link{multimarkClosed}}. The models must have the same number of chains and MCMC iterations.
+#' @param modlist A list of individual model output lists returned by \code{\link{multimarkClosed}} or \code{\link{markClosed}}. The models must have the same number of chains and MCMC iterations.
 #' @param modprior Vector of length \code{length(modlist)} containing prior model probabilities. Default is \code{modprior = rep(1/length(modlist), length(modlist))}.
-#' @param monparms Parameters to monitor. Only parameters common to all models can be monitored (e.g., "\code{pbeta[(Intercept)]}", "\code{N}", "\code{psi}"), but derived capture ("\code{p}") and recapture ("\code{c}") probabilities can also be monitored. Default is \code{monparms = "N"}.
+#' @param monparms Parameters to monitor. Only parameters common to all models can be monitored (e.g., "\code{pbeta[(Intercept)]}", "\code{N}"), but derived capture ("\code{p}") and recapture ("\code{c}") probabilities can also be monitored. Default is \code{monparms = "N"}.
 #' @param miter The number of RJMCMC iterations per chain. If \code{NULL}, then the number of MCMC iterations for each individual model chain is used.
 #' @param mburnin Number of burn-in iterations (\code{0 <= mburnin < miter}).
 #' @param mthin Thinning interval for monitored parameters.
@@ -993,12 +993,12 @@ rjmcmcClosed <- function(ichain,mms,M,noccas,data_type,alpha,C,All.hists,modlist
 #' @param sigppropshape Scaler specifying the shape parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_zp=sqrt(sigma2_zp)}". Only applies if at least one (but not all) model(s) include individual hetergeneity in detection probability. Default is \code{sigppropshape=6}. See Barker & Link (2013) for more details.
 #' @param sigppropscale Scaler specifying the scale parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_zp=sqrt(sigma2_zp)}". Only applies if at least one (but not all) model(s) include individual hetergeneity in detection probability. Default is \code{sigppropscale=4}. See Barker & Link (2013) for more details.
 #' @param printlog Logical indicating whether to print the progress of chains and any errors to a log file in the working directory. Ignored when \code{nchains=1}. Updates are printed to log file as 1\% increments of \code{iter} of each chain are completed. With >1 chains, setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.
-#' @details Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosed}} models to be included in \code{modlist}.
+#' @details Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosed}} or \code{\link{markClosed}} models to be included in \code{modlist}.
 #' @return A list containing the following:
 #' \item{rjmcmc}{Reversible jump Markov chain Monte Carlo object of class \code{\link[coda]{mcmc.list}}. Includes RJMCMC output for monitored parameters and the current model at each iteration ("\code{M}").}
 #' \item{pos.prob}{A list of calculated posterior model probabilities for each chain, including the overall posterior model probabilities across all chains.}
 #' @author Brett T. McClintock
-#' @seealso \code{\link{multimarkClosed}}, \code{\link{processdata}}
+#' @seealso \code{\link{multimarkClosed}}, \code{\link{markClosed}}, \code{\link{processdata}}
 #' @references
 #' Barker, R. J. and Link. W. A. 2013. Bayesian multimodel inference by RJMCMC: a Gibbs sampling approach. The American Statistician 67: 150-156.
 #' @examples

@@ -7,7 +7,7 @@
 simdataClosedSCR(N = 30, ntraps = 9, noccas = 5, pbeta = 0.25,
   tau = 0, sigma2_scr = 0.75, delta_1 = 0.4, delta_2 = 0.4,
   alpha = 0.5, data.type = "never", detection = "half-normal",
-  spatialInputs = NULL, ncells = 1024)
+  spatialInputs = NULL, ncells = 1024, plot = FALSE)
 }
 \arguments{
 \item{N}{True population size or abundance.}
@@ -36,19 +36,21 @@ simdataClosedSCR(N = 30, ntraps = 9, noccas = 5, pbeta = 0.25,
 
  \code{data.type="always"} indicates both type 1 and type 2 encounters are always observed, but some encounter histories may still include only type 1 or type 2 encounters. Observed encounter histories can consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4). Latent encounter histories consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4).}
 
-\item{detection}{Detection function for detection probability. Must be "\code{half-normal}" or "\code{exponential}".}
+\item{detection}{Model for detection probability as a function of distance from activity centers. Must be "\code{half-normal}" (of the form \eqn{\exp{(-d^2 / (2*\sigma^2))}}, where \eqn{d} is distance) or "\code{exponential}" (of the form \eqn{\exp{(-d / \sigma^2)}}).}
 
 \item{spatialInputs}{A list of length 3 composed of objects named \code{trapCoords}, \code{studyArea}, and \code{centers}:
 
- \code{trapCoords} is a matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating.
+ \code{trapCoords} is a matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate (``x''), and the second column the y-coordinate (``y''). The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating.
 
- \code{studyArea} is a 3-column matrix defining the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution.
+ \code{studyArea} is a 3-column matrix defining the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns (``x'' and ``y'') indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column (``avail'') indicates whether the cell is available habitat (=1) or not (=0). All grid cells must have the same resolution.
 
  \code{centers} is a \code{N}-vector indicating the grid cell (i.e., the row of \code{studyArea}) that contains the true (latent) activity centers for each individual in the population.
 
 If \code{spatialInputs=NULL} (the default), then all traps are assumed to be operating on all occasions, the study area is assumed to be composed of \code{ncells} grid cells of available habitat (including a buffer of 3*\code{sqrt(sigma2_scr)} around the trap array), and the activity centers are randomly assigned to grid cells within the study area..}
 
 \item{ncells}{The number of grid cells in the study area when \code{studyArea=NULL}. The square root of \code{ncells} must be a whole number. Default is \code{ncells=1024}. Ignored unless \code{spatialInputs=NULL}.}
+
+\item{plot}{Logical indicating whether to plot the simulated trap coordinates, study area, and activity centers using \code{\link{plotSpatialData}}.  Default is \code{plot=FALSE}}
 }
 \value{
 A list containing the following:
@@ -65,7 +67,7 @@ A list containing the following:
 This function generates encounter histories from spatially-explicit capture-mark-recapture data consisting of multiple non-invasive marks.
 }
 \details{
-Please be very careful when specifying your own \code{spatialInputs}; \code{\link{multimarkClosedSCR}} does little to verify that these make sense during model fitting.
+Please be very careful when specifying your own \code{spatialInputs}; \code{\link{multimarkClosedSCR}} and \code{\link{markClosedSCR}} do little to verify that these make sense during model fitting.
 }
 \examples{
 #simulate data for data.type="sometimes" using defaults
@@ -82,6 +84,6 @@ McClintock, B. T., Conn, P. B., Alonso, R. S., and Crooks, K. R. 2013. Integrate
 Royle, J.A., Karanth, K.U., Gopalaswamy, A.M. and Kumar, N.S. 2009. Bayesian inference in camera trapping studies for a class of spatial capture-recapture models.  \emph{Ecology} 90: 3233-3244.
 }
 \seealso{
-\code{\link{processdataSCR}}, \code{\link{multimarkClosedSCR}}
+\code{\link{processdataSCR}}, \code{\link{multimarkClosedSCR}}, \code{\link{markClosedSCR}}
 }
 

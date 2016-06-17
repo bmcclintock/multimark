@@ -63,7 +63,7 @@ setClass("multimarksetup", representation=list(Enc.Mat="matrix",data.type="chara
 #' @slot L Object of class \code{"integer"}. Sampling occasion of last capture for each encounter history.
 #' @slot naivex Object of class \code{"integer"}. ``Naive'' latent history frequencies assuming a one-to-one mapping with \code{Enc.Mat}.
 #' @slot covs Object of class \code{"data.frame"}. Temporal covariates for detection probability (the number of rows in the data frame must equal the number of sampling occasions).
-#' @slot spatialInputs Object of class \code{"list"}. List is of length 3 containing \code{trapCoords} and \code{studyArea} after re-scaling coordinates based on \code{maxscale}, as well as the original (no re-scaled) grid cell resolution (\code{origCellRes}).
+#' @slot spatialInputs Object of class \code{"list"}. List is of length 4 containing \code{trapCoords} and \code{studyArea} after re-scaling coordinates based on \code{maxscale}, as well as the original (not re-scaled) grid cell resolution (\code{origCellRes}) and re-scaling range (\code{Srange}).
 #' 
 #' @section Methods:
 #' No methods defined with class "multimarkSCRsetup".
@@ -73,7 +73,7 @@ setClass("multimarksetup", representation=list(Enc.Mat="matrix",data.type="chara
 #' showClass("multimarkSCRsetup")
 #' @keywords classes
 setClass("multimarkSCRsetup", representation=list(Enc.Mat="matrix",data.type="character",vAll.hists="integer",Aprime="sparseMatrix",indBasis="integer",ncolbasis="integer",knownx="integer",C="integer",L="integer",naivex="integer",covs="data.frame",spatialInputs="list"),
-         prototype=list(Enc.Mat=matrix(0,0,0),data.type=character(),vAll.hists=integer(),Aprime=Matrix(0,0,0),indBasis=integer(),ncolbasis=integer(),knownx=integer(),C=integer(),L=integer(),naivex=integer(),covs=data.frame(),spatialInputs=list(trapCoords=matrix(0,0,0),studyArea=matrix(0,0,0),origCellRes=numeric())),
+         prototype=list(Enc.Mat=matrix(0,0,0),data.type=character(),vAll.hists=integer(),Aprime=Matrix(0,0,0),indBasis=integer(),ncolbasis=integer(),knownx=integer(),C=integer(),L=integer(),naivex=integer(),covs=data.frame(),spatialInputs=list(trapCoords=matrix(0,0,0),studyArea=matrix(0,0,0),origCellRes=numeric(),Srange=numeric())),
          package="multimark")
 
 
@@ -1048,6 +1048,7 @@ processdataSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=NU
   spatialInputs$trapCoords <- trapCoords
   spatialInputs$trapCoords[,c("x","y")] <- scale(trapCoords[,c(1,2)], center=minCoord, scale=rep(Srange,2))
   spatialInputs$origCellRes <- sp::points2grid(sp::SpatialPoints(studyArea[,1:2]))@cellsize[1]
+  spatialInputs$Srange <- Srange
   #availSpatialInputs$a <- sp::points2grid(sp::SpatialPoints(availSpatialInputs$studyArea[,1:2]))@cellsize[1]
   #availSpatialInputs$A <- availSpatialInputs$a * sum(studyArea[,"avail"])
   #availSpatialInputs$dist2 <- getdist(availSpatialInputs$studyArea,availSpatialInputs$trapCoords)
@@ -1185,6 +1186,19 @@ derivedlogitfun<-function(parms,var){
     }
   }
   return(getlogit)
+}
+
+derivedcloglogfun<-function(parms,var){
+  if(any(parms==var)){
+    getcloglog <- function(DM,beta){ 
+      invcloglog(DM %*% beta)
+    }    
+  } else {
+    getcloglog <- function(DM,beta){
+      NULL
+    }
+  }
+  return(getcloglog)
 }
 
 extractmissingparms<-function(missingparms,parm){

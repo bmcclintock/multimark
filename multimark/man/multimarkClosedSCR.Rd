@@ -42,7 +42,7 @@ multimarkClosedSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
 
 \item{mod.delta}{Model formula for conditional probabilities of type 1 (delta_1) and type 2 (delta_2) encounters, given detection. Currently only \code{mod.delta=~1} (i.e., \eqn{\delta_1 = \delta_2}) and \code{mod.delta=~type} (i.e., \eqn{\delta_1 \ne \delta_2}) are implemented.}
 
-\item{detection}{Detection function for detection probability. Must be "\code{half-normal}" or "\code{exponential}".}
+\item{detection}{Model for detection probability as a function of distance from activity centers . Must be "\code{half-normal}" (of the form \eqn{\exp{(-d^2 / (2*\sigma^2))}}, where \eqn{d} is distance) or "\code{exponential}" (of the form \eqn{\exp{(-d / \sigma^2)}}).}
 
 \item{parms}{A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are cloglog-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), conditional probability of type 1 or type 2 encounter, given detection ("\code{delta})", probability of simultaneous type 1 and type 2 detection, given both types encountered ("\code{alpha}"), cloglog-scale variance term for the detection function ("\code{sigma2_scr}"), and the probability that a randomly selected individual from the \code{M = nrow(Enc.Mat)} observed individuals belongs to the \eqn{n} unique individuals encountered at least once ("\code{psi}"). Individual activity centers ("\code{centers}"), encounter history indices ("\code{H}"), and the log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.}
 

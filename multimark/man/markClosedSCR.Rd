@@ -28,7 +28,7 @@ markClosedSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
 
 \item{mod.p}{Model formula for detection probability. For example, \code{mod.p=~1} specifies no effects (i.e., intercept only), \code{mod.p~time} specifies temporal effects, \code{mod.p~c} specifies behavioral reponse (i.e., trap "happy" or "shy"), \code{mod.p~trap} specifies trap effects, and \code{mod.p~time+c} specifies additive temporal and behavioral effects.}
 
-\item{detection}{Detection function for detection probability. Must be "\code{half-normal}" or "\code{exponential}".}
+\item{detection}{Model for detection probability as a function of distance from activity centers . Must be "\code{half-normal}" (of the form \eqn{\exp{(-d^2 / (2*\sigma^2))}}, where \eqn{d} is distance) or "\code{exponential}" (of the form \eqn{\exp{(-d / \sigma^2)}}).}
 
 \item{parms}{A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are cloglog-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), cloglog-scale variance term for the detection function ("\code{sigma2_scr}"), and the probability that a randomly selected individual from the \code{M = nrow(Enc.Mat)} observed individuals belongs to the \eqn{n} unique individuals encountered at least once ("\code{psi}"). Individual activity centers ("\code{centers}"), and the log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.}
 

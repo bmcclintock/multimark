@@ -10,11 +10,11 @@ multimodelClosedSCR(modlist, modprior = rep(1/length(modlist),
   sigppropscale = 4, printlog = FALSE)
 }
 \arguments{
-\item{modlist}{A list of individual model output lists returned by \code{\link{multimarkClosedSCR}}. The models must have the same number of chains and MCMC iterations.}
+\item{modlist}{A list of individual model output lists returned by \code{\link{multimarkClosedSCR}} or \code{\link{markClosedSCR}}. The models must have the same number of chains and MCMC iterations.}
 
 \item{modprior}{Vector of length \code{length(modlist)} containing prior model probabilities. Default is \code{modprior = rep(1/length(modlist), length(modlist))}.}
 
-\item{monparms}{Parameters to monitor. Only parameters common to all models can be monitored (e.g., "\code{pbeta[(Intercept)]}", "\code{N}", "\code{psi}"), but derived capture ("\code{p}") and recapture ("\code{c}") probabilities can also be monitored. Default is \code{monparms = "N"}.}
+\item{monparms}{Parameters to monitor. Only parameters common to all models can be monitored (e.g., "\code{pbeta[(Intercept)]}", "\code{N}", "\code{sigma2_scr}"), but derived density ("\code{D}") as well as capture ("\code{p}") and recapture ("\code{c}") probabilities (at distance zero from activity centers) can also be monitored. Default is \code{monparms = "N"}.}
 
 \item{miter}{The number of RJMCMC iterations per chain. If \code{NULL}, then the number of MCMC iterations for each individual model chain is used.}
 
@@ -41,7 +41,7 @@ A list containing the following:
 This function performs Bayesian multimodel inference for a set of 'multimark' spatial population abundance models using the reversible jump Markov chain Monte Carlo (RJMCMC) algorithm proposed by Barker & Link (2013).
 }
 \details{
-Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosedSCR}} models to be included in \code{modlist}.
+Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosedSCR}} or \code{\link{markClosedSCR}} models to be included in \code{modlist}. Note also that it does not make much sense to try and interpret model-averaged \code{sigma2_scr} unless the detection function (``half-normal'' or ``exponential'') is the same for all of the models in \code{modlist}.
 }
 \examples{
 \dontshow{
