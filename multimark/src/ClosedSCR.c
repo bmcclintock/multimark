@@ -9,21 +9,21 @@
 #define tol 1.e-6
 
 #ifndef min
-  #define min( a, b ) ( ((a) < (b)) ? (a) : (b) )
+#define min( a, b ) ( ((a) < (b)) ? (a) : (b) )
 #endif
 
 // Define function ClosedC to draw samples from the posterior distribution
 
 void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double *sigma2_scr, double *delta_1, double *delta_2, double *alpha, int *x, double *N, double *psi, int *H, int *center,
-              int *ntraps, int *noccas, int *M, double *a0delta, double *a0alpha, double *b0alpha, double *A, double *a0psi, double *b0psi,
-              double *Propsd, int *NNvect, int *numnn, int *cumnumnn, double *accept, double *posterior,
-              int *nHists, int *Allhists, int *C, int *indBasis, int *ncolBasis, int *knownx, double *DMp, double *DMc, int *pdim,
-              int *iter, int *thin, int *adapt, int *bin, double *taccept, double *tuneadjust, int *numbasis,
-              int *data_type, int *Hind, int *centerind, int *updatedelta, int *delta_type, double *dexp, double *dist2, int *ncell, double *Area, int *msk, int *printlog)
+                int *ntraps, int *noccas, int *M, double *a0delta, double *a0alpha, double *b0alpha, double *A, double *a0psi, double *b0psi,
+                double *Propsd, int *NNvect, int *numnn, int *cumnumnn, double *accept, double *posterior,
+                int *nHists, int *Allhists, int *C, int *indBasis, int *ncolBasis, int *knownx, double *DMp, double *DMc, int *pdim,
+                int *iter, int *thin, int *adapt, int *bin, double *taccept, double *tuneadjust, int *numbasis,
+                int *data_type, int *Hind, int *centerind, int *updatedelta, int *delta_type, double *dexp, double *dist2, double *dist2powcells, int *ncell, double *Area, int *msk, int *printlog)
 {
-
+  
   GetRNGstate(); 
-
+  
   /* Declare functions */
   double invcloglog();
   //double getdist();
@@ -37,14 +37,14 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
   void GETPC();
   double GETPSTARSCR();
   double GETcellprob();
-
+  
   int T = *noccas;
   int K = *ntraps;
   int supN = *M; 
   int Mk = supN*T*K;      
   int datatype = *data_type;
   int deltatype = *delta_type;
-    
+  
   int niter, th, ada, n;
   int J = *nHists;
   int firstcap;
@@ -66,7 +66,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
   double sha, sca;
   int base, nbasis;
   double sqrttol = sqrt(tol);
-
+  
   int t, i, j, k, l, g=0;
   double op, np;
   int dimrem, dimadd;
@@ -75,7 +75,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
     betas[k]=beta[k];
     betastar[k]=betas[k];
   }
-
+  
   sigma2_scrs = sigma2_scr[0];
   sigma2_scrstar = sigma2_scrs;
   double sigma_scrs = sqrt(sigma2_scrs);
@@ -84,7 +84,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
   delta_2s= (*updatedelta ? delta_2[0] : 0.);
   alphas= (*updatedelta ? alpha[0] : 0.);
   psis= (*updatedelta ? psi[0] : 1.);
-
+  
   double ns=0.;
   for(i=0; i< supN; i++)  {
     Hs[i] = H[i];
@@ -104,17 +104,17 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
     knownxs[j]= knownx[j];
   }
   int xind;
-
+  
   //int NNvect[(cumnumnn[ncells-1]+numnn[ncells-1])];
   
   //double dist2[K*ncells], dist2powcells[K*ncells];
-  double dist2powcells[K*ncells];
-  for(i=0; i<ncells; i++){
-    for(k=0; k<K; k++){
-      //dist2[k*ncells+i] = getdist(studyArea[i],studyArea[ncells+i],trapCoords[k],trapCoords[K+k]);
-      dist2powcells[k*ncells+i] = pow(dist2[k*ncells+i],*dexp);
-    }
-  }
+  //double dist2powcells[K*ncells];
+  //for(i=0; i<ncells; i++){
+  //  for(k=0; k<K; k++){
+  //    //dist2[k*ncells+i] = getdist(studyArea[i],studyArea[ncells+i],trapCoords[k],trapCoords[K+k]);
+  //    dist2powcells[k*ncells+i] = pow(dist2[k*ncells+i],*dexp);
+  //  }
+  //}
   
   double dist2pow[K*supN], diststar[K];
   for(k=0; k<K; k++){
@@ -123,11 +123,13 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
     }
   }
   
-  double cloglogp[T*K], cloglogpstar[T*K], cloglogc[T*K], cloglogcstar[T*K];
-  double propp[Mk], propc[Mk];
+  double cloglogp[T*K], cloglogc[T*K];
+  double propp[T*K], propc[T*K];
+  //double cloglogp[T*K], cloglogpstar[T*K], cloglogc[T*K], cloglogcstar[T*K];
+  //double propp[Mk], propc[Mk];
   
   GETPC(p,c,cloglogp,cloglogc,betas,sigma2_scrs,DMp,DMc,dist2pow,dimp,supN,T,K,msk);
-
+  
   double pstar=GETPSTARSCR(dist2powcells, cloglogp, sigma2_scrs, T, K, ncells, msk);
   double proppstar=pstar;
   
@@ -138,7 +140,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
   deltavect[0]=delta_1s;
   deltavect[1]=delta_2s;
   deltavect[2]=1.-delta_1s-delta_2s;
-
+  
   /* Vector to store numerator of acceptance rate for each parameter  */   
   double arate[(dimp+supN+1)];       
   for (j=0; j<(dimp+supN+1); j++) {
@@ -172,11 +174,11 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
   
   /* Begin Markov chain */  
   for (g=1; g < (niter+1); g++)  {
-  
+    
     /* Update betas  */
     for(l=0; l<dimp; l++)  {
       betastar[l]=betas[l]+rnorm(0.0,Propsd[l]); 
-      GETPC(propp,propc,cloglogpstar,cloglogcstar,betastar,sigma2_scrs,DMp,DMc,dist2pow,dimp,supN,T,K,msk);
+      GETPC(p,c,cloglogp,cloglogc,betastar,sigma2_scrs,DMp,DMc,dist2pow,dimp,supN,T,K,msk);
       //for(k=0; k<K; k++){
       //  for(t=0; t<T; t++){
       //    cloglogpstar[k*T+t]=0.;
@@ -191,8 +193,8 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
       //    }
       //  }
       //}      
-      proppstar=GETPSTARSCR(dist2powcells, cloglogpstar, sigma2_scrs, T, K, ncells, msk);
-      np=LIKESCR(propp,propc,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,K,supN,C,Ns,proppstar);
+      proppstar=GETPSTARSCR(dist2powcells, cloglogp, sigma2_scrs, T, K, ncells, msk);
+      np=LIKESCR(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,K,supN,C,Ns,proppstar);
       //Rprintf("g %d l %d betastar %f beta %f np %f ll %f nprior %f oprior %f R %f \n",g,l,betastar[l],betas[l],np,ll,dnorm(betastar[l],mu0[l],sqrt(sigma2_mu0[l]),1),dnorm(betas[l],mu0[l],sqrt(sigma2_mu0[l]),1),exp(np+dnorm(betastar[l],mu0[l],sqrt(sigma2_mu0[l]),1)-ll-dnorm(betas[l],mu0[l],sqrt(sigma2_mu0[l]),1)));
       if(runif(0.0,1.0)<exp(np+dnorm(betastar[l],mu0[l],sqrt(sigma2_mu0[l]),1)-ll-dnorm(betas[l],mu0[l],sqrt(sigma2_mu0[l]),1))){
         betas[l]=betastar[l];
@@ -227,8 +229,8 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
       np=dgamma(sigma_scrs,sha,sca,1) - pgamma(sqrttol,sha,sca,0,1);
       op=log(2.0*dcauchy(sigma_scrs,0.0,*A,0));
       np=log(2.0*dcauchy(sigma_scrstar,0.0,*A,0));
-
-      GETPC(propp,propc,cloglogp,cloglogc,betas,sigma2_scrstar,DMp,DMc,dist2pow,dimp,supN,T,K,msk);      
+      
+      GETPC(p,c,cloglogp,cloglogc,betas,sigma2_scrstar,DMp,DMc,dist2pow,dimp,supN,T,K,msk);      
       proppstar=GETPSTARSCR(dist2powcells, cloglogp, sigma2_scrstar, T, K, ncells, msk);
       
       op+=dbinom((double) ns,(double) Ns,pstar,1) - ns * log(pstar);
@@ -242,9 +244,9 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
       //    }
       //  }
       //}      
-
+      
       op+=ll;
-      nl=LIKESCR(propp,propc,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,K,supN,C,Ns,proppstar);      
+      nl=LIKESCR(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,K,supN,C,Ns,proppstar);      
       np+=nl;
       //Rprintf("g %d sigma2_scrstar %f sigma2_scr %f nl %f ll %f np %f op %f R %f \n",g,sigma2_scrstar,sigma2_scrs,nl,ll,np,op,exp(np-op));
       
@@ -264,7 +266,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
         accept[dimp]+=1;
       }
     }
- 
+    
     GETPC(p,c,cloglogp,cloglogc,betas,sigma2_scrs,DMp,DMc,dist2pow,dimp,supN,T,K,msk);   
     
     //Update centers
@@ -281,20 +283,20 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
           diststar[k] = pow(dist2[k*ncells+centerstar],*dexp);
           temp = 1.0/(2.0*sigma2_scrs) * diststar[k];
           for(t=0; t<firstcap; t++) {
-            propp[i*T*K+k*T+t] = invcloglog(cloglogp[k*T+t]-temp) * msk[k*T+t];
-            propc[i*T*K+k*T+t] = invcloglog(cloglogc[k*T+t]-temp) * msk[k*T+t];
-            nl += GETcellprob(Allhists[Hs[i]*T*K+k*T+t], propp, delta_1s, delta_2s, ((1.-delta_1s-delta_2s) * (1.-alphas)), ((1.-delta_1s-delta_2s) * alphas), T, K, t, k, i);
-            ol += GETcellprob(Allhists[Hs[i]*T*K+k*T+t], p,     delta_1s, delta_2s, ((1.-delta_1s-delta_2s) * (1.-alphas)), ((1.-delta_1s-delta_2s) * alphas), T, K, t, k, i);
+            propp[k*T+t] = invcloglog(cloglogp[k*T+t]-temp) * msk[k*T+t];
+            propc[k*T+t] = invcloglog(cloglogc[k*T+t]-temp) * msk[k*T+t];
+            nl += GETcellprob(Allhists[Hs[i]*T*K+k*T+t], propp[k*T+t],       delta_1s, delta_2s, ((1.-delta_1s-delta_2s) * (1.-alphas)), ((1.-delta_1s-delta_2s) * alphas));
+            ol += GETcellprob(Allhists[Hs[i]*T*K+k*T+t], p[i*T*K+k*T+t],     delta_1s, delta_2s, ((1.-delta_1s-delta_2s) * (1.-alphas)), ((1.-delta_1s-delta_2s) * alphas));
             //if(fabs(nl-ol)>1.e-6 && tmpl) {
             //  Rprintf("g %d i %d k %d t %d firstcap %d p %f propp %f nl %f ol %f dist2star %f dist2 %f temp %f sigma2_scr %f cloglogp %f cloglogc %f \n",g,i,k,t,firstcap,p[i*T*K+k*T+t],propp[i*T*K+k*T+t],nl,ol,diststar[k],dist2pow[k*supN+i],temp,sigma2_scrs,cloglogp[k*T+t],cloglogc[k*T+t]);
             //  tmpl=0;
             //}
           }
           for(t=firstcap; t<T; t++) {
-            propp[i*T*K+k*T+t] = invcloglog(cloglogp[k*T+t]-temp) * msk[k*T+t];
-            propc[i*T*K+k*T+t] = invcloglog(cloglogc[k*T+t]-temp) * msk[k*T+t];
-            nl += GETcellprob(Allhists[Hs[i]*T*K+k*T+t], propc, delta_1s, delta_2s, (1.-delta_1s-delta_2s) * (1.-alphas), (1.-delta_1s-delta_2s) * alphas, T, K, t, k, i);
-            ol += GETcellprob(Allhists[Hs[i]*T*K+k*T+t], c,     delta_1s, delta_2s, (1.-delta_1s-delta_2s) * (1.-alphas), (1.-delta_1s-delta_2s) * alphas, T, K, t, k, i);
+            propp[k*T+t] = invcloglog(cloglogp[k*T+t]-temp) * msk[k*T+t];
+            propc[k*T+t] = invcloglog(cloglogc[k*T+t]-temp) * msk[k*T+t];
+            nl += GETcellprob(Allhists[Hs[i]*T*K+k*T+t], propc[k*T+t],       delta_1s, delta_2s, ((1.-delta_1s-delta_2s) * (1.-alphas)), ((1.-delta_1s-delta_2s) * alphas));
+            ol += GETcellprob(Allhists[Hs[i]*T*K+k*T+t], c[i*T*K+k*T+t],     delta_1s, delta_2s, ((1.-delta_1s-delta_2s) * (1.-alphas)), ((1.-delta_1s-delta_2s) * alphas));
             //if(fabs(nl-ol)>1.e-6 && tmpl) {
             //  Rprintf("g %d i %d k %d t %d firstcap %d c %f propc %f nl %f ol %f dist2star %f dist2 %f tmp %f sigma2_scr %f cloglogp %f cloglogc %f \n",g,i,k,t,firstcap,c[i*T*K+k*T+t],propc[i*T*K+k*T+t],nl,ol,diststar[k],dist2pow[k*supN+i],temp,sigma2_scrs,cloglogp[k*T+t],cloglogc[k*T+t]);
             //  tmpl=0;
@@ -307,8 +309,8 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
           for(k=0; k<K; k++){
             dist2pow[k*supN+i] = diststar[k];
             for(t=0; t<T; t++){
-              p[i*T*K+k*T+t]=propp[i*T*K+k*T+t];
-              c[i*T*K+k*T+t]=propc[i*T*K+k*T+t];              
+              p[i*T*K+k*T+t]=propp[k*T+t];
+              c[i*T*K+k*T+t]=propc[k*T+t];              
             }
           }
           accept[dimp+1+i]+=1;
@@ -357,7 +359,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
     
     ll=LIKESCR(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,K,supN,C,Ns,pstar);
     //Rprintf("g %d delta_1s %f delta_2s %f ll %f \n",g,delta_1s,delta_2s,ll);
-  
+    
     /* update x and H (latent history frequencies) */
     op=0.0;
     np=0.0;
@@ -374,7 +376,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
       }
     }
     for(j=0; j< nbasis; j++){
-
+      
       if(obasesum){
         base=sample(*ncolBasis, indbase);
         xind = min(xnew[indBasis[base*3+2]] - knownxs[indBasis[base*3+2]],xnew[0]);
@@ -411,7 +413,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
         obasesum=nbasesum;
       }
     }
-
+    
     if(ind){
       op += ll;
       
@@ -423,7 +425,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
         np += dbinom((double) qnew[i],1.0,psis,1);
       }
       Nstar = nstar+rnbinom((double) nstar,pstar);
-  
+      
       nl = LIKESCR(p,c,qnew,delta_1s,delta_2s,alphas,Allhists,Hnew,T,K,supN,C,Nstar,pstar);  
       np += nl;     
       
@@ -455,11 +457,11 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
     
     //ll=LIKESCR(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,K,supN,C,Ns,pstar);   
     
-     /* Save draws according to thin specification */ 
+    /* Save draws according to thin specification */ 
     if((g % th)==0)  {
-            
+      
       N[(g/th - 1)]=Ns;
-
+      
       for(j=0; j<(dimp); j++){
         beta[(g/th - 1)*(dimp)+j]=betas[j];
       }
@@ -468,7 +470,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
       delta_2[(g/th - 1)]=delta_2s;
       alpha[(g/th - 1)]=alphas;
       psi[(g/th - 1)]=psis;
-
+      
       if(*centerind){
         for(i=0; i<supN; i++){
           center[(g/th - 1)*supN+i]=centers[i];
@@ -488,7 +490,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
           H[i]=Hs[i];
         }
       }
-  
+      
       for(j=0; j<J; j++){
         x[j]=xs[j];
       }
@@ -497,7 +499,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
       if(!R_FINITE(posterior[(g/th - 1)])) {Rprintf("Fatal error in chain %d: please report to <brett.mcclintock@noaa.gov> \n",*ichain); *iter = g; return;}
       
     }
-
+    
     if(!((g+1) % n)){    
       if((g+1)<ada){
         for(i=0; i<dimp+1; i++){
@@ -533,25 +535,25 @@ double getdist(double x1, double y1, double x2, double y2)
   return(dist);
 }
 
-double GETcellprob(int indhist, double *prob, double delta_1, double delta_2, double da3, double da4, int T, int K, int t, int k, int i)
+double GETcellprob(int indhist, double prob, double delta_1, double delta_2, double da3, double da4)
 {
   double cellprob=0.;
   switch(indhist)
   {
   case 0 :
-    cellprob = log(1.0-prob[i*T*K+k*T+t]);
+    cellprob = log(1.0-prob);
     break;
   case 1 :
-    cellprob = log(prob[i*T*K+k*T+t] * delta_1);
+    cellprob = log(prob * delta_1);
     break;
   case 2 :
-    cellprob = log(prob[i*T*K+k*T+t] * delta_2);
+    cellprob = log(prob * delta_2);
     break;
   case 3 :
-    cellprob = log(prob[i*T*K+k*T+t] * da3);
+    cellprob = log(prob * da3);
     break;
   case 4 :
-    cellprob = log(prob[i*T*K+k*T+t] * da4);
+    cellprob = log(prob * da4);
     break;
   }
   return(cellprob);
@@ -569,7 +571,7 @@ double GETprodhSCR(int *Allhists, double *p, double *c, int *C, double delta_1, 
   for(k=0; k<K; k++){
     firstcap = C[j*K+k];
     for(t=0; t<firstcap; t++) {
-      logdens += GETcellprob(Allhists[j*T*K+k*T+t], p, delta_1, delta_2, da3, da4, T, K, t, k, i);
+      logdens += GETcellprob(Allhists[j*T*K+k*T+t], p[i*T*K+k*T+t], delta_1, delta_2, da3, da4);
       //indhist = Allhists[j*T*K+k*T+t];
       //logdens += log( (indhist==0) * (1.0-p[i*T*K+k*T+t]) 
       //                  + (indhist==1) * p[i*T*K+k*T+t] * delta_1 
@@ -578,7 +580,7 @@ double GETprodhSCR(int *Allhists, double *p, double *c, int *C, double delta_1, 
       //                  + (indhist==4) * p[i*T*K+k*T+t] * da4);  
     }
     for(t=firstcap; t<T; t++) {
-      logdens += GETcellprob(Allhists[j*T*K+k*T+t], c, delta_1, delta_2, da3, da4, T, K, t, k, i);
+      logdens += GETcellprob(Allhists[j*T*K+k*T+t], c[i*T*K+k*T+t], delta_1, delta_2, da3, da4);
       //indhist = Allhists[j*T*K+k*T+t];   
       //logdens += log( (indhist==0) * (1.0-c[i*T*K+k*T+t]) 
       //                  + (indhist==1) * c[i*T*K+k*T+t] * delta_1 
@@ -608,10 +610,10 @@ double LIKESCR(double *p, double *c, int *qs, double delta_1, double delta_2, do
       for(k=0; k<K; k++){
         temp = C[Hs[i]*K+k];
         for(t=0; t<temp; t++) {
-          logdens += GETcellprob(Allhists[Hs[i]*T*K+k*T+t], p, delta_1, delta_2, da3, da4, T, K, t, k, i);
+          logdens += GETcellprob(Allhists[Hs[i]*T*K+k*T+t], p[i*T*K+k*T+t], delta_1, delta_2, da3, da4);
         }
         for(t=temp; t<T; t++) {
-          logdens += GETcellprob(Allhists[Hs[i]*T*K+k*T+t], c, delta_1, delta_2, da3, da4, T, K, t, k, i);
+          logdens += GETcellprob(Allhists[Hs[i]*T*K+k*T+t], c[i*T*K+k*T+t], delta_1, delta_2, da3, da4);
         }
       }
     }
@@ -683,7 +685,7 @@ void PROPFREQSCR(int icol,int c_k,int *Hnew, int *indBasis, int J, int *xnew, in
   } else {
     goto S20;
   }
-S10:
+  S10:
     for(j=0; j<3; j++){
       prodzsum=0.0;
       prodhsum=0.0;
@@ -716,44 +718,44 @@ S10:
     }
     if(temp<0.5) goto S20;
     else goto S30;
-S20:
-    for(j=0; j<3; j++){
-      prodzsum=0.0;
-      prodhsum=0.0;
-      if(add_xi[j]){
-        for(i=0; i<supN; i++) {
-          prodz[i] = -1.0;
-          prodh[i] = -1.0;
-          if(!Hnew[i]){
-            prodh[i] = GETprodhSCR(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,K,i);
-            prodhsum+=prodh[i];
-          } else if(Hnew[i]==indBasis[icol*3+j]){
-            prodz[i] = 1. - GETprodhSCR(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,K,i);
-            prodzsum+=prodz[i];
+    S20:
+      for(j=0; j<3; j++){
+        prodzsum=0.0;
+        prodhsum=0.0;
+        if(add_xi[j]){
+          for(i=0; i<supN; i++) {
+            prodz[i] = -1.0;
+            prodh[i] = -1.0;
+            if(!Hnew[i]){
+              prodh[i] = GETprodhSCR(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,K,i);
+              prodhsum+=prodh[i];
+            } else if(Hnew[i]==indBasis[icol*3+j]){
+              prodz[i] = 1. - GETprodhSCR(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,K,i);
+              prodzsum+=prodz[i];
+            }
+          }
+          ProbSampleNoReplace(supN, prodh, absc_k, add);
+          for(k=0; k<absc_k; k++){
+            Hnew[add[k]]=indBasis[icol*3+j];
+            prodz[add[k]] = 1. - prodh[add[k]];
+            prodzsum+=prodz[add[k]];
+          }
+          for(k=0; k<absc_k; k++){
+            nprop[count] = log(prodh[add[k]])-log(prodhsum);  
+            oprop[count] = log(prodz[add[k]])-log(prodzsum); 
+            prodzsum -=  prodz[add[k]];
+            prodhsum -=  prodh[add[k]];
+            count+=1;
           }
         }
-        ProbSampleNoReplace(supN, prodh, absc_k, add);
-        for(k=0; k<absc_k; k++){
-          Hnew[add[k]]=indBasis[icol*3+j];
-          prodz[add[k]] = 1. - prodh[add[k]];
-          prodzsum+=prodz[add[k]];
-        }
-        for(k=0; k<absc_k; k++){
-          nprop[count] = log(prodh[add[k]])-log(prodhsum);  
-          oprop[count] = log(prodz[add[k]])-log(prodzsum); 
-          prodzsum -=  prodz[add[k]];
-          prodhsum -=  prodh[add[k]];
-          count+=1;
-        }
       }
-    }
-    if(temp>=0.5) goto S10;
-    else goto S30;
-S30:
-    xnew[indBasis[icol*3]]-=c_k;
-    xnew[indBasis[icol*3+1]]-=c_k;
-    xnew[indBasis[icol*3+2]]+=c_k;  
-    xnew[0]+=c_k;
+      if(temp>=0.5) goto S10;
+      else goto S30;
+      S30:
+      xnew[indBasis[icol*3]]-=c_k;
+      xnew[indBasis[icol*3+1]]-=c_k;
+      xnew[indBasis[icol*3+2]]+=c_k;  
+      xnew[0]+=c_k;
 }
 
 void GETPC(double *p, double *c, double *cloglogp, double *cloglogc, double *beta, double sigma2, double *DMp, double *DMc, double *dist2pow, int dimp, int supN, int T, int K, int *msk)
@@ -781,19 +783,20 @@ double GETPSTARSCR(double *dist2powcells, double *cloglogp, double sigma2_scr, i
 {
   int i,t, k;
   double tmp = 1.0/(2.0*sigma2_scr);
-  double oneminuspstar[ncells], esa=0., dist2tmp;
+  double oneminuspstar, esa=0., dist2tmp;
+  double ncell = (double) ncells;
   for(i=0; i<ncells; i++){
-    oneminuspstar[i]=1.;
+    oneminuspstar=1.;
     for(k=0; k<K; k++){
       dist2tmp = tmp * dist2powcells[k*ncells+i];
       for(t=0; t<T; t++){
-        oneminuspstar[i] *= 1. - invcloglog(cloglogp[k*T+t]-dist2tmp) * msk[k*T+t];
+        oneminuspstar *= (1. - invcloglog(cloglogp[k*T+t]-dist2tmp) * msk[k*T+t]);
       }
     }
-    esa += 1. - fmax(oneminuspstar[i],tol);
+    esa += 1. - fmax(oneminuspstar,tol);
     //Rprintf("cell %d oneminuspstar %f esa %f \n",i,oneminuspstar[i],esa);
   }
-  double pstar = esa / ncells;
+  double pstar = esa / ncell;
   //Rprintf("pstar %f esa %f dexp %f ncells %d sigma2_scr %f \n",pstar,esa,dexp,ncells,sigma2_scr);
   return(pstar);
 }
