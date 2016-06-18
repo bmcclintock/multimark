@@ -153,7 +153,7 @@ simdataClosedSCR <- function(N=30,ntraps=9,noccas=5,pbeta=0.25,tau=0,sigma2_scr=
 #' @param trapLines Logical indicating whether to draw lines from activity centers to respective traps at which each individual was captured. Default is \code{trapLines=FALSE}. Ignored when \code{mms=NULL} or \code{centers=NULL}. 
 #' @author Brett T. McClintock 
 #' @examples
-#' #Plot the ``traditional'' tiger example data
+#' #Plot the tiger example data
 #' plotSpatialData(trapCoords=tiger$trapCoords,studyArea=tiger$studyArea)
 plotSpatialData<-function(mms=NULL,trapCoords,studyArea,centers=NULL,trapLines=FALSE){
   if(!is.null(mms)){

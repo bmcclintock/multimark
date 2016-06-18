@@ -22,7 +22,7 @@ plotSpatialData(mms = NULL, trapCoords, studyArea, centers = NULL,
 This function plots the study area grid, available habitat, and trap coordinates for spatial capture-recapture studies.  Activity centers and capture locations can also be plotted.
 }
 \examples{
-#Plot the ``traditional'' tiger example data
+#Plot the tiger example data
 plotSpatialData(trapCoords=tiger$trapCoords,studyArea=tiger$studyArea)
 }
 \author{
