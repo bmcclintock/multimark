@@ -146,7 +146,7 @@ simdataClosedSCR <- function(N=30,ntraps=9,noccas=5,pbeta=0.25,tau=0,sigma2_scr=
 #' This function plots the study area grid, available habitat, and trap coordinates for spatial capture-recapture studies.  Activity centers and capture locations can also be plotted. 
 #'
 #'
-#' @param mms An optional object of class \code{multimarkSCRsetup-class}.
+#' @param mms An optional object of class \code{multimarkSCRsetup-class} from which the (re-scaled) study area and trap coordinates are plotted.
 #' @param trapCoords A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating. Ignored unless \code{mms=NULL}.  
 #' @param studyArea A 3-column matrix defining the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. Ignored unless \code{mms=NULL}.
 #' @param centers An optional vector indicating the grid cell (i.e., the row of \code{studyArea}) that contains the true (latent) activity centers for each individual. If \code{mms} is provided, then \code{centers} must be of length \code{nrow(Enc.Mat)} (i.e., a center must be provided for each observed individual). 
@@ -292,7 +292,7 @@ loglikeClosedSCR<-function(parms,DM,noccas,ntraps,C,All.hists,spatialInputs){
   c2 <- (centers[indid,2] - trapgridbig[,2])^2
   
   p <- invcloglogtol(rep(DM$p%*%pbeta,each=n)[msk2==1]*(1-prevcap) + rep(DM$c%*%pbeta,each=n)[msk2==1]*prevcap - 1./(dexp*parms$sigma2_scr)*sqrt(c1+c2)^dexp)
-  #p2 <- invcloglogtol(matrix(rep(DM$p%*%pbeta,each=n)*(1-prevcap2)+rep(DM$c%*%pbeta,each=n)*prevcap2,nrow=n,ncol=noccas*ntraps)- 1./(2*parms$sigma2_scr)*(dist2mat)^dexp)
+  #p2 <- invcloglogtol(matrix(rep(DM$p%*%pbeta,each=n)*(1-prevcap2)+rep(DM$c%*%pbeta,each=n)*prevcap2,nrow=n,ncol=noccas*ntraps)- 1./(dexp*parms$sigma2_scr)*(dist2mat)^dexp)
   
   loglike <- base::sum( log( (y==0) * (1. - p)
                              + (y==1) * p * delta_1  
@@ -474,6 +474,7 @@ mcmcClosedSCR<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,ta
   g <- posterior$iter
   x <- posterior$x
   posterior$centers<-mapCenters(posterior$centers+1,spatialInputs$centermap1,spatialInputs$centermap2,0)
+  posterior$sigma2_scr <- posterior$sigma2_scr * mms@spatialInputs$Srange^2
   
   if(any(params=="centers")){
     temp<-cbind(matrix(posterior$pbeta[(floor(burnin/thin)*pdim+1):(max(1,floor(iter/thin))*pdim)],ncol=pdim,byrow=T),matrix(posterior$centers[(floor(burnin/thin)*M+1):(max(1,floor(iter/thin))*M)],ncol=M,byrow=T),posterior$sigma2_scr[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$delta_1[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$delta_2[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$alpha[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$N[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))],posterior$psi[(floor(burnin/thin)+1):(max(1,floor(iter/thin)))]) 
@@ -1020,7 +1021,7 @@ monitorparmsClosedSCR <- function(parms,parmlist,noccas,ntraps){
   list(commonparms=commonparms,parms=parms,namesD=namesD,namesp=namesp,namesc=namesc,getcloglogp=getcloglogp,getcloglogc=getcloglogc)
 }
 
-getcurClosedSCRparmslist<-function(cur.parms,DM,M,noccas,data_type,alpha,centermap1,centermap2){
+getcurClosedSCRparmslist<-function(cur.parms,DM,M,noccas,data_type,alpha,centermap1,centermap2,Srange2){
   
   parmslist=vector('list',1)
   parmslist[[1]]$H<-cur.parms[paste0("H[",1:M,"]")]
@@ -1028,7 +1029,7 @@ getcurClosedSCRparmslist<-function(cur.parms,DM,M,noccas,data_type,alpha,centerm
   parmslist[[1]]$pbeta <- cur.parms[paste0("pbeta[",colnames(DM$p),"]")]
   parmslist[[1]]$centers <- mapCenters(cur.parms[paste0("center[",1:M,"]")],centermap1,centermap2)
   names(parmslist[[1]]$centers) <- paste0("center[",1:M,"]")
-  parmslist[[1]]$sigma2_scr <- cur.parms["sigma2_scr"]
+  parmslist[[1]]$sigma2_scr <- cur.parms["sigma2_scr"] / Srange2
   
   parmslist[[1]]$psi <- cur.parms["psi"]
   parmslist[[1]]$delta_1 <- cur.parms["delta_1"]
@@ -1060,6 +1061,7 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
   }
   
   A <- mms@spatialInputs$origCellRes * nrow(spatialInputs$studyArea)
+  Srange2 <- mms@spatialInputs$Srange^2
   
   M.cur<- M1
   
@@ -1071,7 +1073,7 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
   DM$mod.det <- detlist[[M.cur]]
   DM$mod.p.h <- mod.p.h[[M.cur]]
   
-  cur.parms.list <- getcurClosedSCRparmslist(cur.parms,DM,M,noccas,data_type,alpha,spatialInputs$centermap1,spatialInputs$centermap2)  
+  cur.parms.list <- getcurClosedSCRparmslist(cur.parms,DM,M,noccas,data_type,alpha,spatialInputs$centermap1,spatialInputs$centermap2,Srange2)  
   
   for(iiter in 1:miter){
     
@@ -1109,7 +1111,7 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
     DM$mod.det <- detlist[[M.cur]]
     DM$mod.p.h <- mod.p.h[[M.cur]]
     
-    cur.parms.list <- getcurClosedSCRparmslist(cur.parms,DM,M,noccas,data_type,alpha,spatialInputs$centermap1,spatialInputs$centermap2)
+    cur.parms.list <- getcurClosedSCRparmslist(cur.parms,DM,M,noccas,data_type,alpha,spatialInputs$centermap1,spatialInputs$centermap2,Srange2)
     
     if(iiter>mburnin & !iiter%%mthin){
       multimodel[iiter/mthin-floor(mburnin/mthin),"M"] <- M.cur
@@ -1146,7 +1148,7 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
 #' @param sigppropshape Scaler specifying the shape parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}". Only applies if at least one (but not all) model(s) includes spatial effects in detection function. Default is \code{sigppropshape=6}. See Barker & Link (2013) for more details.
 #' @param sigppropscale Scaler specifying the scale parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}". Only applies if at least one (but not all) model(s) includes spatial effects in detection function. Default is \code{sigppropscale=4}. See Barker & Link (2013) for more details.
 #' @param printlog Logical indicating whether to print the progress of chains and any errors to a log file in the working directory. Ignored when \code{nchains=1}. Updates are printed to log file as 1\% increments of \code{iter} of each chain are completed. With >1 chains, setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.
-#' @details Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosedSCR}} or \code{\link{markClosedSCR}} models to be included in \code{modlist}. Note also that it does not make much sense to try and interpret model-averaged \code{sigma2_scr} unless the detection function (``half-normal'' or ``exponential'') is the same for all of the models in \code{modlist}.
+#' @details Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosedSCR}} or \code{\link{markClosedSCR}} models to be included in \code{modlist}. Note also that it does not make much sense to try and interpret \code{sigma2_scr} across models unless the detection function (``half-normal'' or ``exponential'') is the same for all of the models in \code{modlist}.
 #' @return A list containing the following:
 #' \item{rjmcmc}{Reversible jump Markov chain Monte Carlo object of class \code{\link[coda]{mcmc.list}}. Includes RJMCMC output for monitored parameters and the current model at each iteration ("\code{M}").}
 #' \item{pos.prob}{A list of calculated posterior model probabilities for each chain, including the overall posterior model probabilities across all chains.}

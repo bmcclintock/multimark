@@ -706,7 +706,7 @@ get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0
     
     if(length(initial.values[[ichain]]$sigma2_scr)){
       if(length(initial.values[[ichain]]$sigma2_scr)==1 & initial.values[[ichain]]$sigma2_scr>0){
-        inits[[ichain]]$sigma2_scr<-max(initial.values[[ichain]]$sigma2_scr,tol)
+        inits[[ichain]]$sigma2_scr<-max(initial.values[[ichain]]$sigma2_scr/mms@spatialInputs$Srange^2,tol)
       } else {
         stop("initial value for sigma2_scr must be a positive scalar")
       }

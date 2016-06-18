@@ -8,7 +8,7 @@ plotSpatialData(mms = NULL, trapCoords, studyArea, centers = NULL,
   trapLines = FALSE)
 }
 \arguments{
-\item{mms}{An optional object of class \code{multimarkSCRsetup-class}.}
+\item{mms}{An optional object of class \code{multimarkSCRsetup-class} from which the (re-scaled) study area and trap coordinates are plotted.}
 
 \item{trapCoords}{A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating. Ignored unless \code{mms=NULL}.}
 

@@ -41,7 +41,7 @@ A list containing the following:
 This function performs Bayesian multimodel inference for a set of 'multimark' spatial population abundance models using the reversible jump Markov chain Monte Carlo (RJMCMC) algorithm proposed by Barker & Link (2013).
 }
 \details{
-Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosedSCR}} or \code{\link{markClosedSCR}} models to be included in \code{modlist}. Note also that it does not make much sense to try and interpret model-averaged \code{sigma2_scr} unless the detection function (``half-normal'' or ``exponential'') is the same for all of the models in \code{modlist}.
+Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosedSCR}} or \code{\link{markClosedSCR}} models to be included in \code{modlist}. Note also that it does not make much sense to try and interpret \code{sigma2_scr} across models unless the detection function (``half-normal'' or ``exponential'') is the same for all of the models in \code{modlist}.
 }
 \examples{
 \dontshow{
