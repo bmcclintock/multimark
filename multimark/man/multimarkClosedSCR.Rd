@@ -11,16 +11,16 @@ multimarkClosedSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
   iter = 12000, adapt = 1000, bin = 50, thin = 1, burnin = 2000,
   taccept = 0.44, tuneadjust = 0.95, proppbeta = 0.1, propsigma = 1,
   propcenter = NULL, maxnumbasis = 1, a0delta = 1, a0alpha = 1,
-  b0alpha = 1, a = 25, mu0 = 0, sigma2_mu0 = 1.75, a0psi = 1,
-  b0psi = 1, initial.values = NULL, known = integer(), scalemax = 10,
-  printlog = FALSE, ...)
+  b0alpha = 1, sigma_bounds = NULL, mu0 = 0, sigma2_mu0 = 1.75,
+  a0psi = 1, b0psi = 1, initial.values = NULL, known = integer(),
+  scalemax = 10, printlog = FALSE, ...)
 }
 \arguments{
 \item{Enc.Mat}{A matrix containing the observed encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc. Ignored unless \code{mms=NULL}.}
 
-\item{trapCoords}{A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating. Ignored unless \code{mms=NULL}.}
+\item{trapCoords}{A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate (``x''), and the second column the y-coordinate (``y''). The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating. Ignored unless \code{mms=NULL}.}
 
-\item{studyArea}{is a 3-column matrix containing the coordinates for the centroids a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{studyArea=NULL} (the default) and  \code{mms=NULL}, then a square study area grid composed of \code{ncells} cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}. Ignored unless \code{mms=NULL}.}
+\item{studyArea}{is a 3-column matrix containing the coordinates for the centroids a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns (``x'' and ``y'') indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column (``avail'') indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{studyArea=NULL} (the default) and  \code{mms=NULL}, then a square study area grid composed of \code{ncells} cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}. Ignored unless \code{mms=NULL}.}
 
 \item{buffer}{A scaler in same units as \code{trapCoords} indicating the buffer around the bounding box of \code{trapCoords} for defining the study area when \code{studyArea=NULL}.  Ignored unless \code{studyArea=NULL} and \code{mms=NULL}.}
 
@@ -76,7 +76,7 @@ multimarkClosedSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
 
 \item{b0alpha}{Specifies "shape2" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{b0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1).}
 
-\item{a}{Scale parameter for [sigma_scr] ~ half-Cauchy(a) prior for the detection function term sigma_scr = sqrt(sigma2_scr). Default is ``uninformative'' \code{a = 25}.}
+\item{sigma_bounds}{Positive vector of length 2 for the lower and upper bounds for the [sigma_scr] ~ Uniform(sigma_bounds[1], sigma_bounds[2]) prior for the detection function term sigma_scr = sqrt(sigma2_scr). When \code{sigma_bounds = NULL} (the default), then \code{sigma_bounds = c(1.e-6,max(diff(range(studyArea[,"x"])),diff(range(studyArea[,"y"]))))}.}
 
 \item{mu0}{Scaler or vector (of length k) specifying mean of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{mu0 = 0}.}
 

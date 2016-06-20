@@ -183,7 +183,7 @@ plotSpatialData<-function(mms=NULL,trapCoords,studyArea,centers=NULL,trapLines=F
     M<-ifelse(!is.null(mms),nrow(Enc.Mat),length(centers))
     rainColors<-grDevices::rainbow(M)
     ntraps<-nrow(trapCoords)
-    noccas<-ncol(trapCoords[,-c(1,2)])
+    noccas<-ncol(as.matrix(trapCoords[,-c(1,2)]))
     if(length(centers)!=M) stop("'centers' must be of length ",M)
     for(i in 1:M){
       points(studyArea[centers[i],"x"],studyArea[centers[i],"y"],pch=20,col=rainColors[i])
@@ -211,6 +211,7 @@ pstarintegrandSCR<-function(noccas,beta,sigma2,DM,spatialInputs,dexp){
   XB <- as.matrix(DM[msk2,]) %*% beta
   dist2 <- spatialInputs$dist2
   detProb<-invcloglogtol(matrix(XB,nrow=dim(dist2)[1],ncol=length(msk2),byrow=TRUE)-1/(dexp*sigma2)*dist2[,rep(1:dim(dist2)[2],times=apply(spatialInputs$msk,1,sum))]^dexp)
+  #detProb<-exp(matrix(0,nrow=dim(dist2)[1],ncol=length(msk2),byrow=TRUE)-1/(dexp*sigma2)*dist2[,rep(1:dim(dist2)[2],times=apply(spatialInputs$msk,1,sum))]^dexp)
   pdot<-1.-apply(1.-detProb,1,function(x) max(prod(x),tol))
   esa<-sum(pdot)*spatialInputs$a
   esa/spatialInputs$A
@@ -292,6 +293,7 @@ loglikeClosedSCR<-function(parms,DM,noccas,ntraps,C,All.hists,spatialInputs){
   c2 <- (centers[indid,2] - trapgridbig[,2])^2
   
   p <- invcloglogtol(rep(DM$p%*%pbeta,each=n)[msk2==1]*(1-prevcap) + rep(DM$c%*%pbeta,each=n)[msk2==1]*prevcap - 1./(dexp*parms$sigma2_scr)*sqrt(c1+c2)^dexp)
+  #p <- exp(- 1./(dexp*parms$sigma2_scr)*sqrt(c1+c2)^dexp)
   #p2 <- invcloglogtol(matrix(rep(DM$p%*%pbeta,each=n)*(1-prevcap2)+rep(DM$c%*%pbeta,each=n)*prevcap2,nrow=n,ncol=noccas*ntraps)- 1./(dexp*parms$sigma2_scr)*(dist2mat)^dexp)
   
   loglike <- base::sum( log( (y==0) * (1. - p)
@@ -330,7 +332,8 @@ priorsClosedSCR<-function(parms,DM,priorparms,data_type,spatialInputs){
                          + dbeta(parms$psi,priorparms$a0psi,priorparms$b0psi,log=TRUE))
   }
   
-  priors <- priors + log(2.0*dcauchy(sqrt(parms$sigma2_scr),0.0,priorparms$a,log=FALSE))
+  #priors <- priors + log(2.0*dcauchy(sqrt(parms$sigma2_scr),0.0,priorparms$a,log=FALSE))
+  priors <- priors + dunif(sqrt(parms$sigma2_scr),priorparms$sigma_bounds[1],priorparms$sigma_bounds[2],log=TRUE)
   
   priors <- priors + length(parms$centers)*log(1./spatialInputs$A)
   
@@ -343,6 +346,9 @@ posteriorClosedSCR<-function(parms,DM,mms,priorparms,spatialInputs){
   noccas<-ncol(mms@Enc.Mat)/ntraps
   M<-nrow(mms@Enc.Mat)
   All.hists<-matrix(mms@vAll.hists,byrow=TRUE,ncol=noccas*ntraps)
+  
+  priorparms$sigma_bounds <- priorparms$sigma_bounds / mms@spatialInputs$Srange
+  
   for(ichain in 1:nchains){
     temp<-parms[[ichain]]
     
@@ -398,7 +404,7 @@ mapCenters<-function(centers,centermap1,centermap2,origtoavail=TRUE){
   as.integer(ncenters)
 }
 
-checkClosedSCR<-function(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccept,tuneadjust,maxnumbasis,a0delta,a0alpha,b0alpha,a,sigma2_mu0,a0psi,b0psi){
+checkClosedSCR<-function(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccept,tuneadjust,maxnumbasis,a0delta,a0alpha,b0alpha,sigma_bounds,sigma2_mu0,a0psi,b0psi){
   
   if(mms@data.type!="sometimes" & any(parms=="alpha")) stop("Parameter 'alpha' only applies to models for the 'sometimes' data type")
   
@@ -419,7 +425,7 @@ checkClosedSCR<-function(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccep
   if(taccept<=0 | taccept>1) stop ("'taccept' must be >0 and <=1")
   if(tuneadjust<=0 | tuneadjust>1) stop ("'tuneadjust' must be >0 and <=1")
   if(mms@ncolbasis & (maxnumbasis<1 | maxnumbasis>mms@ncolbasis)) stop("'maxnumbasis' must be between 1 and ",mms@ncolbasis)
-  if(!all(c(a0delta,a0alpha,b0alpha,a,sigma2_mu0,a0psi,b0psi)>0)) stop("'a0delta', 'a0alpha', 'b0alpha', 'a', 'sigma2_mu0', 'a0psi', and 'b0psi' must be >0")
+  if(!all(c(a0delta,a0alpha,b0alpha,sigma_bounds,sigma2_mu0,a0psi,b0psi)>0)) stop("'a0delta', 'a0alpha', 'b0alpha', 'a', 'sigma2_mu0', 'a0psi', and 'b0psi' must be >0")
   
   pdim<-ncol(DM$p)
   if(!pdim) stop("'mod.p' must include at least 1 parameter")
@@ -427,7 +433,7 @@ checkClosedSCR<-function(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccep
   params
 }
 
-mcmcClosedSCR<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,Prop.center,spatialInputs,maxnumbasis,a0delta,a0alpha,b0alpha,a,mu0,sigma2_mu0,a0psi,b0psi,printlog){
+mcmcClosedSCR<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,Prop.center,spatialInputs,maxnumbasis,a0delta,a0alpha,b0alpha,sigma_bounds,mu0,sigma2_mu0,a0psi,b0psi,printlog){
 
   ntraps<-nrow(spatialInputs$trapCoords)
   noccas<-ncol(mms@Enc.Mat)/ntraps
@@ -463,13 +469,13 @@ mcmcClosedSCR<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,ta
   arate<-numeric(M+pdim+1)
   
   posterior <- .C(ClosedSCRC,as.integer(ichain),as.numeric(mu0), as.numeric(sigma2_mu0), as.numeric(pbeta), as.numeric(sigma2_scr), as.numeric(delta_1),as.numeric(delta_2),as.numeric(alpha), as.integer(inits[[ichain]]$x), as.numeric(N), as.numeric(psi), as.integer(H), as.integer(centers),
-                  as.integer(ntraps),as.integer(noccas), as.integer(M), as.numeric(a0delta), as.numeric(a0alpha), as.numeric(b0alpha), as.numeric(a), as.numeric(a0psi), as.numeric(b0psi),
+                  as.integer(ntraps),as.integer(noccas), as.integer(M), as.numeric(a0delta), as.numeric(a0alpha), as.numeric(b0alpha), as.numeric(sigma_bounds/mms@spatialInputs$Srange), as.numeric(a0psi), as.numeric(b0psi),
                   as.numeric(Prop.sd),as.integer(Prop.center$NNvect-1),as.integer(Prop.center$numnn),as.integer(Prop.center$cumnumnn),as.numeric(arate),as.numeric(logPosterior),
                   as.integer(length(mms@vAll.hists)/(noccas*ntraps)),as.integer(mms@vAll.hists), as.integer(firstcap), as.integer(mms@indBasis-1), as.integer(mms@ncolbasis), as.integer(mms@knownx), as.numeric(as.vector(t(DMp))), as.numeric(as.vector(t(DMc))),as.integer(pdim),
                   as.integer(iter), as.integer(thin), as.integer(adapt), as.integer(bin), as.numeric(taccept),as.numeric(tuneadjust),as.integer(maxnumbasis),
-                  as.integer(mms@data.type=="sometimes"),as.integer(any(params=="H")),as.integer(any(params=="centers")),as.integer(DM$mod.delta != ~NULL),as.integer(DM$mod.delta==formula(~type)),as.numeric(dexp),as.numeric(spatialInputs$dist2),as.numeric(spatialInputs$dist2^dexp),as.integer(nrow(spatialInputs$studyArea)),as.numeric(spatialInputs$A),as.integer(c(t(spatialInputs$msk))),as.integer(printlog),NAOK = TRUE) 
+                  as.integer(mms@data.type=="sometimes"),as.integer(any(params=="H")),as.integer(any(params=="centers")),as.integer(DM$mod.delta != ~NULL),as.integer(DM$mod.delta==formula(~type)),as.numeric(dexp),as.numeric(spatialInputs$dist2^dexp),as.integer(nrow(spatialInputs$studyArea)),as.numeric(spatialInputs$A),as.integer(c(t(spatialInputs$msk))),as.integer(printlog),NAOK = TRUE) 
   
-  names(posterior) <- c("ichain","mu_0","sigma2_mu","pbeta","sigma2_scr", "delta_1","delta_2","alpha", "x", "N", "psi","H", "centers", "ntraps", "noccas", "M","a0delta", "a0alpha", "b0alpha","a","a0psi","b0psi","Prop.sd", "NNvect", "numnn","cumnumnn", "arate","logPosterior","nHists","vAll.hists","firstcap", "indBasis", "ncolBasis","knownx","DMp","DMc","pdim","iter", "thin", "adapt", "bin", "taccept","tuneadjust","maxnumbasis","sometimes?","H?","centers?","updatedelta?","type?","dexp","dist2","dist2powcells","ncells","Area","msk","printlog?")
+  names(posterior) <- c("ichain","mu_0","sigma2_mu","pbeta","sigma2_scr", "delta_1","delta_2","alpha", "x", "N", "psi","H", "centers", "ntraps", "noccas", "M","a0delta", "a0alpha", "b0alpha","sigma_bounds","a0psi","b0psi","Prop.sd", "NNvect", "numnn","cumnumnn", "arate","logPosterior","nHists","vAll.hists","firstcap", "indBasis", "ncolBasis","knownx","DMp","DMc","pdim","iter", "thin", "adapt", "bin", "taccept","tuneadjust","maxnumbasis","sometimes?","H?","centers?","updatedelta?","type?","dexp","dist2","ncells","Area","msk","printlog?")
   
   g <- posterior$iter
   x <- posterior$x
@@ -493,7 +499,7 @@ mcmcClosedSCR<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,ta
   return(list(posterior=posterior,x=x,H=H,centers=centers,g=g))
 }
 
-processClosedSCRchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin){
+processClosedSCRchains<-function(chains,params,DM,M,nchains,iter,burnin,thin){
   
   parms<-params
   if(any(parms=="pbeta")){
@@ -582,7 +588,7 @@ getSpatialInputs<-function(mms){
   spatialInputs$a <- sp::points2grid(sp::SpatialPoints(mms@spatialInputs$studyArea[,1:2]))@cellsize[1]
   spatialInputs$A <- spatialInputs$a * nrow(spatialInputs$studyArea)
   spatialInputs$dist2 <- getdist(spatialInputs$studyArea,spatialInputs$trapCoords)
-  spatialInputs$msk <- mms@spatialInputs$trapCoords[,-c(1,2)]
+  spatialInputs$msk <- as.matrix(mms@spatialInputs$trapCoords[,-c(1,2)])
   spatialInputs$centermap1 <- cumsum(mms@spatialInputs$studyArea[,"avail"]==0)
   spatialInputs$centermap2 <- cumsum(mms@spatialInputs$studyArea[,"avail"]==1)
   spatialInputs
@@ -594,8 +600,8 @@ getSpatialInputs<-function(mms){
 #'
 #'
 #' @param Enc.Mat A matrix containing the observed encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc.
-#' @param trapCoords A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating.
-#' @param studyArea is a 3-column matrix containing the coordinates for the centroids a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{studyArea=NULL} (the default) the square study area grid composed of \code{ncells} cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}
+#' @param trapCoords A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate (``x''), and the second column the y-coordinate (``y''). The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating. Ignored unless \code{mms=NULL}.
+#' @param studyArea is a 3-column matrix containing the coordinates for the centroids a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns (``x'' and ``y'') indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column (``avail'') indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{studyArea=NULL} (the default) and  \code{mms=NULL}, then a square study area grid composed of \code{ncells} cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}. Ignored unless \code{mms=NULL}.
 #' @param buffer A scaler in same units as \code{trapCoords} indicating the buffer around the bounding box of \code{trapCoords} for defining the study area when \code{studyArea=NULL}.  Ignored unless \code{studyArea=NULL}.
 #' @param ncells The number of grid cells in the study area when \code{studyArea=NULL}. The square root of \code{ncells} must be a whole number. Default is \code{ncells=1024}. Ignored unless \code{studyArea=NULL} and \code{mms=NULL}.
 #' @param covs A data frame of temporal covariates for detection probabilities. The number of rows in the data frame must equal the number of sampling occasions. Covariate names cannot be "time", "c", or "h"; these names are reserved.
@@ -613,7 +619,7 @@ getSpatialInputs<-function(mms){
 #' @param proppbeta Scaler or vector (of length k) specifying the initial standard deviation of the Normal(pbeta[j], proppbeta[j]) proposal distribution. If \code{proppbeta} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{proppbeta = 0.1}.
 #' @param propsigma Scaler specifying the initial Gamma(shape = 1/\code{propsigma}, scale = sigma_scr * \code{propsigma}) proposal distribution for sigma_scr = sqrt(sigma2_scr). Default is \code{propsigma=1}.
 #' @param propcenter Scaler specifying the neighborhood distance (on re-scaled coordinates between 0 and \code{scalemax}) when proposing updates to activity centers. When \code{propcenter=NULL} (the default), then propcenter = a*10, where a is the re-scaled cell size for the study area grid.  When \code{propcenter=NULL} and \code{scalemax=10} (the default), each cell has approximately 300 neighbors (at most). 
-#' @param a Scale parameter for [sigma_z] ~ half-Cauchy(a) prior for the individual hetegeneity term sigma_scr = sqrt(sigma2_scr). Default is ``uninformative'' \code{a = 25}.
+#' @param sigma_bounds Positive vector of length 2 for the lower and upper bounds for the [sigma_scr] ~ Uniform(sigma_bounds[1], sigma_bounds[2]) prior for the detection function term sigma_scr = sqrt(sigma2_scr). When \code{sigma_bounds = NULL} (the default), then \code{sigma_bounds = c(1.e-6,max(diff(range(studyArea[,"x"])),diff(range(studyArea[,"y"]))))}.
 #' @param mu0 Scaler or vector (of length k) specifying mean of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{mu0 = 0}.
 #' @param sigma2_mu0 Scaler or vector (of length k) specifying variance of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{sigma2_mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{sigma2_mu0 = 1.75}.
 #' @param initial.values Optional list of \code{nchain} list(s) specifying initial values for "\code{pbeta}", "\code{N}", "\code{sigma2_scr}", and "\code{centers}". Default is \code{initial.values = NULL}, which causes initial values to be generated automatically.
@@ -659,10 +665,10 @@ getSpatialInputs<-function(mms){
 #' #Posterior summary for monitored parameters
 #' summary(tiger.dot$mcmc)
 #' plot(tiger.dot$mcmc)}
-markClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=1024,covs=data.frame(),mod.p=~1,detection="half-normal",parms=c("pbeta","N","sigma2_scr"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propsigma=1,propcenter=NULL,a=25,mu0=0,sigma2_mu0=1.75,initial.values=NULL,scalemax=10,printlog=FALSE,...){
+markClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=1024,covs=data.frame(),mod.p=~1,detection="half-normal",parms=c("pbeta","N","sigma2_scr"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propsigma=1,propcenter=NULL,sigma_bounds=NULL,mu0=0,sigma2_mu0=1.75,initial.values=NULL,scalemax=10,printlog=FALSE,...){
   if(any(Enc.Mat>1 | Enc.Mat<0)) stop("With a single mark type, encounter histories can only contain 0's (non-detections) and 1's (detections)")
   mms <- processdataSCR(Enc.Mat,trapCoords,studyArea,buffer,ncells,covs=covs,known=rep(1,nrow(Enc.Mat)),scalemax=scalemax)
-  out <- multimarkClosedSCR(mms=mms,mod.p=mod.p,mod.delta=~NULL,parms=parms,nchains=nchains,iter=iter,adapt=adapt,bin=bin,thin=thin,burnin=burnin,taccept=taccept,tuneadjust=tuneadjust,proppbeta=proppbeta,propsigma=propsigma,propcenter=propcenter,a=a,mu0=mu0,sigma2_mu0=sigma2_mu0,initial.values=initial.values,scalemax=scalemax,printlog=printlog,...)
+  out <- multimarkClosedSCR(mms=mms,mod.p=mod.p,mod.delta=~NULL,parms=parms,nchains=nchains,iter=iter,adapt=adapt,bin=bin,thin=thin,burnin=burnin,taccept=taccept,tuneadjust=tuneadjust,proppbeta=proppbeta,propsigma=propsigma,propcenter=propcenter,sigma_bounds=sigma_bounds,mu0=mu0,sigma2_mu0=sigma2_mu0,initial.values=initial.values,scalemax=scalemax,printlog=printlog,...)
   out$initial.values <- lapply(out$initial.values,function(x) list(pbeta=x$pbeta,sigma2_scr=x$sigma2_scr,N=x$N,centers=x$centers))
   return(out)
 }
@@ -673,8 +679,8 @@ markClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=102
 #'
 #'
 #' @param Enc.Mat A matrix containing the observed encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc. Ignored unless \code{mms=NULL}.
-#' @param trapCoords A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating. Ignored unless \code{mms=NULL}.
-#' @param studyArea is a 3-column matrix containing the coordinates for the centroids a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{studyArea=NULL} (the default) and  \code{mms=NULL}, then a square study area grid composed of \code{ncells} cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}. Ignored unless \code{mms=NULL}.
+#' @param trapCoords A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate (``x''), and the second column the y-coordinate (``y''). The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating. Ignored unless \code{mms=NULL}.
+#' @param studyArea is a 3-column matrix containing the coordinates for the centroids a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns (``x'' and ``y'') indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column (``avail'') indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{studyArea=NULL} (the default) and  \code{mms=NULL}, then a square study area grid composed of \code{ncells} cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}. Ignored unless \code{mms=NULL}.
 #' @param buffer A scaler in same units as \code{trapCoords} indicating the buffer around the bounding box of \code{trapCoords} for defining the study area when \code{studyArea=NULL}.  Ignored unless \code{studyArea=NULL} and \code{mms=NULL}.
 #' @param ncells The number of grid cells in the study area when \code{studyArea=NULL}. The square root of \code{ncells} must be a whole number. Default is \code{ncells=1024}. Ignored unless \code{studyArea=NULL} and \code{mms=NULL}.
 #' @param data.type Specifies the encounter history data type. All data types include non-detections (type 0 encounter), type 1 encounter (e.g., left-side), and type 2 encounters (e.g., right-side). When both type 1 and type 2 encounters occur for the same individual within a sampling occasion, these can either be "non-simultaneous" (type 3 encounter) or "simultaneous" (type 4 encounter). Three data types are currently permitted:
@@ -706,7 +712,7 @@ markClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=102
 #' @param a0delta Scaler or vector (of length d) specifying the prior for the conditional (on detection) probability of type 1 (delta_1), type 2 (delta_2), and both type 1 and type 2 encounters (1-delta_1-delta_2). If \code{a0delta} is a scaler, then this value is used for all a0delta[j] for j = 1, ..., d. For \code{mod.delta=~type}, d=3 with [delta_1, delta_2, 1-delta_1-delta_2] ~ Dirichlet(a0delta) prior. For \code{mod.delta=~1}, d=2 with [tau] ~ Beta(a0delta[1],a0delta[2]) prior, where (delta_1,delta_2,1-delta_1-delta_2) = (tau/2,tau/2,1-tau). See McClintock et al. (2013) for more details.
 #' @param a0alpha Specifies "shape1" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{a0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1).
 #' @param b0alpha Specifies "shape2" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{b0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1).
-#' @param a Scale parameter for [sigma_scr] ~ half-Cauchy(a) prior for the detection function term sigma_scr = sqrt(sigma2_scr). Default is ``uninformative'' \code{a = 25}.
+#' @param sigma_bounds Positive vector of length 2 for the lower and upper bounds for the [sigma_scr] ~ Uniform(sigma_bounds[1], sigma_bounds[2]) prior for the detection function term sigma_scr = sqrt(sigma2_scr). When \code{sigma_bounds = NULL} (the default), then \code{sigma_bounds = c(1.e-6,max(diff(range(studyArea[,"x"])),diff(range(studyArea[,"y"]))))}.
 #' @param mu0 Scaler or vector (of length k) specifying mean of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{mu0 = 0}.
 #' @param sigma2_mu0 Scaler or vector (of length k) specifying variance of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{sigma2_mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{sigma2_mu0 = 1.75}.
 #' @param a0psi Specifies "shape1" parameter for [psi] ~ Beta(a0psi,b0psi) prior. Default is \code{a0psi = 1}.
@@ -764,7 +770,7 @@ markClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=102
 #' #Posterior summary for monitored parameters
 #' summary(example.dot$mcmc)
 #' plot(example.dot$mcmc)}
-multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=1024,data.type="never",covs=data.frame(),mms=NULL,mod.p=~1,mod.delta=~type,detection="half-normal",parms=c("pbeta","delta","N","sigma2_scr"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propsigma=1,propcenter=NULL,maxnumbasis=1,a0delta=1,a0alpha=1,b0alpha=1,a=25,mu0=0,sigma2_mu0=1.75,a0psi=1,b0psi=1,initial.values=NULL,known=integer(),scalemax=10,printlog=FALSE,...){
+multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=1024,data.type="never",covs=data.frame(),mms=NULL,mod.p=~1,mod.delta=~type,detection="half-normal",parms=c("pbeta","delta","N","sigma2_scr"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propsigma=1,propcenter=NULL,maxnumbasis=1,a0delta=1,a0alpha=1,b0alpha=1,sigma_bounds=NULL,mu0=0,sigma2_mu0=1.75,a0psi=1,b0psi=1,initial.values=NULL,known=integer(),scalemax=10,printlog=FALSE,...){
   
   if(is.null(mms)) mms <- processdataSCR(Enc.Mat,trapCoords,studyArea,buffer,ncells,data.type,covs,known,scalemax)
   if(class(mms)!="multimarkSCRsetup") stop("'mms' must be an object of class 'multimarkSCRsetup'")
@@ -785,12 +791,15 @@ multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncell
   } else {
     parmlist<-c("pbeta","N","sigma2_scr","centers","logPosterior")    
   }
-  params <- checkClosedSCR(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccept,tuneadjust,maxnumbasis,a0delta,a0alpha,b0alpha,a,sigma2_mu0,a0psi,b0psi)
+  
+  if(is.null(sigma_bounds)){
+    sigma_bounds<-c(1.e-6,max(diff(range(mms@spatialInputs$studyArea[,"x"])),diff(range(mms@spatialInputs$studyArea[,"y"])))*mms@spatialInputs$Srange)
+  }
+  params <- checkClosedSCR(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccept,tuneadjust,maxnumbasis,a0delta,a0alpha,b0alpha,sigma_bounds,sigma2_mu0,a0psi,b0psi)
   
   data.type<-mms@data.type
   Enc.Mat<-mms@Enc.Mat
   M<-nrow(Enc.Mat)
-  noccas<-ncol(Enc.Mat)
   covs<-mms@covs
   pdim<-ncol(DM$p)
   
@@ -800,9 +809,9 @@ multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncell
   
   spatialInputs <- getSpatialInputs(mms)
   
-  inits<-get_initsSCR(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0delta,a0psi,b0psi,DM,spatialInputs)
+  inits<-get_initsSCR(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0delta,sigma_bounds/mms@spatialInputs$Srange,a0psi,b0psi,DM,spatialInputs)
   
-  priorparms <-list(a0delta=a0delta,a0alpha=a0alpha,b0alpha=b0alpha,a=a,mu0=mu0,sigma2_mu0=sigma2_mu0,a0psi=a0psi,b0psi=b0psi)
+  priorparms <-list(a0delta=a0delta,a0alpha=a0alpha,b0alpha=b0alpha,sigma_bounds=sigma_bounds,mu0=mu0,sigma2_mu0=sigma2_mu0,a0psi=a0psi,b0psi=b0psi)
   
   message("\nFitting spatial abundance model with cloglog link\n")
   if(mod.delta != ~NULL) message("data type = \"",data.type,"\"\n")
@@ -834,16 +843,16 @@ multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncell
     modlog <- ifelse(mod.delta != ~NULL,"multimarkClosed","markClosed")
     cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0(modlog,"_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
     clusterExport(cl,list("mcmcClosed"),envir=environment())  
-    chains <- parLapply(cl,1:nchains, function(ichain) mcmcClosedSCR(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,Prop.center,spatialInputs,maxnumbasis,a0delta,a0alpha,b0alpha,a,mu0,sigma2_mu0,a0psi,b0psi,printlog))
+    chains <- parLapply(cl,1:nchains, function(ichain) mcmcClosedSCR(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,Prop.center,spatialInputs,maxnumbasis,a0delta,a0alpha,b0alpha,sigma_bounds,mu0,sigma2_mu0,a0psi,b0psi,printlog))
     stopCluster(cl)
     gc()
   } else {
     chains <- vector('list',nchains)
-    chains[[nchains]] <- mcmcClosedSCR(nchains,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,Prop.center,spatialInputs,maxnumbasis,a0delta,a0alpha,b0alpha,a,mu0,sigma2_mu0,a0psi,b0psi,printlog)
+    chains[[nchains]] <- mcmcClosedSCR(nchains,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,Prop.center,spatialInputs,maxnumbasis,a0delta,a0alpha,b0alpha,sigma_bounds,mu0,sigma2_mu0,a0psi,b0psi,printlog)
     gc()
   }
   
-  chains <- processClosedSCRchains(chains,params,DM,M,noccas,nchains,iter,burnin,thin)
+  chains <- processClosedSCRchains(chains,params,DM,M,nchains,iter,burnin,thin)
   return(list(mcmc=chains$chains,mod.p=mod.p,mod.delta=mod.delta,mod.det=detection,DM=list(p=DM$p,c=DM$c),initial.values=chains$initial.values,priorparms=priorparms,mms=mms))
 }
 
@@ -1062,6 +1071,9 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
   
   A <- mms@spatialInputs$origCellRes * nrow(spatialInputs$studyArea)
   Srange2 <- mms@spatialInputs$Srange^2
+  for(imod in 1:nmod){
+    priorlist[[imod]]$sigma_bounds<-priorlist[[imod]]$sigma_bounds/mms@spatialInputs$Srange
+  }
   
   M.cur<- M1
   
@@ -1209,7 +1221,7 @@ multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modl
   
   spatialInputs<-getSpatialInputs(mms)
 
-  noccas<-ncol(mms@spatialInputs$trapCoords[,-c(1,2)])
+  noccas<-ncol(as.matrix(mms@spatialInputs$trapCoords[,-c(1,2)]))
   ntraps<-nrow(mms@spatialInputs$trapCoords)
   M<-nrow(mms@Enc.Mat)
   All.hists<-matrix(mms@vAll.hists,byrow=TRUE,ncol=noccas*ntraps)

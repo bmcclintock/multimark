@@ -27,9 +27,9 @@ NULL
 #' 
 #' \code{trapCoords} is a matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating.
 #' 
-#' \code{studyArea} is a 3-column matrix containing the coordinates for the centroids a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same 0.336 km^2 resolution. 
+#' \code{studyArea} is a 3-column matrix containing the coordinates for the centroids of the contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). The grid cells are 0.336 km^2 resolution. 
 #'
-#' These data were obtained from the R package \code{SPACECAP} and modified by projecting onto a regular rectangular grid consisting of square grid cells (as required by the spatial capture-recapture models in \code{multimark}). 
+#' These data were obtained from the R package \code{SPACECAP} and modified by projecting onto a regular rectangular grid consisting of square grid cells (as is required by the spatial capture-recapture models in \code{multimark}). 
 #' 
 #' @seealso \code{\link{markClosedSCR}}
 #' @source 
@@ -320,7 +320,7 @@ get_C <-function(All.hists,type="Closed"){
     zeroind<-which(apply(All.hists,1,sum)>0)
     C<-integer(nrow(All.hists))
     C[-zeroind]<-ncol(All.hists)
-    C[zeroind]<-apply(All.hists[zeroind,]>0,1,which.max)
+    C[zeroind]<-apply(as.matrix(All.hists[zeroind,]>0),1,which.max)
   } else {
     C<-c(ncol(All.hists)+1,apply(All.hists[-1,]>0,1,which.max))
   }
@@ -618,7 +618,7 @@ get_inits<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0del
   return(inits)
 }
 
-get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0delta,a0psi,b0psi,DM,spatialInputs=NULL){
+get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0delta,sigma_bounds,a0psi,b0psi,DM,spatialInputs=NULL){
   
   inits<-vector("list",nchains)
   
@@ -704,7 +704,6 @@ get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0
       }
     } else {
       centers <- rep(NA,M)
-      mdm <- NULL
       #plot(SpatialGrid(points2grid(SpatialPoints(spatialInputs$studyArea[,1:2]))))
       #points(spatialInputs$trapCoords[,1],spatialInputs$trapCoords[,2],pch=2)
       for(i in 1:M){
@@ -715,20 +714,12 @@ get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0
           av.coord <- apply(matrix(xxx, ncol=2), 2, mean)
           dvec <- as.vector(getdist(matrix(av.coord,ncol=2), spatialInputs$studyArea))
           centers[i] <- (1:length(dvec))[dvec==min(dvec)][1] 
-          #points(spatialInputs$trapCoords[tt,1],spatialInputs$trapCoords[tt,2],col=i+1)
-          tt1 <- unique(tt)
-          if(length(tt1) > 1) mdm <- c(mdm, max(getdist(spatialInputs$trapCoords[tt1,], spatialInputs$trapCoords[tt1,])))
         } else {
           centers[i] <- sample(1:nrow(spatialInputs$studyArea), 1)
         }
         #points(spatialInputs$studyArea[centers[i],1],spatialInputs$studyArea[centers[i],2],col=i+1,pch=20)
       }   
       inits[[ichain]]$centers<-centers#spatialInputs$studyArea[centers,] 
-      if(!is.null(mdm)) {
-        mmdm <- mean(mdm) # Mean Maximum Distance Moved
-      } else {
-        mmdm <- sqrt(spatialInputs$A)/ntraps
-      }
     }
     
     if(length(initial.values[[ichain]]$sigma2_scr)){
@@ -738,7 +729,25 @@ get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0
         stop("initial value for sigma2_scr must be a positive scalar")
       }
     } else {
-      inits[[ichain]]$sigma2_scr <- rgamma(1,shape=4,scale=(mmdm/4)/4)
+      mdm <- NULL
+      for(i in 1:M){
+        tt <- matrix(mms@Enc.Mat[i,],ncol=noccas,nrow=ntraps,byrow=TRUE)
+        tt <- row(tt)[tt>0]
+        if(length(tt)) {
+          tt1 <- unique(tt)
+          if(length(tt1) > 1) mdm <- c(mdm, max(getdist(spatialInputs$trapCoords[tt1,], spatialInputs$trapCoords[tt1,])))
+        }
+      }   
+      if(!is.null(mdm)) {
+        mmdm <- mean(mdm) # Mean Maximum Distance Moved
+        inits[[ichain]]$sigma2_scr <- rgamma(1,shape=4,scale=(mmdm/2)/4)^2
+      } else {
+        #mmdm <- sqrt(spatialInputs$A)/ntraps
+        inits[[ichain]]$sigma2_scr <- runif(1,sigma_bounds[1],sigma_bounds[2])^2
+      }
+    }
+    if(!dunif(sqrt(inits[[ichain]]$sigma2_scr),sigma_bounds[1],sigma_bounds[2])){
+      stop("initial value(s) for sigma2_scr are not consistent with prior")
     }
     
     if(!is.null(DM$phi)){
@@ -1037,7 +1046,7 @@ processdataSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=NU
     stop("Data type ('data.type') must be 'never', 'sometimes', or 'always'")
   }
   
-  noccas<-ncol(trapCoords[,-c(1,2)])
+  noccas<-ncol(as.matrix(trapCoords[,-c(1,2)]))
   ntraps<-nrow(trapCoords)
   if(ncol(Enc.Mat)!=noccas*ntraps) stop("Dimensions of 'Enc.Mat' and 'trapCoords' are not consistent")
   
@@ -1082,8 +1091,6 @@ processdataSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=NU
   #availSpatialInputs$msk <- trapCoords[,-c(1,2)]
   
   M<-nrow(Enc.Mat)
-  ntraps<-nrow(trapCoords)
-  noccas<-ncol(Enc.Mat)/ntraps
   
   if(!is.data.frame(covs)) stop("covariates ('covs') must be a data frame")
   
