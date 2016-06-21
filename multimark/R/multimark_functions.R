@@ -45,7 +45,10 @@ NULL
 #' # Example uses unrealistically low values for nchain, iter, and burnin
 #' 
 #' # Fit spatial model to tiger data
-#' tiger.dot<-markClosedSCR(tiger$Enc.Mat,tiger$trapCoords,tiger$studyArea,iter=200,adapt=100,burnin=100)
+#' Enc.Mat<-tiger$Enc.Mat
+#' trapCoords<-tiger$trapCoords
+#' studyArea<-tiger$studyArea
+#' tiger.dot<-markClosedSCR(Enc.Mat,trapCoords,studyArea,iter=200,adapt=100,burnin=100)
 #' summary(tiger.dot$mcmc)}
 #' @keywords data
 NULL
