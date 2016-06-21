@@ -40,7 +40,14 @@ NULL
 #' data(tiger)
 #' #plot the traps and available habitat within the study area
 #' plotSpatialData(trapCoords=tiger$trapCoords,studyArea=tiger$studyArea)
-#' @keywords tiger
+#' \donttest{
+#' # This example is excluded from testing to reduce package check time
+#' # Example uses unrealistically low values for nchain, iter, and burnin
+#' 
+#' # Fit spatial model to tiger data
+#' tiger.dot<-markClosedSCR(tiger$Enc.Mat,tiger$trapCoords,tiger$studyArea,iter=200,adapt=100,burnin=100)
+#' summary(tiger.dot$mcmc)}
+#' @keywords data
 NULL
 
 #' Class \code{"multimarksetup"}
