@@ -978,7 +978,7 @@ getdensityClosedSCR<-function(out){
     
   spatialInputs<-getSpatialInputs(out$mms)
   
-  A <- out$mms@spatialInputs$origCellRes * nrow(spatialInputs$studyArea)
+  A <- out$mms@spatialInputs$origCellRes^2 * nrow(spatialInputs$studyArea)
   
   varind <- is.null(varnames(out$mcmc))
   if(!varind){
@@ -1069,7 +1069,7 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
     H<-NULL
   }
   
-  A <- mms@spatialInputs$origCellRes * nrow(spatialInputs$studyArea)
+  A <- mms@spatialInputs$origCellRes^2 * nrow(spatialInputs$studyArea)
   Srange2 <- mms@spatialInputs$Srange^2
   for(imod in 1:nmod){
     priorlist[[imod]]$sigma_bounds<-priorlist[[imod]]$sigma_bounds/mms@spatialInputs$Srange
