@@ -334,7 +334,7 @@ get_C <-function(All.hists,type="Closed"){
     zeroind<-which(apply(All.hists,1,sum)>0)
     C<-integer(nrow(All.hists))
     C[-zeroind]<-ncol(All.hists)
-    C[zeroind]<-apply(as.matrix(All.hists[zeroind,]>0),1,which.max)
+    C[zeroind]<-apply(All.hists[zeroind,,drop=FALSE]>0,1,which.max)
   } else {
     C<-c(ncol(All.hists)+1,apply(All.hists[-1,]>0,1,which.max))
   }
@@ -1060,7 +1060,7 @@ processdataSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=NU
     stop("Data type ('data.type') must be 'never', 'sometimes', or 'always'")
   }
   
-  noccas<-ncol(as.matrix(trapCoords[,-c(1,2)]))
+  noccas<-ncol(trapCoords[,-c(1,2),drop=FALSE])
   ntraps<-nrow(trapCoords)
   if(ncol(Enc.Mat)!=noccas*ntraps) stop("Dimensions of 'Enc.Mat' and 'trapCoords' are not consistent")
   
@@ -1159,7 +1159,7 @@ checkmats<-function(mat,dim,parm){
 inverseXB<-function(ichain,iout,betanames,mod.h,DM,noccas,varind,vars,parm,sigparm,link){
   
   if(!varind){
-    beta<-as.matrix(iout$mcmc[[ichain]][,betanames])   
+    beta<-iout$mcmc[[ichain]][,betanames,drop=FALSE]  
   } else {
     beta<-matrix(iout$mcmc[[ichain]][betanames],nrow=1) 
   }
@@ -1175,7 +1175,7 @@ inverseXB<-function(ichain,iout,betanames,mod.h,DM,noccas,varind,vars,parm,sigpa
   } else {
     if(!any(match(sigparm,vars,nomatch=0))) stop(paste(sigparm,"parameter not found"))
     if(!varind){
-      sigma2<-as.matrix(iout$mcmc[[ichain]][,sigparm])
+      sigma2<-iout$mcmc[[ichain]][,sigparm,drop=FALSE]
     } else {
       sigma2<-matrix(iout$mcmc[[ichain]][sigparm],nrow=1)  
     }

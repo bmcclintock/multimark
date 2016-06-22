@@ -193,7 +193,7 @@ plotSpatialData<-function(mms=NULL,trapCoords,studyArea,centers=NULL,trapLines=F
     M<-ifelse(!is.null(mms),nrow(Enc.Mat),length(centers))
     rainColors<-grDevices::rainbow(M)
     ntraps<-nrow(trapCoords)
-    noccas<-ncol(as.matrix(trapCoords[,-c(1,2)]))
+    noccas<-ncol(trapCoords[,-c(1,2),drop=FALSE])
     if(length(centers)!=M) stop("'centers' must be of length ",M)
     for(i in 1:M){
       points(studyArea[centers[i],"x"],studyArea[centers[i],"y"],pch=20,col=rainColors[i])
@@ -218,7 +218,7 @@ plotSpatialData<-function(mms=NULL,trapCoords,studyArea,centers=NULL,trapLines=F
 
 pstarintegrandSCR<-function(noccas,beta,sigma2,DM,spatialInputs,dexp){
   msk2 <- which(c(t(spatialInputs$msk))==1)
-  XB <- as.matrix(DM[msk2,]) %*% beta
+  XB <- DM[msk2,,drop=FALSE] %*% beta
   dist2 <- spatialInputs$dist2
   detProb<-invcloglogtol(matrix(XB,nrow=dim(dist2)[1],ncol=length(msk2),byrow=TRUE)-1/(dexp*sigma2)*dist2[,rep(1:dim(dist2)[2],times=apply(spatialInputs$msk,1,sum))]^dexp)
   #detProb<-exp(matrix(0,nrow=dim(dist2)[1],ncol=length(msk2),byrow=TRUE)-1/(dexp*sigma2)*dist2[,rep(1:dim(dist2)[2],times=apply(spatialInputs$msk,1,sum))]^dexp)
@@ -601,7 +601,7 @@ getSpatialInputs<-function(mms){
   spatialInputs$a <- sp::points2grid(sp::SpatialPoints(mms@spatialInputs$studyArea[,1:2]))@cellsize[1]
   spatialInputs$A <- spatialInputs$a * nrow(spatialInputs$studyArea)
   spatialInputs$dist2 <- getdist(spatialInputs$studyArea,spatialInputs$trapCoords)
-  spatialInputs$msk <- as.matrix(mms@spatialInputs$trapCoords[,-c(1,2)])
+  spatialInputs$msk <- mms@spatialInputs$trapCoords[,-c(1,2),drop=FALSE]
   spatialInputs$centermap1 <- cumsum(mms@spatialInputs$studyArea[,"avail"]==0)
   spatialInputs$centermap2 <- cumsum(mms@spatialInputs$studyArea[,"avail"]==1)
   spatialInputs
@@ -932,7 +932,7 @@ getprobsClosedSCR<-function(out,link="cloglog"){
   for(ichain in 1:nchains){
     
     if(!varind){
-      pbeta<-as.matrix(out$mcmc[[ichain]][,pbetanames])   
+      pbeta<-out$mcmc[[ichain]][,pbetanames,drop=FALSE]   
     } else {
       pbeta<-matrix(out$mcmc[[ichain]][pbetanames],nrow=1) 
     }
@@ -1238,7 +1238,7 @@ multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modl
   
   spatialInputs<-getSpatialInputs(mms)
 
-  noccas<-ncol(as.matrix(mms@spatialInputs$trapCoords[,-c(1,2)]))
+  noccas<-ncol(mms@spatialInputs$trapCoords[,-c(1,2),drop=FALSE])
   ntraps<-nrow(mms@spatialInputs$trapCoords)
   M<-nrow(mms@Enc.Mat)
   All.hists<-matrix(mms@vAll.hists,byrow=TRUE,ncol=noccas*ntraps)
