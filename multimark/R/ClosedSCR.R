@@ -468,14 +468,17 @@ mcmcClosedSCR<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,ta
   
   arate<-numeric(M+pdim+1)
   
+  cummind<-c(0,cumsum(apply(spatialInputs$msk,1,sum)))
+  mind<-c(unlist(apply(spatialInputs$msk,1,function(x) which(x>0))))-1
+  
   posterior <- .C(ClosedSCRC,as.integer(ichain),as.numeric(mu0), as.numeric(sigma2_mu0), as.numeric(pbeta), as.numeric(sigma2_scr), as.numeric(delta_1),as.numeric(delta_2),as.numeric(alpha), as.integer(inits[[ichain]]$x), as.numeric(N), as.numeric(psi), as.integer(H), as.integer(centers),
                   as.integer(ntraps),as.integer(noccas), as.integer(M), as.numeric(a0delta), as.numeric(a0alpha), as.numeric(b0alpha), as.numeric(sigma_bounds/mms@spatialInputs$Srange), as.numeric(a0psi), as.numeric(b0psi),
                   as.numeric(Prop.sd),as.integer(Prop.center$NNvect-1),as.integer(Prop.center$numnn),as.integer(Prop.center$cumnumnn),as.numeric(arate),as.numeric(logPosterior),
                   as.integer(length(mms@vAll.hists)/(noccas*ntraps)),as.integer(mms@vAll.hists), as.integer(firstcap), as.integer(mms@indBasis-1), as.integer(mms@ncolbasis), as.integer(mms@knownx), as.numeric(as.vector(t(DMp))), as.numeric(as.vector(t(DMc))),as.integer(pdim),
                   as.integer(iter), as.integer(thin), as.integer(adapt), as.integer(bin), as.numeric(taccept),as.numeric(tuneadjust),as.integer(maxnumbasis),
-                  as.integer(mms@data.type=="sometimes"),as.integer(any(params=="H")),as.integer(any(params=="centers")),as.integer(DM$mod.delta != ~NULL),as.integer(DM$mod.delta==formula(~type)),as.numeric(dexp),as.numeric(spatialInputs$dist2^dexp),as.integer(nrow(spatialInputs$studyArea)),as.numeric(spatialInputs$A),as.integer(c(t(spatialInputs$msk))),as.integer(printlog),NAOK = TRUE) 
+                  as.integer(mms@data.type=="sometimes"),as.integer(any(params=="H")),as.integer(any(params=="centers")),as.integer(DM$mod.delta != ~NULL),as.integer(DM$mod.delta==formula(~type)),as.numeric(dexp),as.numeric(spatialInputs$dist2^dexp),as.integer(nrow(spatialInputs$studyArea)),as.numeric(spatialInputs$A),as.integer(c(t(spatialInputs$msk))),as.integer(cummind),as.integer(mind),as.integer(printlog),NAOK = TRUE) 
   
-  names(posterior) <- c("ichain","mu_0","sigma2_mu","pbeta","sigma2_scr", "delta_1","delta_2","alpha", "x", "N", "psi","H", "centers", "ntraps", "noccas", "M","a0delta", "a0alpha", "b0alpha","sigma_bounds","a0psi","b0psi","Prop.sd", "NNvect", "numnn","cumnumnn", "arate","logPosterior","nHists","vAll.hists","firstcap", "indBasis", "ncolBasis","knownx","DMp","DMc","pdim","iter", "thin", "adapt", "bin", "taccept","tuneadjust","maxnumbasis","sometimes?","H?","centers?","updatedelta?","type?","dexp","dist2","ncells","Area","msk","printlog?")
+  names(posterior) <- c("ichain","mu_0","sigma2_mu","pbeta","sigma2_scr", "delta_1","delta_2","alpha", "x", "N", "psi","H", "centers", "ntraps", "noccas", "M","a0delta", "a0alpha", "b0alpha","sigma_bounds","a0psi","b0psi","Prop.sd", "NNvect", "numnn","cumnumnn", "arate","logPosterior","nHists","vAll.hists","firstcap", "indBasis", "ncolBasis","knownx","DMp","DMc","pdim","iter", "thin", "adapt", "bin", "taccept","tuneadjust","maxnumbasis","sometimes?","H?","centers?","updatedelta?","type?","dexp","dist2","ncells","Area","msk","cummind","mind","printlog?")
   
   g <- posterior$iter
   x <- posterior$x
