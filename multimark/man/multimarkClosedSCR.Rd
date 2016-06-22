@@ -66,7 +66,7 @@ multimarkClosedSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
 
 \item{propsigma}{Scaler specifying the initial Gamma(shape = 1/\code{propsigma}, scale = sigma_scr * \code{propsigma}) proposal distribution for sigma_scr = sqrt(sigma2_scr). Default is \code{propsigma=1}.}
 
-\item{propcenter}{Scaler specifying the neighborhood distance (on re-scaled coordinates between 0 and \code{scalemax}) when proposing updates to activity centers. When \code{propcenter=NULL} (the default), then propcenter = a*10, where a is the re-scaled cell size for the study area grid.  When \code{propcenter=NULL} and \code{scalemax=10} (the default), each cell has approximately 300 neighbors (at most).}
+\item{propcenter}{Scaler specifying the neighborhood distance (on re-scaled coordinates between 0 and \code{scalemax}) when proposing updates to activity centers. When \code{propcenter=NULL} (the default), then propcenter = a*10, where a is the re-scaled cell size for the study area grid, and each cell has (at most) approximately 300 neighbors.}
 
 \item{maxnumbasis}{Maximum number of basis vectors to use when proposing latent history frequency updates. Default is \code{maxnumbasis = 1}, but higher values can potentially improve mixing.}
 

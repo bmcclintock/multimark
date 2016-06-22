@@ -52,7 +52,7 @@ markClosedSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
 
 \item{propsigma}{Scaler specifying the initial Gamma(shape = 1/\code{propsigma}, scale = sigma_scr * \code{propsigma}) proposal distribution for sigma_scr = sqrt(sigma2_scr). Default is \code{propsigma=1}.}
 
-\item{propcenter}{Scaler specifying the neighborhood distance (on re-scaled coordinates between 0 and \code{scalemax}) when proposing updates to activity centers. When \code{propcenter=NULL} (the default), then propcenter = a*10, where a is the re-scaled cell size for the study area grid.  When \code{propcenter=NULL} and \code{scalemax=10} (the default), each cell has approximately 300 neighbors (at most).}
+\item{propcenter}{Scaler specifying the neighborhood distance (on re-scaled coordinates between 0 and \code{scalemax}) when proposing updates to activity centers. When \code{propcenter=NULL} (the default), then propcenter = a*10, where a is the re-scaled cell size for the study area grid, and each cell has (at most) approximately 300 neighbors.}
 
 \item{sigma_bounds}{Positive vector of length 2 for the lower and upper bounds for the [sigma_scr] ~ Uniform(sigma_bounds[1], sigma_bounds[2]) prior for the detection function term sigma_scr = sqrt(sigma2_scr). When \code{sigma_bounds = NULL} (the default), then \code{sigma_bounds = c(1.e-6,max(diff(range(studyArea[,"x"])),diff(range(studyArea[,"y"]))))}.}
 
