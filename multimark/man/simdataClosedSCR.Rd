@@ -7,7 +7,8 @@
 simdataClosedSCR(N = 30, ntraps = 9, noccas = 5, pbeta = 0.25,
   tau = 0, sigma2_scr = 0.75, delta_1 = 0.4, delta_2 = 0.4,
   alpha = 0.5, data.type = "never", detection = "half-normal",
-  spatialInputs = NULL, ncells = 1024, plot = FALSE)
+  spatialInputs = NULL, buffer = 3 * sqrt(sigma2_scr), ncells = 1024,
+  scalemax = 10, plot = TRUE)
 }
 \arguments{
 \item{N}{True population size or abundance.}
@@ -46,11 +47,15 @@ simdataClosedSCR(N = 30, ntraps = 9, noccas = 5, pbeta = 0.25,
   
  \code{centers} is a \code{N}-vector indicating the grid cell (i.e., the row of \code{studyArea}) that contains the true (latent) activity centers for each individual in the population. 
 
-If \code{spatialInputs=NULL} (the default), then all traps are assumed to be operating on all occasions, the study area is assumed to be composed of \code{ncells} grid cells of available habitat (including a buffer of 3*\code{sqrt(sigma2_scr)} around the trap array), and the activity centers are randomly assigned to grid cells within the study area..}
+If \code{spatialInputs=NULL} (the default), then all traps are assumed to be operating on all occasions, the study area is assumed to be composed of \code{ncells} grid cells, grid cells within \code{buffer} of the trap array are assumed to be available habitat, and the activity centers are randomly assigned to grid cells of available habitat.}
+
+\item{buffer}{A scaler indicating the buffer around the bounding box of \code{trapCoords} for defining the study area and available habitat when \code{spatialInputs=NULL}.  Default is \code{buffer=3*sqrt(sigma2_scr)}. Ignored unless \code{spatialInputs=NULL}.}
 
 \item{ncells}{The number of grid cells in the study area when \code{studyArea=NULL}. The square root of \code{ncells} must be a whole number. Default is \code{ncells=1024}. Ignored unless \code{spatialInputs=NULL}.}
 
-\item{plot}{Logical indicating whether to plot the simulated trap coordinates, study area, and activity centers using \code{\link{plotSpatialData}}.  Default is \code{plot=FALSE}}
+\item{scalemax}{Upper bound for grid cell centroid x- and y-coordinates. Default is \code{scalemax=10}, which scales the x- and y-coordinates to be between 0 and 10.  Ignored unless \code{spatialInputs=NULL}.}
+
+\item{plot}{Logical indicating whether to plot the simulated trap coordinates, study area, and activity centers using \code{\link{plotSpatialData}}.  Default is \code{plot=TRUE}}
 }
 \value{
 A list containing the following:

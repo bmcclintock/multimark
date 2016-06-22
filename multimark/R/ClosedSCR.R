@@ -29,9 +29,11 @@
 #'   
 #'  \code{centers} is a \code{N}-vector indicating the grid cell (i.e., the row of \code{studyArea}) that contains the true (latent) activity centers for each individual in the population. 
 #'
-#' If \code{spatialInputs=NULL} (the default), then all traps are assumed to be operating on all occasions, the study area is assumed to be composed of \code{ncells} grid cells of available habitat (including a buffer of 3*\code{sqrt(sigma2_scr)} around the trap array), and the activity centers are randomly assigned to grid cells within the study area..
+#' If \code{spatialInputs=NULL} (the default), then all traps are assumed to be operating on all occasions, the study area is assumed to be composed of \code{ncells} grid cells, grid cells within \code{buffer} of the trap array are assumed to be available habitat, and the activity centers are randomly assigned to grid cells of available habitat.
+#' @param buffer A scaler indicating the buffer around the bounding box of \code{trapCoords} for defining the study area and available habitat when \code{spatialInputs=NULL}.  Default is \code{buffer=3*sqrt(sigma2_scr)}. Ignored unless \code{spatialInputs=NULL}.
 #' @param ncells The number of grid cells in the study area when \code{studyArea=NULL}. The square root of \code{ncells} must be a whole number. Default is \code{ncells=1024}. Ignored unless \code{spatialInputs=NULL}.
-#' @param plot Logical indicating whether to plot the simulated trap coordinates, study area, and activity centers using \code{\link{plotSpatialData}}.  Default is \code{plot=FALSE}
+#' @param scalemax Upper bound for grid cell centroid x- and y-coordinates. Default is \code{scalemax=10}, which scales the x- and y-coordinates to be between 0 and 10.  Ignored unless \code{spatialInputs=NULL}.
+#' @param plot Logical indicating whether to plot the simulated trap coordinates, study area, and activity centers using \code{\link{plotSpatialData}}.  Default is \code{plot=TRUE}
 #' @details Please be very careful when specifying your own \code{spatialInputs}; \code{\link{multimarkClosedSCR}} and \code{\link{markClosedSCR}} do little to verify that these make sense during model fitting.  
 #'
 #' @return A list containing the following:
@@ -54,7 +56,7 @@
 #' @examples
 #' #simulate data for data.type="sometimes" using defaults
 #' data<-simdataClosedSCR(data.type="sometimes")
-simdataClosedSCR <- function(N=30,ntraps=9,noccas=5,pbeta=0.25,tau=0,sigma2_scr=0.75,delta_1=0.4,delta_2=0.4,alpha=0.5,data.type="never",detection="half-normal",spatialInputs=NULL,ncells=1024,plot=FALSE){
+simdataClosedSCR <- function(N=30,ntraps=9,noccas=5,pbeta=0.25,tau=0,sigma2_scr=0.75,delta_1=0.4,delta_2=0.4,alpha=0.5,data.type="never",detection="half-normal",spatialInputs=NULL,buffer=3*sqrt(sigma2_scr),ncells=1024,scalemax=10,plot=TRUE){
   
   if(length(pbeta)==1){
     pbeta=rep(pbeta,noccas)
@@ -76,12 +78,20 @@ simdataClosedSCR <- function(N=30,ntraps=9,noccas=5,pbeta=0.25,tau=0,sigma2_scr=
     spatialInputs=list()
     if(sqrt(ntraps)%%1) stop("The square root of 'ntraps' must be a whole number")
     if(sqrt(ncells)%%1) stop("The square root of 'ncells' must be a whole number")
-    buffer <- 3*sqrt(sigma2_scr)
-    spatialInputs$trapCoords<-as.matrix(expand.grid(seq(0+buffer,10-buffer,length=sqrt(ntraps)),seq(0+buffer,10-buffer,length=sqrt(ntraps)))) #trap coordinates on square
+    if(buffer>=scalemax/2) stop("'buffer' must be <",scalemax/2)
+    spatialInputs$trapCoords<-as.matrix(expand.grid(seq(0+buffer,scalemax-buffer,length=sqrt(ntraps)),seq(0+buffer,scalemax-buffer,length=sqrt(ntraps)))) #trap coordinates on square
     spatialInputs$trapCoords<-cbind(spatialInputs$trapCoords,matrix(1,nrow=ntraps,ncol=noccas)) # assumes all traps are operational on all occasions
-    studyArea<-as.matrix(expand.grid(seq(0,10,length=sqrt(ncells)),seq(0,10,length=sqrt(ncells)))) #study area grid
-    spatialInputs$studyArea<-cbind(studyArea,rep(1,ncells))
-    spatialInputs$centers<-sample.int(nrow(studyArea),N,replace=TRUE)
+    studyArea<-as.matrix(expand.grid(seq(0,scalemax,length=sqrt(ncells)),seq(0,scalemax,length=sqrt(ncells)))) #study area grid
+    NN<-numeric()
+    for(i in 1:nrow(spatialInputs$trapCoords)){
+      od <- sqrt( (studyArea[,1]-spatialInputs$trapCoords[i,1])^2  +  (studyArea[,2]-spatialInputs$trapCoords[i,2])^2  )
+      od <- (1:length(od))[od <= buffer]
+      NN<-c(NN,od)
+    }
+    spatialInputs$studyArea<-cbind(studyArea,rep(0,ncells))
+    spatialInputs$studyArea[unique(NN),3]<-1
+    if(!sum(spatialInputs$studyArea[,3])) stop("No available habitat; 'buffer' probably too small")
+    spatialInputs$centers<-sample.int(nrow(studyArea),N,replace=TRUE,prob=spatialInputs$studyArea[,3])
   } else {
     if(!is.list(spatialInputs) | length(spatialInputs)!=3 | any(sort(names(spatialInputs))!=c("centers","studyArea","trapCoords"))) stop("'spatialInputs' must be a list of length 3 containing the object 'trapCoords', 'studyArea', and 'centers'")
     if(ntraps!=nrow(spatialInputs$trapCoords)){
@@ -597,6 +607,19 @@ getSpatialInputs<-function(mms){
   spatialInputs
 }
 
+getPropCenter<-function(spatialInputs,propcenter){
+  NN<-list()
+  RAD <- ifelse(is.null(propcenter),spatialInputs$a*10,propcenter) # Change propcenter to get more or fewer neighbors
+  for(i in 1:nrow(spatialInputs$studyArea)){
+    od <- sqrt( (spatialInputs$studyArea[i,1]-spatialInputs$studyArea[,1])^2  +  (spatialInputs$studyArea[i,2]-spatialInputs$studyArea[,2])^2  )
+    od <- (1:length(od))[od < RAD]
+    NN[[i]]<-od
+  }
+  Prop.center<-list(NNvect=unlist(NN),numnn=unlist(lapply(NN,length)))
+  Prop.center$cumnumnn<-c(0,cumsum(Prop.center$numnn))[1:length(Prop.center$numnn)]
+  Prop.center
+}
+
 #' Fit spatial population abundance models for ``traditional'' capture-mark-recapture data consisting of a single mark type
 #'
 #' This function fits spatial population abundance models for ``traditional'' capture-mark-recapture data consisting of a single mark type using Bayesian analysis methods. Markov chain Monte Carlo (MCMC) is used to draw samples from the joint posterior distribution. 
@@ -826,16 +849,7 @@ multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncell
   proppbeta <- checkvecs(proppbeta,pdim,"proppbeta")
   if(length(propsigma)!=1) stop("'propsigma' must be a scaler")
   
-  NN<-list()
-  RAD <- ifelse(is.null(propcenter),spatialInputs$a*10,propcenter) # Change propcenter to get more or fewer neighbors
-  for(i in 1:nrow(spatialInputs$studyArea)){
-    od <- sqrt( (spatialInputs$studyArea[i,1]-spatialInputs$studyArea[,1])^2  +  (spatialInputs$studyArea[i,2]-spatialInputs$studyArea[,2])^2  )
-    od <- (1:length(od))[od < RAD]
-    NN[[i]]<-od
-  }
-  Prop.center<-list(NNvect=unlist(NN),numnn=unlist(lapply(NN,length)))
-  Prop.center$cumnumnn<-c(0,cumsum(Prop.center$numnn))[1:length(Prop.center$numnn)]
-  
+  Prop.center<-getPropCenter(spatialInputs,propcenter)
   Prop.sd <- c(proppbeta,propsigma)
   
   message("Updating...",ifelse(printlog | nchains==1,"","set 'printlog=TRUE' to follow progress of chains in a working directory log file"),"\n",sep="")

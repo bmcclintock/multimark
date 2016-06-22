@@ -265,42 +265,46 @@ get_Enc <- function(tEnc.Mat,data.type){
     Enc.Mat<-Enc.Mat[-z.Enc.Mat,]        #remove all zero simulated histories
   }
   
-  if(data.type=="never"){
-    for(i in 1:nrow(Enc.Mat)){      #histories with 1 and 2 or 3 result in 2 'ghost' histories; change 2's to 0 and 3's to 1 to get 1 ghosts, then change 3's to 2 and append with 2 ghosts to end of array
-      if((base::sum(Enc.Mat[i,]==1)>0 & base::sum(Enc.Mat[i,]==2)>0) | base::sum(Enc.Mat[i,]==3)>0) {
-        cur2<-which(Enc.Mat[i,]==2)
-        cur3<-which(Enc.Mat[i,]==3)
-        Enc.Mat[i,cur2] <- 0
-        Enc.Mat[i,cur3] <- 1
-        new.hist<-rep(0,noccas)
-        new.hist[cur2] <- 2
-        new.hist[cur3] <- 2
-        Enc.Mat<-rbind(Enc.Mat,new.hist,deparse.level=0)
+  if(length(Enc.Mat)) {
+    if(data.type=="never"){
+      for(i in 1:nrow(Enc.Mat)){      #histories with 1 and 2 or 3 result in 2 'ghost' histories; change 2's to 0 and 3's to 1 to get 1 ghosts, then change 3's to 2 and append with 2 ghosts to end of array
+        if((base::sum(Enc.Mat[i,]==1)>0 & base::sum(Enc.Mat[i,]==2)>0) | base::sum(Enc.Mat[i,]==3)>0) {
+          cur2<-which(Enc.Mat[i,]==2)
+          cur3<-which(Enc.Mat[i,]==3)
+          Enc.Mat[i,cur2] <- 0
+          Enc.Mat[i,cur3] <- 1
+          new.hist<-rep(0,noccas)
+          new.hist[cur2] <- 2
+          new.hist[cur3] <- 2
+          Enc.Mat<-rbind(Enc.Mat,new.hist,deparse.level=0)
+        }
+      }
+    } else if(data.type=="always"){
+      for(i in 1:nrow(Enc.Mat)){      #histories with 1 and 2 but no 4 result in 2 'ghost' histories; change 2's to 0 to get 1 ghosts and append 2 ghosts to end of array
+        if(base::sum(Enc.Mat[i,]==1)>0 & base::sum(Enc.Mat[i,]==2)>0 & base::sum(Enc.Mat[i,]==4)==0) {
+          cur2<-which(Enc.Mat[i,]==2)
+          Enc.Mat[i,cur2] <- 0
+          new.hist<-rep(0,noccas)
+          new.hist[cur2] <- 2
+          Enc.Mat<-rbind(Enc.Mat,new.hist,deparse.level=0)
+        }
+      }
+    } else if(data.type=="sometimes"){
+      for(i in 1:nrow(Enc.Mat)){      #histories with 1 and 2 or 3 but no 4 result in 2 'ghost' histories; change 2's to 0 and 3's to 1 to get 1 ghosts, then change 3's to 2 and append with 2 ghosts to end of array
+        if(base::sum(Enc.Mat[i,]==1)>0 & base::sum(Enc.Mat[i,]==2)>0 & base::sum(Enc.Mat[i,]==4)==0 | (base::sum(Enc.Mat[i,]==3)>0 & base::sum(Enc.Mat[i,]==4)==0)) {
+          cur2<-which(Enc.Mat[i,]==2)
+          cur3<-which(Enc.Mat[i,]==3)
+          Enc.Mat[i,cur2] <- 0
+          Enc.Mat[i,cur3] <- 1
+          new.hist<-rep(0,noccas)
+          new.hist[cur2] <- 2
+          new.hist[cur3] <- 2
+          Enc.Mat<-rbind(Enc.Mat,new.hist,deparse.level=0)
+        }
       }
     }
-  } else if(data.type=="always"){
-    for(i in 1:nrow(Enc.Mat)){      #histories with 1 and 2 but no 4 result in 2 'ghost' histories; change 2's to 0 to get 1 ghosts and append 2 ghosts to end of array
-      if(base::sum(Enc.Mat[i,]==1)>0 & base::sum(Enc.Mat[i,]==2)>0 & base::sum(Enc.Mat[i,]==4)==0) {
-        cur2<-which(Enc.Mat[i,]==2)
-        Enc.Mat[i,cur2] <- 0
-        new.hist<-rep(0,noccas)
-        new.hist[cur2] <- 2
-        Enc.Mat<-rbind(Enc.Mat,new.hist,deparse.level=0)
-      }
-    }
-  } else if(data.type=="sometimes"){
-    for(i in 1:nrow(Enc.Mat)){      #histories with 1 and 2 or 3 but no 4 result in 2 'ghost' histories; change 2's to 0 and 3's to 1 to get 1 ghosts, then change 3's to 2 and append with 2 ghosts to end of array
-      if(base::sum(Enc.Mat[i,]==1)>0 & base::sum(Enc.Mat[i,]==2)>0 & base::sum(Enc.Mat[i,]==4)==0 | (base::sum(Enc.Mat[i,]==3)>0 & base::sum(Enc.Mat[i,]==4)==0)) {
-        cur2<-which(Enc.Mat[i,]==2)
-        cur3<-which(Enc.Mat[i,]==3)
-        Enc.Mat[i,cur2] <- 0
-        Enc.Mat[i,cur3] <- 1
-        new.hist<-rep(0,noccas)
-        new.hist[cur2] <- 2
-        new.hist[cur3] <- 2
-        Enc.Mat<-rbind(Enc.Mat,new.hist,deparse.level=0)
-      }
-    }
+  } else {
+    warning("No individuals were detected!")
   }
   Enc.Mat
 }
