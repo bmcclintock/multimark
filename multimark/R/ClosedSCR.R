@@ -244,8 +244,13 @@ loglikeClosedSCR<-function(parms,DM,noccas,ntraps,C,All.hists,spatialInputs){
     delta_2 <- 0.0
     alpha <- 0.0
   }
-  
-  dexp<-ifelse(DM$mod.det=="half-normal",2,1)
+  if(DM$mod.det=="half-normal"){
+    dexp <- 2
+    sigma2 <- parms$sigma2_scr
+  } else {
+    dexp <-1
+    sigma2 <- parms$lambda
+  }
   
   Hind <- H[which(H>1)]
   centers <- spatialInputs$studyArea[parms$centers[which(H>1)],]
@@ -302,9 +307,9 @@ loglikeClosedSCR<-function(parms,DM,noccas,ntraps,C,All.hists,spatialInputs){
   c1 <- (centers[indid,1] - trapgridbig[,1])^2
   c2 <- (centers[indid,2] - trapgridbig[,2])^2
   
-  p <- invcloglogtol(rep(DM$p%*%pbeta,each=n)[msk2==1]*(1-prevcap) + rep(DM$c%*%pbeta,each=n)[msk2==1]*prevcap - 1./(dexp*parms$sigma2_scr)*sqrt(c1+c2)^dexp)
-  #p <- exp(- 1./(dexp*parms$sigma2_scr)*sqrt(c1+c2)^dexp)
-  #p2 <- invcloglogtol(matrix(rep(DM$p%*%pbeta,each=n)*(1-prevcap2)+rep(DM$c%*%pbeta,each=n)*prevcap2,nrow=n,ncol=noccas*ntraps)- 1./(dexp*parms$sigma2_scr)*(dist2mat)^dexp)
+  p <- invcloglogtol(rep(DM$p%*%pbeta,each=n)[msk2==1]*(1-prevcap) + rep(DM$c%*%pbeta,each=n)[msk2==1]*prevcap - 1./(dexp*sigma2)*sqrt(c1+c2)^dexp)
+  #p <- exp(- 1./(dexp*sigma2)*sqrt(c1+c2)^dexp)
+  #p2 <- invcloglogtol(matrix(rep(DM$p%*%pbeta,each=n)*(1-prevcap2)+rep(DM$c%*%pbeta,each=n)*prevcap2,nrow=n,ncol=noccas*ntraps)- 1./(dexp*sigma2)*(dist2mat)^dexp)
   
   loglike <- base::sum( log( (y==0) * (1. - p)
                              + (y==1) * p * delta_1  
@@ -318,7 +323,7 @@ loglikeClosedSCR<-function(parms,DM,noccas,ntraps,C,All.hists,spatialInputs){
   #                           + (indhist==3) * p2 * (1. - delta_1 - delta_2) * (1. - alpha)
   #                           + (indhist==4) * p2 * (1. - delta_1 - delta_2) * alpha ))
   
-  pstar <- pstarintegrandSCR(noccas,pbeta,parms$sigma2_scr,DM$p,spatialInputs,dexp)
+  pstar <- pstarintegrandSCR(noccas,pbeta,sigma2,DM$p,spatialInputs,dexp)
    
   loglike <- loglike + dbinom(n,parms$N,pstar,1) - n * log(pstar)  
   loglike
@@ -343,7 +348,7 @@ priorsClosedSCR<-function(parms,DM,priorparms,data_type,spatialInputs){
   }
   
   #priors <- priors + log(2.0*dcauchy(sqrt(parms$sigma2_scr),0.0,priorparms$a,log=FALSE))
-  priors <- priors + dunif(sqrt(parms$sigma2_scr),priorparms$sigma_bounds[1],priorparms$sigma_bounds[2],log=TRUE)
+  priors <- priors + dunif(sqrt(ifelse(DM$mod.det=="half-normal",parms$sigma2_scr,parms$lambda)),priorparms$sigma_bounds[1],priorparms$sigma_bounds[2],log=TRUE)
   
   priors <- priors + length(parms$centers)*log(1./spatialInputs$A)
   
@@ -417,6 +422,8 @@ mapCenters<-function(centers,centermap1,centermap2,origtoavail=TRUE){
 checkClosedSCR<-function(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccept,tuneadjust,maxnumbasis,a0delta,a0alpha,b0alpha,sigma_bounds,sigma2_mu0,a0psi,b0psi){
   
   if(mms@data.type!="sometimes" & any(parms=="alpha")) stop("Parameter 'alpha' only applies to models for the 'sometimes' data type")
+  if(DM$mod.det=="half-normal" & any(parms=="lambda")) stop("Parameter 'lambda' only applies to `exponential' detection function")
+  if(DM$mod.det=="exponential" & any(parms=="sigma2_scr")) stop("Parameter 'sigma2_scr' only applies to `half-normal' detection function")
   
   params<-parms
   if(any(parms=="all")){
@@ -435,7 +442,7 @@ checkClosedSCR<-function(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccep
   if(taccept<=0 | taccept>1) stop ("'taccept' must be >0 and <=1")
   if(tuneadjust<=0 | tuneadjust>1) stop ("'tuneadjust' must be >0 and <=1")
   if(mms@ncolbasis & (maxnumbasis<1 | maxnumbasis>mms@ncolbasis)) stop("'maxnumbasis' must be between 1 and ",mms@ncolbasis)
-  if(!all(c(a0delta,a0alpha,b0alpha,sigma_bounds,sigma2_mu0,a0psi,b0psi)>0)) stop("'a0delta', 'a0alpha', 'b0alpha', 'a', 'sigma2_mu0', 'a0psi', and 'b0psi' must be >0")
+  if(!all(c(a0delta,a0alpha,b0alpha,sigma_bounds,sigma2_mu0,a0psi,b0psi)>0)) stop("'a0delta', 'a0alpha', 'b0alpha', 'sigma_bounds', 'sigma2_mu0', 'a0psi', and 'b0psi' must be >0")
   
   pdim<-ncol(DM$p)
   if(!pdim) stop("'mod.p' must include at least 1 parameter")
@@ -469,7 +476,7 @@ mcmcClosedSCR<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,ta
   pbeta[1:pdim] <- inits[[ichain]]$pbeta
   H[1:M] <- inits[[ichain]]$H-1
   centers[1:M] <- inits[[ichain]]$centers-1
-  sigma2_scr[1] <- inits[[ichain]]$sigma2_scr
+  sigma2_scr[1] <- ifelse(DM$mod.det=="half-normal",inits[[ichain]]$sigma2_scr,inits[[ichain]]$lambda)
   alpha[1] <- inits[[ichain]]$alpha
   delta_1[1] <- inits[[ichain]]$delta_1
   delta_2[1] <- inits[[ichain]]$delta_2
@@ -541,6 +548,7 @@ processClosedSCRchains<-function(chains,params,DM,M,nchains,iter,burnin,thin){
   } else {
     Hname<-NULL
   }
+  sig2name<-ifelse(DM$mod.det=="half-normal","sigma2_scr","lambda")
   
   initial.values <- list()
   
@@ -558,11 +566,11 @@ processClosedSCRchains<-function(chains,params,DM,M,nchains,iter,burnin,thin){
     } else {
       initstemp <- chains[[ichain]]$posterior[nrow(chains[[ichain]]$posterior),]
     }
-    names(initstemp) <- c(paste0("pbeta[",colnames(DM$p),"]"),centersname,"sigma2_scr","delta_1","delta_2","alpha","N","psi",Hname,"logPosterior")
+    names(initstemp) <- c(paste0("pbeta[",colnames(DM$p),"]"),centersname,sig2name,"delta_1","delta_2","alpha","N","psi",Hname,"logPosterior")
     if(any(params=="centers")){
-      initial.values[[ichain]] <- list(pbeta=initstemp[paste0("pbeta[",colnames(DM$p),"]")],centers=initstemp[centersname],sigma2_scr=initstemp["sigma2_scr"],delta_1=initstemp["delta_1"],delta_2=initstemp["delta_2"],alpha=initstemp["alpha"],N=initstemp["N"],psi=initstemp["psi"],x=chains[[ichain]]$x,H=chains[[ichain]]$H)
+      initial.values[[ichain]] <- list(pbeta=initstemp[paste0("pbeta[",colnames(DM$p),"]")],centers=initstemp[centersname],sigma2_scr=initstemp[sig2name],delta_1=initstemp["delta_1"],delta_2=initstemp["delta_2"],alpha=initstemp["alpha"],N=initstemp["N"],psi=initstemp["psi"],x=chains[[ichain]]$x,H=chains[[ichain]]$H)
     } else {
-      initial.values[[ichain]] <- list(pbeta=initstemp[paste0("pbeta[",colnames(DM$p),"]")],centers=chains[[ichain]]$centers,sigma2_scr=initstemp["sigma2_scr"],delta_1=initstemp["delta_1"],delta_2=initstemp["delta_2"],alpha=initstemp["alpha"],N=initstemp["N"],psi=initstemp["psi"],x=chains[[ichain]]$x,H=chains[[ichain]]$H)
+      initial.values[[ichain]] <- list(pbeta=initstemp[paste0("pbeta[",colnames(DM$p),"]")],centers=chains[[ichain]]$centers,sigma2_scr=initstemp[sig2name],delta_1=initstemp["delta_1"],delta_2=initstemp["delta_2"],alpha=initstemp["alpha"],N=initstemp["N"],psi=initstemp["psi"],x=chains[[ichain]]$x,H=chains[[ichain]]$H)
       names(initial.values[[ichain]]$centers) <- paste0("center[",1:M,"]")
     }
     if(any(params=="H")){
@@ -572,6 +580,7 @@ processClosedSCRchains<-function(chains,params,DM,M,nchains,iter,burnin,thin){
       names(initial.values[[ichain]]$H) <- paste0("H[",1:M,"]")
     }
     names(initial.values[[ichain]]$x) <- paste0("x[",1:length(initial.values[[ichain]]$x),"]")
+    names(initial.values[[ichain]])[match("sigma2_scr",names(initial.values[[ichain]]))]<-sig2name
     chains[[ichain]] <- chains[[ichain]]$posterior
     colnames(chains[[ichain]]) <- names(initstemp)   
     chains[[ichain]] <- chains[[ichain]][,parms]
@@ -632,8 +641,8 @@ getPropCenter<-function(spatialInputs,propcenter){
 #' @param ncells The number of grid cells in the study area when \code{studyArea=NULL}. The square root of \code{ncells} must be a whole number. Default is \code{ncells=1024}. Ignored unless \code{studyArea=NULL} and \code{mms=NULL}.
 #' @param covs A data frame of temporal covariates for detection probabilities. The number of rows in the data frame must equal the number of sampling occasions. Covariate names cannot be "time", "c", or "h"; these names are reserved.
 #' @param mod.p Model formula for detection probability. For example, \code{mod.p=~1} specifies no effects (i.e., intercept only), \code{mod.p~time} specifies temporal effects, \code{mod.p~c} specifies behavioral reponse (i.e., trap "happy" or "shy"), \code{mod.p~trap} specifies trap effects, and \code{mod.p~time+c} specifies additive temporal and behavioral effects.
-#' @param detection Model for detection probability as a function of distance from activity centers . Must be "\code{half-normal}" (of the form \eqn{\exp{(-d^2 / (2*\sigma^2))}}, where \eqn{d} is distance) or "\code{exponential}" (of the form \eqn{\exp{(-d / \sigma^2)}}).
-#' @param parms A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are cloglog-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), cloglog-scale variance term for the detection function ("\code{sigma2_scr}"), and the probability that a randomly selected individual from the \code{M = nrow(Enc.Mat)} observed individuals belongs to the \eqn{n} unique individuals encountered at least once ("\code{psi}"). Individual activity centers ("\code{centers}"), and the log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.
+#' @param detection Model for detection probability as a function of distance from activity centers . Must be "\code{half-normal}" (of the form \eqn{\exp{(-d^2 / (2*\sigma^2))}}, where \eqn{d} is distance) or "\code{exponential}" (of the form \eqn{\exp{(-d / \lambda)}}).
+#' @param parms A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are cloglog-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), cloglog-scale distance term for the detection function ("\code{sigma2_scr}" when \code{detection=``half-normal''} or "\code{lambda}" when \code{detection=``exponential''}), and the probability that a randomly selected individual from the \code{M = nrow(Enc.Mat)} observed individuals belongs to the \eqn{n} unique individuals encountered at least once ("\code{psi}"). Individual activity centers ("\code{centers}"), and the log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.
 #' @param nchains The number of parallel MCMC chains for the model.
 #' @param iter The number of MCMC iterations.
 #' @param adapt The number of iterations for proposal distribution adaptation. If \code{adapt = 0} then no adaptation occurs.
@@ -645,7 +654,7 @@ getPropCenter<-function(spatialInputs,propcenter){
 #' @param proppbeta Scaler or vector (of length k) specifying the initial standard deviation of the Normal(pbeta[j], proppbeta[j]) proposal distribution. If \code{proppbeta} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{proppbeta = 0.1}.
 #' @param propsigma Scaler specifying the initial Gamma(shape = 1/\code{propsigma}, scale = sigma_scr * \code{propsigma}) proposal distribution for sigma_scr = sqrt(sigma2_scr). Default is \code{propsigma=1}.
 #' @param propcenter Scaler specifying the neighborhood distance (on re-scaled coordinates between 0 and \code{scalemax}) when proposing updates to activity centers. When \code{propcenter=NULL} (the default), then propcenter = a*10, where a is the re-scaled cell size for the study area grid, and each cell has (at most) approximately 300 neighbors. 
-#' @param sigma_bounds Positive vector of length 2 for the lower and upper bounds for the [sigma_scr] ~ Uniform(sigma_bounds[1], sigma_bounds[2]) prior for the detection function term sigma_scr = sqrt(sigma2_scr). When \code{sigma_bounds = NULL} (the default), then \code{sigma_bounds = c(1.e-6,max(diff(range(studyArea[,"x"])),diff(range(studyArea[,"y"]))))}.
+#' @param sigma_bounds Positive vector of length 2 for the lower and upper bounds for the [sigma_scr] ~ Uniform(sigma_bounds[1], sigma_bounds[2]) (or [sqrt(lambda)] when \code{detection=``exponential''}) prior for the detection function term sigma_scr = sqrt(sigma2_scr) (or sqrt(lambda)). When \code{sigma_bounds = NULL} (the default), then \code{sigma_bounds = c(1.e-6,max(diff(range(studyArea[,"x"])),diff(range(studyArea[,"y"]))))}.
 #' @param mu0 Scaler or vector (of length k) specifying mean of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{mu0 = 0}.
 #' @param sigma2_mu0 Scaler or vector (of length k) specifying variance of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{sigma2_mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{sigma2_mu0 = 1.75}.
 #' @param initial.values Optional list of \code{nchain} list(s) specifying initial values for "\code{pbeta}", "\code{N}", "\code{sigma2_scr}", and "\code{centers}". Default is \code{initial.values = NULL}, which causes initial values to be generated automatically.
@@ -691,7 +700,7 @@ getPropCenter<-function(spatialInputs,propcenter){
 #' #Posterior summary for monitored parameters
 #' summary(tiger.dot$mcmc)
 #' plot(tiger.dot$mcmc)}
-markClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=1024,covs=data.frame(),mod.p=~1,detection="half-normal",parms=c("pbeta","N","sigma2_scr"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propsigma=1,propcenter=NULL,sigma_bounds=NULL,mu0=0,sigma2_mu0=1.75,initial.values=NULL,scalemax=10,printlog=FALSE,...){
+markClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=1024,covs=data.frame(),mod.p=~1,detection="half-normal",parms=c("pbeta","N"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propsigma=1,propcenter=NULL,sigma_bounds=NULL,mu0=0,sigma2_mu0=1.75,initial.values=NULL,scalemax=10,printlog=FALSE,...){
   if(any(Enc.Mat>1 | Enc.Mat<0)) stop("With a single mark type, encounter histories can only contain 0's (non-detections) and 1's (detections)")
   mms <- processdataSCR(Enc.Mat,trapCoords,studyArea,buffer,ncells,covs=covs,known=rep(1,nrow(Enc.Mat)),scalemax=scalemax)
   out <- multimarkClosedSCR(mms=mms,mod.p=mod.p,mod.delta=~NULL,parms=parms,nchains=nchains,iter=iter,adapt=adapt,bin=bin,thin=thin,burnin=burnin,taccept=taccept,tuneadjust=tuneadjust,proppbeta=proppbeta,propsigma=propsigma,propcenter=propcenter,sigma_bounds=sigma_bounds,mu0=mu0,sigma2_mu0=sigma2_mu0,initial.values=initial.values,scalemax=scalemax,printlog=printlog,...)
@@ -721,8 +730,8 @@ markClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=102
 #' @param mms An optional object of class \code{multimarkSCRsetup-class}; if \code{NULL} it is created. See \code{\link{processdataSCR}}.
 #' @param mod.p Model formula for detection probability as a function of distance from activity centers. For example, \code{mod.p=~1} specifies no effects (i.e., intercept only) other than distance, \code{mod.p~time} specifies temporal effects, \code{mod.p~c} specifies behavioral reponse (i.e., trap "happy" or "shy"), \code{mod.p~trap} specifies trap effects, and \code{mod.p~time+c} specifies additive temporal and behavioral effects.
 #' @param mod.delta Model formula for conditional probabilities of type 1 (delta_1) and type 2 (delta_2) encounters, given detection. Currently only \code{mod.delta=~1} (i.e., \eqn{\delta_1 = \delta_2}) and \code{mod.delta=~type} (i.e., \eqn{\delta_1 \ne \delta_2}) are implemented.
-#' @param detection Model for detection probability as a function of distance from activity centers . Must be "\code{half-normal}" (of the form \eqn{\exp{(-d^2 / (2*\sigma^2))}}, where \eqn{d} is distance) or "\code{exponential}" (of the form \eqn{\exp{(-d / \sigma^2)}}).
-#' @param parms A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are cloglog-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), conditional probability of type 1 or type 2 encounter, given detection ("\code{delta})", probability of simultaneous type 1 and type 2 detection, given both types encountered ("\code{alpha}"), cloglog-scale variance term for the detection function ("\code{sigma2_scr}"), and the probability that a randomly selected individual from the \code{M = nrow(Enc.Mat)} observed individuals belongs to the \eqn{n} unique individuals encountered at least once ("\code{psi}"). Individual activity centers ("\code{centers}"), encounter history indices ("\code{H}"), and the log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.
+#' @param detection Model for detection probability as a function of distance from activity centers . Must be "\code{half-normal}" (of the form \eqn{\exp{(-d^2 / (2*\sigma^2))}}, where \eqn{d} is distance) or "\code{exponential}" (of the form \eqn{\exp{(-d / \lambda)}}).
+#' @param parms A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are cloglog-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), conditional probability of type 1 or type 2 encounter, given detection ("\code{delta})", probability of simultaneous type 1 and type 2 detection, given both types encountered ("\code{alpha}"), cloglog-scale distance term for the detection function ("\code{sigma2_scr}" when \code{detection=``half-normal''} or "\code{lambda}" when \code{detection=``exponential''}), and the probability that a randomly selected individual from the \code{M = nrow(Enc.Mat)} observed individuals belongs to the \eqn{n} unique individuals encountered at least once ("\code{psi}"). Individual activity centers ("\code{centers}"), encounter history indices ("\code{H}"), and the log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.
 #' @param nchains The number of parallel MCMC chains for the model.
 #' @param iter The number of MCMC iterations.
 #' @param adapt The number of iterations for proposal distribution adaptation. If \code{adapt = 0} then no adaptation occurs.
@@ -732,13 +741,13 @@ markClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=102
 #' @param taccept Target acceptance rate during adaptive phase (\code{0 < taccept <= 1}). Acceptance rate is monitored every \code{bin} iterations. Default is \code{taccept = 0.44}.
 #' @param tuneadjust Adjustment term during adaptive phase (\code{0 < tuneadjust <= 1}). If acceptance rate is less than \code{taccept}, then proposal term (\code{proppbeta} or \code{propsigma}) is multiplied by \code{tuneadjust}. If acceptance rate is greater than or equal to \code{taccept}, then proposal term is divided by \code{tuneadjust}. Default is \code{tuneadjust = 0.95}.
 #' @param proppbeta Scaler or vector (of length k) specifying the initial standard deviation of the Normal(pbeta[j], proppbeta[j]) proposal distribution. If \code{proppbeta} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{proppbeta = 0.1}.
-#' @param propsigma Scaler specifying the initial Gamma(shape = 1/\code{propsigma}, scale = sigma_scr * \code{propsigma}) proposal distribution for sigma_scr = sqrt(sigma2_scr). Default is \code{propsigma=1}.
+#' @param propsigma Scaler specifying the initial Gamma(shape = 1/\code{propsigma}, scale = sigma_scr * \code{propsigma}) proposal distribution for sigma_scr = sqrt(sigma2_scr) (or sqrt(lambda) = lambda if \code{detection=``exponential''}). Default is \code{propsigma=1}.
 #' @param propcenter Scaler specifying the neighborhood distance (on re-scaled coordinates between 0 and \code{scalemax}) when proposing updates to activity centers. When \code{propcenter=NULL} (the default), then propcenter = a*10, where a is the re-scaled cell size for the study area grid, and each cell has (at most) approximately 300 neighbors. 
 #' @param maxnumbasis Maximum number of basis vectors to use when proposing latent history frequency updates. Default is \code{maxnumbasis = 1}, but higher values can potentially improve mixing.
 #' @param a0delta Scaler or vector (of length d) specifying the prior for the conditional (on detection) probability of type 1 (delta_1), type 2 (delta_2), and both type 1 and type 2 encounters (1-delta_1-delta_2). If \code{a0delta} is a scaler, then this value is used for all a0delta[j] for j = 1, ..., d. For \code{mod.delta=~type}, d=3 with [delta_1, delta_2, 1-delta_1-delta_2] ~ Dirichlet(a0delta) prior. For \code{mod.delta=~1}, d=2 with [tau] ~ Beta(a0delta[1],a0delta[2]) prior, where (delta_1,delta_2,1-delta_1-delta_2) = (tau/2,tau/2,1-tau). See McClintock et al. (2013) for more details.
 #' @param a0alpha Specifies "shape1" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{a0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1).
 #' @param b0alpha Specifies "shape2" parameter for [alpha] ~ Beta(a0alpha, b0alpha) prior. Only applicable when \code{data.type = "sometimes"}. Default is \code{b0alpha = 1}. Note that when \code{a0alpha = 1} and \code{b0alpha = 1}, then [alpha] ~ Unif(0,1).
-#' @param sigma_bounds Positive vector of length 2 for the lower and upper bounds for the [sigma_scr] ~ Uniform(sigma_bounds[1], sigma_bounds[2]) prior for the detection function term sigma_scr = sqrt(sigma2_scr). When \code{sigma_bounds = NULL} (the default), then \code{sigma_bounds = c(1.e-6,max(diff(range(studyArea[,"x"])),diff(range(studyArea[,"y"]))))}.
+#' @param sigma_bounds Positive vector of length 2 for the lower and upper bounds for the [sigma_scr] ~ Uniform(sigma_bounds[1], sigma_bounds[2]) (or [sqrt(lambda)] when \code{detection=``exponential''}) prior for the detection function term sigma_scr = sqrt(sigma2_scr) (or sqrt(lambda)). When \code{sigma_bounds = NULL} (the default), then \code{sigma_bounds = c(1.e-6,max(diff(range(studyArea[,"x"])),diff(range(studyArea[,"y"]))))}.
 #' @param mu0 Scaler or vector (of length k) specifying mean of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{mu0 = 0}.
 #' @param sigma2_mu0 Scaler or vector (of length k) specifying variance of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{sigma2_mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{sigma2_mu0 = 1.75}.
 #' @param a0psi Specifies "shape1" parameter for [psi] ~ Beta(a0psi,b0psi) prior. Default is \code{a0psi = 1}.
@@ -796,7 +805,7 @@ markClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=102
 #' #Posterior summary for monitored parameters
 #' summary(example.dot$mcmc)
 #' plot(example.dot$mcmc)}
-multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=1024,data.type="never",covs=data.frame(),mms=NULL,mod.p=~1,mod.delta=~type,detection="half-normal",parms=c("pbeta","delta","N","sigma2_scr"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propsigma=1,propcenter=NULL,maxnumbasis=1,a0delta=1,a0alpha=1,b0alpha=1,sigma_bounds=NULL,mu0=0,sigma2_mu0=1.75,a0psi=1,b0psi=1,initial.values=NULL,known=integer(),scalemax=10,printlog=FALSE,...){
+multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=1024,data.type="never",covs=data.frame(),mms=NULL,mod.p=~1,mod.delta=~type,detection="half-normal",parms=c("pbeta","delta","N"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propsigma=1,propcenter=NULL,maxnumbasis=1,a0delta=1,a0alpha=1,b0alpha=1,sigma_bounds=NULL,mu0=0,sigma2_mu0=1.75,a0psi=1,b0psi=1,initial.values=NULL,known=integer(),scalemax=10,printlog=FALSE,...){
   
   if(is.null(mms)) mms <- processdataSCR(Enc.Mat,trapCoords,studyArea,buffer,ncells,data.type,covs,known,scalemax)
   if(class(mms)!="multimarkSCRsetup") stop("'mms' must be an object of class 'multimarkSCRsetup'")
@@ -812,10 +821,11 @@ multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncell
     burnin<-0
   }
   
+  detParm<-ifelse(DM$mod.det=="half-normal","sigma2_scr","lambda")
   if(mod.delta != ~NULL) {
-    parmlist<-c("pbeta","delta","N","sigma2_scr","alpha","psi","H","centers","logPosterior")
+    parmlist<-c("pbeta","delta","N",detParm,"alpha","psi","H","centers","logPosterior")
   } else {
-    parmlist<-c("pbeta","N","sigma2_scr","centers","logPosterior")    
+    parmlist<-c("pbeta","N",detParm,"centers","logPosterior")    
   }
   
   if(is.null(sigma_bounds)){
@@ -841,6 +851,7 @@ multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncell
   
   message("\nFitting spatial abundance model with cloglog link\n")
   if(mod.delta != ~NULL) message("data type = \"",data.type,"\"\n")
+  message("detection function = \"",DM$mod.det,"\"\n")
   message("p model = ",as.character(mod.p))
   if(mod.delta != ~NULL) message("delta model = ",as.character(mod.delta))
   message("\nInitializing model \n")
@@ -1056,6 +1067,7 @@ getcurClosedSCRparmslist<-function(cur.parms,DM,M,noccas,data_type,alpha,centerm
   parmslist[[1]]$centers <- mapCenters(cur.parms[paste0("center[",1:M,"]")],centermap1,centermap2)
   names(parmslist[[1]]$centers) <- paste0("center[",1:M,"]")
   parmslist[[1]]$sigma2_scr <- cur.parms["sigma2_scr"] / Srange2
+  parmslist[[1]]$lambda <- cur.parms["lambda"] / Srange2
   
   parmslist[[1]]$psi <- cur.parms["psi"]
   parmslist[[1]]$delta_1 <- cur.parms["delta_1"]
@@ -1174,10 +1186,10 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
 #' @param mthin Thinning interval for monitored parameters.
 #' @param M1 Integer vector indicating the initial model for each chain, where \code{M1_j=i} initializes the RJMCMC algorithm for chain j in the model corresponding to \code{modlist[[i]]} for i=1,...,  \code{length(modlist)}. If \code{NULL}, the algorithm for all chains is initialized in the most general model. Default is \code{M1=NULL}.
 #' @param pbetapropsd Scaler specifying the standard deviation of the Normal(0, pbetapropsd) proposal distribution for "\code{pbeta}"  parameters. Default is \code{pbetapropsd=1}. See Barker & Link (2013) for more details.
-#' @param sigppropshape Scaler specifying the shape parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}". Only applies if at least one (but not all) model(s) includes spatial effects in detection function. Default is \code{sigppropshape=6}. See Barker & Link (2013) for more details.
-#' @param sigppropscale Scaler specifying the scale parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}". Only applies if at least one (but not all) model(s) includes spatial effects in detection function. Default is \code{sigppropscale=4}. See Barker & Link (2013) for more details.
+#' @param sigppropshape Scaler specifying the shape parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}" (or "\code{sqrt(lambda)=lambda}" if \code{detection="exponential}). Only applies if models do not have the same detection function (i.e., ``half-normal'' or ``exponential''). Default is \code{sigppropshape=6}. See Barker & Link (2013) for more details.
+#' @param sigppropscale Scaler specifying the scale parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}" (or "\code{sqrt(lambda)=lambda}" if \code{detection="exponential}). Only applies if models do not have the same detection function (i.e., ``half-normal'' or ``exponential''). Default is \code{sigppropscale=4}. See Barker & Link (2013) for more details.
 #' @param printlog Logical indicating whether to print the progress of chains and any errors to a log file in the working directory. Ignored when \code{nchains=1}. Updates are printed to log file as 1\% increments of \code{iter} of each chain are completed. With >1 chains, setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.
-#' @details Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosedSCR}} or \code{\link{markClosedSCR}} models to be included in \code{modlist}. Note also that it does not make much sense to try and interpret \code{sigma2_scr} across models unless the detection function (``half-normal'' or ``exponential'') is the same for all of the models in \code{modlist}.
+#' @details Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosedSCR}} or \code{\link{markClosedSCR}} models to be included in \code{modlist}.
 #' @return A list containing the following:
 #' \item{rjmcmc}{Reversible jump Markov chain Monte Carlo object of class \code{\link[coda]{mcmc.list}}. Includes RJMCMC output for monitored parameters and the current model at each iteration ("\code{M}").}
 #' \item{pos.prob}{A list of calculated posterior model probabilities for each chain, including the overall posterior model probabilities across all chains.}
@@ -1244,16 +1256,18 @@ multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modl
   All.hists<-matrix(mms@vAll.hists,byrow=TRUE,ncol=noccas*ntraps)
   C<-mms@C
   
-  checkparmsClosed(mms,modlist,params,parmlist=c("pbeta[(Intercept)]","sigma2_scr","N","logPosterior"),M,type="SCR")
+  checkparmsClosed(mms,modlist,params,parmlist=c("pbeta[(Intercept)]","N","logPosterior"),M,type="SCR")
   
   pmodnames <- unlist(lapply(modlist,function(x) x$mod.p)) 
   deltamodnames <- unlist(lapply(modlist,function(x) x$mod.delta)) 
+  detlist <- lapply(modlist,function(x) x$mod.det)
+  detmodnames<-unlist(detlist)
   
   message("\nPerforming spatial population abundance Bayesian multimodel inference by RJMCMC \n")
   if(all(deltamodnames!=~NULL)) {
-    message(paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")\n"))
+    message(paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")  (",detmodnames,")\n"))
   } else if(all(deltamodnames==~NULL)){
-    message(paste0("mod",1:nmod,": ","p(",pmodnames,")\n"))
+    message(paste0("mod",1:nmod,": ","p(",pmodnames,")  (",detmodnames,")\n"))
   }
   
   missing <- missingparmnamesClosed(params,M,noccas,NULL) 
@@ -1262,7 +1276,6 @@ multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modl
   
   DMlist <- lapply(modlist,function(x) x$DM)
   deltalist <- lapply(modlist,function(x) x$mod.delta)
-  detlist <- lapply(modlist,function(x) x$mod.det)
   priorlist <- lapply(modlist,function(x) x$priorparms) 
   mod.p.h <- unlist(lapply(modlist,function(x) any("h"==attributes(terms(x$mod.p))$term.labels)))
   
@@ -1302,9 +1315,9 @@ multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modl
   for(ichain in 1:nchains){
     pos.prob[[ichain]] <-hist(multimodel[[ichain]][,"M"],plot=F,breaks=0:nmod)$density
     if(all(deltamodnames!=~NULL)){
-      names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")") 
+      names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")  (",detmodnames,")") 
     } else {
-      names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")")
+      names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")  (",detmodnames,")")
     }
     multimodel[[ichain]] <- mcmc(multimodel[[ichain]])
     attributes(multimodel[[ichain]])$mcpar <- c(head(temp,n=1),tail(temp,n=1),mthin)
@@ -1314,9 +1327,9 @@ multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modl
   names(pos.prob) <- paste0("chain",1:nchains)
   pos.prob[["overall"]]<- hist(unlist(multimodel[, "M"]),plot = F, breaks = 0:nmod)$density
   if(all(deltamodnames!=~NULL)){
-    names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")") 
+    names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")  (",detmodnames,")")
   } else {
-    names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")")
+    names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")  (",detmodnames,")")
   }
   list(rjmcmc=multimodel,pos.prob=pos.prob) 
 }

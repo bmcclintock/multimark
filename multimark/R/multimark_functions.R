@@ -736,11 +736,19 @@ get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0
       inits[[ichain]]$centers<-centers#spatialInputs$studyArea[centers,] 
     }
     
+    if(DM$mod.det=="exponential"){
+      if(length(initial.values[[ichain]]$lambda)){
+        initial.values[[ichain]]$sigma2_scr<-initial.values[[ichain]]$lambda
+      } else {
+        initial.values[[ichain]]$sigma2_scr<-NULL  
+      }
+    }
+    
     if(length(initial.values[[ichain]]$sigma2_scr)){
       if(length(initial.values[[ichain]]$sigma2_scr)==1 & initial.values[[ichain]]$sigma2_scr>0){
         inits[[ichain]]$sigma2_scr<-max(initial.values[[ichain]]$sigma2_scr/mms@spatialInputs$Srange^2,tol)
       } else {
-        stop("initial value for sigma2_scr must be a positive scalar")
+        stop("initial value for ",ifelse(DM$mod.det=="half-normal","sigma2_scr","lambda")," must be a positive scalar")
       }
     } else {
       mdm <- NULL
@@ -761,7 +769,7 @@ get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0
       }
     }
     if(!dunif(sqrt(inits[[ichain]]$sigma2_scr),sigma_bounds[1],sigma_bounds[2])){
-      stop("initial value(s) for sigma2_scr are not consistent with prior")
+      stop("initial value(s) for ",ifelse(DM$mod.det=="half-normal","sigma2_scr","lambda")," are not consistent with prior")
     }
     
     if(!is.null(DM$phi)){
@@ -822,6 +830,8 @@ get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0
         inits[[ichain]]$N<-base::sum(inits[[ichain]]$H>1)+rnbinom(1,base::sum(inits[[ichain]]$H>1),pstar)
       }      
     }
+    if(DM$mod.det=="exponential") names(inits[[ichain]])[match("sigma2_scr",names(inits[[ichain]]))]<-"lambda"
+    
     if(mms@data.type=="never"){    
       inits[[ichain]]$alpha <- 0.0
     } else if(mms@data.type=="sometimes"){

@@ -737,11 +737,19 @@ getprobsClosed<-function(out,link="logit"){
 checkparmsClosed <- function(mms,modlist,params,parmlist,M,type=""){    
   deltatypeind <- which(lapply(modlist,function(x) any("~type"==x$mod.delta))==TRUE)
   if(length(deltatypeind)){
-    if(!all(lapply(params[deltatypeind],function(x) base::sum(match(x,c("delta_1","delta_2"),nomatch=0)))==base::sum(1:length(1:2)))) stop("required parameters not found for all models")
+    if(!all(lapply(params[deltatypeind],function(x) all(c("delta_1","delta_2") %in% x))==1)) stop("required parameters not found for all models")
   }
   delta1ind <- which(lapply(modlist,function(x) any("~1"==x$mod.delta))==TRUE)
   if(length(delta1ind)){
-    if(!all(lapply(params[delta1ind],function(x) base::sum(match(x,"delta",nomatch=0)))==1)) stop("required parameters not found for all models")
+    if(!all(lapply(params[delta1ind],function(x) "delta" %in% x)==1)) stop("required parameters not found for all models")
+  }
+  dettypeindhn<- which(lapply(modlist,function(x) any("half-normal"==x$mod.det))==TRUE)
+  if(length(dettypeindhn)){
+    if(!all(lapply(params[dettypeindhn],function(x) "sigma2_scr" %in% x)==1)) stop("required parameters not found for all models")
+  }
+  dettypeindexp<- which(lapply(modlist,function(x) any("exponential"==x$mod.det))==TRUE)
+  if(length(dettypeindexp)){
+    if(!all(lapply(params[dettypeindexp],function(x) "lambda" %in% x)==1)) stop("required parameters not found for all models")
   }
   if(length(deltatypeind) | length(delta1ind)){
     parmlist<-c(parmlist,"psi",paste0("H[",1:M,"]"))
@@ -825,7 +833,11 @@ drawmissingClosed<-function(M.cur,missing,pbetapropsd,sigppropshape,sigppropscal
   names(missingsigp) <- missing$missingsigpparms[[M.cur]]
   missingzp <- rnorm(length(missing$missingzpparms[[M.cur]]),sd=missing$zppropsd+sqrt(missingsigp)*missing$usesigp)
   names(missingzp) <- missing$missingzpparms[[M.cur]]
-  missing <- c(missingpbeta,missingdelta,missingzp,missingsigp)
+  missingsigma2_scr <- rinvgamma(length(missing$missingsigma2_scrparms[[M.cur]]),shape=sigppropshape,scale=sigppropscale)
+  names(missingsigma2_scr) <- missing$missingsigma2_scrparms[[M.cur]]
+  missinglambda <- rinvgamma(length(missing$missinglambdaparms[[M.cur]]),shape=sigppropshape,scale=sigppropscale)
+  names(missinglambda) <- missing$missinglambdaparms[[M.cur]]
+  missing <- c(missingpbeta,missingdelta,missingzp,missingsigp,missingsigma2_scr,missinglambda)
   missing
 }
 
@@ -844,6 +856,8 @@ getbrobprobClosed<-function(imod,modprior,posterior,cur.parms,missing,pbetaprops
        + base::sum(dnorm(cur.parms[missing$missingpbetaparms[[imod]]],sd=pbetapropsd,log=TRUE))
        + base::sum(dnorm(cur.parms[missing$missingzpparms[[imod]]],sd=missing$zppropsd+sqrt(cur.parms[missing$missingsigpparms[[imod]]])*missing$usesigp,log=TRUE))
        + base::sum(dinvgamma(cur.parms[missing$missingsigpparms[[imod]]],shape=sigppropshape,scale=sigppropscale))
+       + base::sum(dinvgamma(cur.parms[missing$missingsigma2_scrparms[[imod]]],shape=sigppropshape,scale=sigppropscale))
+       + base::sum(dinvgamma(cur.parms[missing$missinglambdaparms[[imod]]],shape=sigppropshape,scale=sigppropscale))
        + deltadens)
 }
 
@@ -886,13 +900,17 @@ missingparmnamesClosed<-function(params,M,noccas,zppropsd){
   
   missingzpparms <- extractmissingparms(missingparms,"zp[")
   
+  missingsigma2_scrparms <- extractmissingparms(missingparms,"sigma2_scr")
+  
+  missinglambdaparms <- extractmissingparms(missingparms,"lambda")
+  
   if(is.null(zppropsd)){
     zppropsd <- 0
     usesigp <- 1
   } else {
     usesigp <-0
   }
-  list(commonparms=commonparms,missingparms=missingparms,missingpbetaparms=missingpbetaparms,missingdeltaparms=missingdeltaparms,missingsigpparms=missingsigpparms,missingzpparms=missingzpparms,zppropsd=zppropsd,usesigp=usesigp) 
+  list(commonparms=commonparms,missingparms=missingparms,missingpbetaparms=missingpbetaparms,missingdeltaparms=missingdeltaparms,missingsigpparms=missingsigpparms,missingzpparms=missingzpparms,zppropsd=zppropsd,usesigp=usesigp,missingsigma2_scrparms=missingsigma2_scrparms,missinglambdaparms=missinglambdaparms) 
 }
 
 rjmcmcClosed <- function(ichain,mms,M,noccas,data_type,alpha,C,All.hists,modlist,DMlist,deltalist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,gq,printlog){

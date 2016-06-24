@@ -6,12 +6,11 @@
 \usage{
 markClosedSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
   ncells = 1024, covs = data.frame(), mod.p = ~1,
-  detection = "half-normal", parms = c("pbeta", "N", "sigma2_scr"),
-  nchains = 1, iter = 12000, adapt = 1000, bin = 50, thin = 1,
-  burnin = 2000, taccept = 0.44, tuneadjust = 0.95, proppbeta = 0.1,
-  propsigma = 1, propcenter = NULL, sigma_bounds = NULL, mu0 = 0,
-  sigma2_mu0 = 1.75, initial.values = NULL, scalemax = 10,
-  printlog = FALSE, ...)
+  detection = "half-normal", parms = c("pbeta", "N"), nchains = 1,
+  iter = 12000, adapt = 1000, bin = 50, thin = 1, burnin = 2000,
+  taccept = 0.44, tuneadjust = 0.95, proppbeta = 0.1, propsigma = 1,
+  propcenter = NULL, sigma_bounds = NULL, mu0 = 0, sigma2_mu0 = 1.75,
+  initial.values = NULL, scalemax = 10, printlog = FALSE, ...)
 }
 \arguments{
 \item{Enc.Mat}{A matrix containing the observed encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc.}
@@ -28,9 +27,9 @@ markClosedSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
 
 \item{mod.p}{Model formula for detection probability. For example, \code{mod.p=~1} specifies no effects (i.e., intercept only), \code{mod.p~time} specifies temporal effects, \code{mod.p~c} specifies behavioral reponse (i.e., trap "happy" or "shy"), \code{mod.p~trap} specifies trap effects, and \code{mod.p~time+c} specifies additive temporal and behavioral effects.}
 
-\item{detection}{Model for detection probability as a function of distance from activity centers . Must be "\code{half-normal}" (of the form \eqn{\exp{(-d^2 / (2*\sigma^2))}}, where \eqn{d} is distance) or "\code{exponential}" (of the form \eqn{\exp{(-d / \sigma^2)}}).}
+\item{detection}{Model for detection probability as a function of distance from activity centers . Must be "\code{half-normal}" (of the form \eqn{\exp{(-d^2 / (2*\sigma^2))}}, where \eqn{d} is distance) or "\code{exponential}" (of the form \eqn{\exp{(-d / \lambda)}}).}
 
-\item{parms}{A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are cloglog-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), cloglog-scale variance term for the detection function ("\code{sigma2_scr}"), and the probability that a randomly selected individual from the \code{M = nrow(Enc.Mat)} observed individuals belongs to the \eqn{n} unique individuals encountered at least once ("\code{psi}"). Individual activity centers ("\code{centers}"), and the log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.}
+\item{parms}{A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are cloglog-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), cloglog-scale distance term for the detection function ("\code{sigma2_scr}" when \code{detection=``half-normal''} or "\code{lambda}" when \code{detection=``exponential''}), and the probability that a randomly selected individual from the \code{M = nrow(Enc.Mat)} observed individuals belongs to the \eqn{n} unique individuals encountered at least once ("\code{psi}"). Individual activity centers ("\code{centers}"), and the log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.}
 
 \item{nchains}{The number of parallel MCMC chains for the model.}
 
@@ -54,7 +53,7 @@ markClosedSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
 
 \item{propcenter}{Scaler specifying the neighborhood distance (on re-scaled coordinates between 0 and \code{scalemax}) when proposing updates to activity centers. When \code{propcenter=NULL} (the default), then propcenter = a*10, where a is the re-scaled cell size for the study area grid, and each cell has (at most) approximately 300 neighbors.}
 
-\item{sigma_bounds}{Positive vector of length 2 for the lower and upper bounds for the [sigma_scr] ~ Uniform(sigma_bounds[1], sigma_bounds[2]) prior for the detection function term sigma_scr = sqrt(sigma2_scr). When \code{sigma_bounds = NULL} (the default), then \code{sigma_bounds = c(1.e-6,max(diff(range(studyArea[,"x"])),diff(range(studyArea[,"y"]))))}.}
+\item{sigma_bounds}{Positive vector of length 2 for the lower and upper bounds for the [sigma_scr] ~ Uniform(sigma_bounds[1], sigma_bounds[2]) (or [sqrt(lambda)] when \code{detection=``exponential''}) prior for the detection function term sigma_scr = sqrt(sigma2_scr) (or sqrt(lambda)). When \code{sigma_bounds = NULL} (the default), then \code{sigma_bounds = c(1.e-6,max(diff(range(studyArea[,"x"])),diff(range(studyArea[,"y"]))))}.}
 
 \item{mu0}{Scaler or vector (of length k) specifying mean of pbeta[j] ~ Normal(mu0[j], sigma2_mu0[j]) prior. If \code{mu0} is a scaler, then this value is used for all j = 1, ..., k. Default is \code{mu0 = 0}.}
 

@@ -26,9 +26,9 @@ multimodelClosedSCR(modlist, modprior = rep(1/length(modlist),
 
 \item{pbetapropsd}{Scaler specifying the standard deviation of the Normal(0, pbetapropsd) proposal distribution for "\code{pbeta}"  parameters. Default is \code{pbetapropsd=1}. See Barker & Link (2013) for more details.}
 
-\item{sigppropshape}{Scaler specifying the shape parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}". Only applies if at least one (but not all) model(s) includes spatial effects in detection function. Default is \code{sigppropshape=6}. See Barker & Link (2013) for more details.}
+\item{sigppropshape}{Scaler specifying the shape parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}" (or "\code{sqrt(lambda)=lambda}" if \code{detection="exponential}). Only applies if models do not have the same detection function (i.e., ``half-normal'' or ``exponential''). Default is \code{sigppropshape=6}. See Barker & Link (2013) for more details.}
 
-\item{sigppropscale}{Scaler specifying the scale parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}". Only applies if at least one (but not all) model(s) includes spatial effects in detection function. Default is \code{sigppropscale=4}. See Barker & Link (2013) for more details.}
+\item{sigppropscale}{Scaler specifying the scale parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}" (or "\code{sqrt(lambda)=lambda}" if \code{detection="exponential}). Only applies if models do not have the same detection function (i.e., ``half-normal'' or ``exponential''). Default is \code{sigppropscale=4}. See Barker & Link (2013) for more details.}
 
 \item{printlog}{Logical indicating whether to print the progress of chains and any errors to a log file in the working directory. Ignored when \code{nchains=1}. Updates are printed to log file as 1\% increments of \code{iter} of each chain are completed. With >1 chains, setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.}
 }
@@ -41,7 +41,7 @@ A list containing the following:
 This function performs Bayesian multimodel inference for a set of 'multimark' spatial population abundance models using the reversible jump Markov chain Monte Carlo (RJMCMC) algorithm proposed by Barker & Link (2013).
 }
 \details{
-Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosedSCR}} or \code{\link{markClosedSCR}} models to be included in \code{modlist}. Note also that it does not make much sense to try and interpret \code{sigma2_scr} across models unless the detection function (``half-normal'' or ``exponential'') is the same for all of the models in \code{modlist}.
+Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosedSCR}} or \code{\link{markClosedSCR}} models to be included in \code{modlist}.
 }
 \examples{
 \dontshow{
