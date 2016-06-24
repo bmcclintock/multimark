@@ -435,7 +435,7 @@ checkClosedSCR<-function(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccep
   if(taccept<=0 | taccept>1) stop ("'taccept' must be >0 and <=1")
   if(tuneadjust<=0 | tuneadjust>1) stop ("'tuneadjust' must be >0 and <=1")
   if(mms@ncolbasis & (maxnumbasis<1 | maxnumbasis>mms@ncolbasis)) stop("'maxnumbasis' must be between 1 and ",mms@ncolbasis)
-  if(!all(c(a0delta,a0alpha,b0alpha,sigma_bounds,sigma2_mu0,a0psi,b0psi)>0)) stop("'a0delta', 'a0alpha', 'b0alpha', 'a', 'sigma2_mu0', 'a0psi', and 'b0psi' must be >0")
+  if(!all(c(a0delta,a0alpha,b0alpha,sigma_bounds,sigma2_mu0,a0psi,b0psi)>0)) stop("'a0delta', 'a0alpha', 'b0alpha', 'sigma_bounds', 'sigma2_mu0', 'a0psi', and 'b0psi' must be >0")
   
   pdim<-ncol(DM$p)
   if(!pdim) stop("'mod.p' must include at least 1 parameter")

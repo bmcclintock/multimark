@@ -820,7 +820,7 @@ double GETPSTARSCR(double *dist2, double *cloglogp, double sigma2_scr, int T, in
     }
   }
   for(i=0; i<ncells; i++){
-    esa += fmax(1.-oneminuspstar[i],tol);
+    esa += 1. - fmax(oneminuspstar[i],tol);
   }
   double pstar = esa / ncell;
   //Rprintf("pstar %f esa %f dexp %f ncells %d sigma2_scr %f \n",pstar,esa,dexp,ncells,sigma2_scr);
