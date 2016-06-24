@@ -739,7 +739,7 @@ get_initsSCR<-function(mms,nchains,initial.values,M,data.type,a0alpha,b0alpha,a0
     if(DM$mod.det=="exponential"){
       if(length(initial.values[[ichain]]$lambda)){
         initial.values[[ichain]]$sigma2_scr<-initial.values[[ichain]]$lambda
-      } else {
+      } else if(length(initial.values[[ichain]]$sigma2_scr)){
         initial.values[[ichain]]$sigma2_scr<-NULL  
       }
     }
