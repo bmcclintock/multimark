@@ -5,10 +5,10 @@
 \title{Simulate spatially-explicit capture-mark-recapture data from a (demographically) closed population with multiple non-invasive marks}
 \usage{
 simdataClosedSCR(N = 30, ntraps = 9, noccas = 5, pbeta = 0.25,
-  tau = 0, sigma2_scr = 0.75, delta_1 = 0.4, delta_2 = 0.4,
-  alpha = 0.5, data.type = "never", detection = "half-normal",
-  spatialInputs = NULL, buffer = 3 * sqrt(sigma2_scr), ncells = 1024,
-  scalemax = 10, plot = TRUE)
+  tau = 0, sigma2_scr = 0.75, lambda = 0.75, delta_1 = 0.4,
+  delta_2 = 0.4, alpha = 0.5, data.type = "never",
+  detection = "half-normal", spatialInputs = NULL, buffer = 3 *
+  sqrt(sigma2_scr), ncells = 1024, scalemax = 10, plot = TRUE)
 }
 \arguments{
 \item{N}{True population size or abundance.}
@@ -21,7 +21,9 @@ simdataClosedSCR(N = 30, ntraps = 9, noccas = 5, pbeta = 0.25,
 
 \item{tau}{Additive complementary loglog-scale behavioral effect term for recapture probability (c).}
 
-\item{sigma2_scr}{Complementary loglog-scale variance for the detection function.}
+\item{sigma2_scr}{Complementary loglog-scale term for effect of distance in the ``half-normal'' detection function. Ignored unless \code{detection=``half-normal''}.}
+
+\item{lambda}{Complementary loglog-scale term for effect of distance in the ``exponential'' detection function. Ignored unless \code{detection=``exponential''}.}
 
 \item{delta_1}{Conditional probability of type 1 encounter, given detection.}
 
@@ -37,7 +39,7 @@ simdataClosedSCR(N = 30, ntraps = 9, noccas = 5, pbeta = 0.25,
 
  \code{data.type="always"} indicates both type 1 and type 2 encounters are always observed, but some encounter histories may still include only type 1 or type 2 encounters. Observed encounter histories can consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4). Latent encounter histories consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4).}
 
-\item{detection}{Model for detection probability as a function of distance from activity centers. Must be "\code{half-normal}" (of the form \eqn{\exp{(-d^2 / (2*\sigma^2))}}, where \eqn{d} is distance) or "\code{exponential}" (of the form \eqn{\exp{(-d / \sigma^2)}}).}
+\item{detection}{Model for detection probability as a function of distance from activity centers. Must be "\code{half-normal}" (of the form \eqn{\exp{(-d^2 / (2*\sigma^2))}}, where \eqn{d} is distance) or "\code{exponential}" (of the form \eqn{\exp{(-d / \lambda)}}).}
 
 \item{spatialInputs}{A list of length 3 composed of objects named \code{trapCoords}, \code{studyArea}, and \code{centers}:
 

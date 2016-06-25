@@ -8,7 +8,8 @@
 #' @param noccas Scaler indicating the number of sampling occasions per trap.
 #' @param pbeta Complementary loglog-scale intercept term for detection probability (p). Must be a scaler or vector of length \code{noccas}.
 #' @param tau Additive complementary loglog-scale behavioral effect term for recapture probability (c).
-#' @param sigma2_scr Complementary loglog-scale variance for the detection function.
+#' @param sigma2_scr Complementary loglog-scale term for effect of distance in the ``half-normal'' detection function. Ignored unless \code{detection=``half-normal''}.
+#' @param lambda Complementary loglog-scale term for effect of distance in the ``exponential'' detection function. Ignored unless \code{detection=``exponential''}.
 #' @param delta_1 Conditional probability of type 1 encounter, given detection.
 #' @param delta_2 Conditional probability of type 2 encounter, given detection.
 #' @param alpha Conditional probability of simultaneous type 1 and type 2 detection, given both types encountered. Only applies when \code{data.type="sometimes"}.
@@ -20,7 +21,7 @@
 #'
 #'  \code{data.type="always"} indicates both type 1 and type 2 encounters are always observed, but some encounter histories may still include only type 1 or type 2 encounters. Observed encounter histories can consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4). Latent encounter histories consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4).
 #'
-#' @param detection Model for detection probability as a function of distance from activity centers. Must be "\code{half-normal}" (of the form \eqn{\exp{(-d^2 / (2*\sigma^2))}}, where \eqn{d} is distance) or "\code{exponential}" (of the form \eqn{\exp{(-d / \sigma^2)}}).
+#' @param detection Model for detection probability as a function of distance from activity centers. Must be "\code{half-normal}" (of the form \eqn{\exp{(-d^2 / (2*\sigma^2))}}, where \eqn{d} is distance) or "\code{exponential}" (of the form \eqn{\exp{(-d / \lambda)}}).
 #' @param spatialInputs A list of length 3 composed of objects named \code{trapCoords}, \code{studyArea}, and \code{centers}:
 #' 
 #'  \code{trapCoords} is a matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate (``x''), and the second column the y-coordinate (``y''). The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating.  
@@ -56,7 +57,7 @@
 #' @examples
 #' #simulate data for data.type="sometimes" using defaults
 #' data<-simdataClosedSCR(data.type="sometimes")
-simdataClosedSCR <- function(N=30,ntraps=9,noccas=5,pbeta=0.25,tau=0,sigma2_scr=0.75,delta_1=0.4,delta_2=0.4,alpha=0.5,data.type="never",detection="half-normal",spatialInputs=NULL,buffer=3*sqrt(sigma2_scr),ncells=1024,scalemax=10,plot=TRUE){
+simdataClosedSCR <- function(N=30,ntraps=9,noccas=5,pbeta=0.25,tau=0,sigma2_scr=0.75,lambda=0.75,delta_1=0.4,delta_2=0.4,alpha=0.5,data.type="never",detection="half-normal",spatialInputs=NULL,buffer=3*sqrt(sigma2_scr),ncells=1024,scalemax=10,plot=TRUE){
   
   if(length(pbeta)==1){
     pbeta=rep(pbeta,noccas)
@@ -122,8 +123,10 @@ simdataClosedSCR <- function(N=30,ntraps=9,noccas=5,pbeta=0.25,tau=0,sigma2_scr=
   
   if(detection=="half-normal") {
     dexp<-2
+    sigma2<-sigma2_scr
   } else if(detection=="exponential"){
     dexp<-1
+    sigma2<-lambda
   } else {
     stop("'detection' argument must be 'half-normal' or 'exponential'")
   }
@@ -132,8 +135,8 @@ simdataClosedSCR <- function(N=30,ntraps=9,noccas=5,pbeta=0.25,tau=0,sigma2_scr=
     for(k in 1:ntraps){
       ind<-0
       for(j in 1:noccas){
-        p<-invcloglog(pbeta[j]-1./(dexp*sigma2_scr)*dist2[i,k]^dexp)*trapCoords[k,2+j]
-        c<-invcloglog(pbeta[j]+tau-1./(dexp*sigma2_scr)*dist2[i,k]^dexp)*trapCoords[k,2+j]
+        p<-invcloglog(pbeta[j]-1./(dexp*sigma2)*dist2[i,k]^dexp)*trapCoords[k,2+j]
+        c<-invcloglog(pbeta[j]+tau-1./(dexp*sigma2)*dist2[i,k]^dexp)*trapCoords[k,2+j]
         tEnc.Mat[i,(k-1)*noccas+j] <- rbinom(1,1,((1-ind)*p+ind*c) )       #"true" latent histories
         if(tEnc.Mat[i,(k-1)*noccas+j]==1){
           ind<-1
@@ -1082,7 +1085,7 @@ getcurClosedSCRparmslist<-function(cur.parms,DM,M,noccas,data_type,alpha,centerm
   parmslist
 }
 
-rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,alpha,C,All.hists,modlist,DMlist,deltalist,detlist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,printlog){
+rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,alpha,C,All.hists,modlist,DMlist,deltalist,detlist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,sigpropmean,sigpropsd,pmodnames,deltamodnames,printlog){
   
   multimodel <- matrix(0,nrow=(max(1,floor(miter/mthin)))-(floor(mburnin/mthin)),ncol=length(monitorparms$parms)+1,dimnames=list(NULL,c(monitorparms$parms,"M")))
   
@@ -1103,6 +1106,9 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
   for(imod in 1:nmod){
     priorlist[[imod]]$sigma_bounds<-priorlist[[imod]]$sigma_bounds/mms@spatialInputs$Srange
   }
+  
+  sigppropshape <- sigpropmean^2/(sigpropsd^2) + 2
+  sigppropscale <- sigpropmean*(sigppropshape-1)/mms@spatialInputs$Srange
   
   M.cur<- M1
   
@@ -1186,8 +1192,8 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
 #' @param mthin Thinning interval for monitored parameters.
 #' @param M1 Integer vector indicating the initial model for each chain, where \code{M1_j=i} initializes the RJMCMC algorithm for chain j in the model corresponding to \code{modlist[[i]]} for i=1,...,  \code{length(modlist)}. If \code{NULL}, the algorithm for all chains is initialized in the most general model. Default is \code{M1=NULL}.
 #' @param pbetapropsd Scaler specifying the standard deviation of the Normal(0, pbetapropsd) proposal distribution for "\code{pbeta}"  parameters. Default is \code{pbetapropsd=1}. See Barker & Link (2013) for more details.
-#' @param sigppropshape Scaler specifying the shape parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}" (or "\code{sqrt(lambda)=lambda}" if \code{detection="exponential}). Only applies if models do not have the same detection function (i.e., ``half-normal'' or ``exponential''). Default is \code{sigppropshape=6}. See Barker & Link (2013) for more details.
-#' @param sigppropscale Scaler specifying the scale parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}" (or "\code{sqrt(lambda)=lambda}" if \code{detection="exponential}). Only applies if models do not have the same detection function (i.e., ``half-normal'' or ``exponential''). Default is \code{sigppropscale=4}. See Barker & Link (2013) for more details.
+#' @param sigpropmean Scaler specifying the mean of the inverse Gamma proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}" (or "\code{sqrt(lambda)=lambda}" if \code{detection="exponential}). Only applies if models do not have the same detection function (i.e., ``half-normal'' or ``exponential''). Default is \code{sigpropmean=0.8}. See Barker & Link (2013) for more details.
+#' @param sigpropsd Scaler specifying the standard deviation of the inverse Gamma proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}" (or "\code{sqrt(lambda)=lambda}" if \code{detection="exponential}). Only applies if models do not have the same detection function (i.e., ``half-normal'' or ``exponential''). Default is \code{sigpropsd=0.4}. See Barker & Link (2013) for more details.
 #' @param printlog Logical indicating whether to print the progress of chains and any errors to a log file in the working directory. Ignored when \code{nchains=1}. Updates are printed to log file as 1\% increments of \code{iter} of each chain are completed. With >1 chains, setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.
 #' @details Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosedSCR}} or \code{\link{markClosedSCR}} models to be included in \code{modlist}.
 #' @return A list containing the following:
@@ -1233,7 +1239,7 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
 #'  
 #' #multimodel posterior summary for abundance
 #' summary(example.M$rjmcmc[,"N"])}
-multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modlist)),monparms="N",miter=NULL,mburnin=0,mthin=1,M1=NULL,pbetapropsd=1,sigppropshape=6,sigppropscale=4,printlog=FALSE){
+multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modlist)),monparms="N",miter=NULL,mburnin=0,mthin=1,M1=NULL,pbetapropsd=1,sigpropmean=0.8,sigpropsd=0.4,printlog=FALSE){
   
   nmod <- length(modlist)
   iter <- unlist(unique(lapply(modlist,function(x) unique(lapply(x$mcmc,nrow)))))
@@ -1265,7 +1271,11 @@ multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modl
   
   message("\nPerforming spatial population abundance Bayesian multimodel inference by RJMCMC \n")
   if(all(deltamodnames!=~NULL)) {
-    message(paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")  (",detmodnames,")\n"))
+    if(length(unique(detmodnames))>1){
+      message(paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,") ",detmodnames,"\n"))
+    } else {
+      message(paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,") \n"))      
+    }
   } else if(all(deltamodnames==~NULL)){
     message(paste0("mod",1:nmod,": ","p(",pmodnames,")  (",detmodnames,")\n"))
   }
@@ -1296,12 +1306,12 @@ multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modl
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
     cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimodelClosed_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
     clusterExport(cl,list("rjmcmcClosed"),envir=environment())
-    multimodel <- parLapply(cl,1:nchains, function(ichain) rjmcmcClosedSCR(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,detlist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1[ichain],monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,printlog))
+    multimodel <- parLapply(cl,1:nchains, function(ichain) rjmcmcClosedSCR(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,detlist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1[ichain],monitorparms,missing,pbetapropsd,sigpropmean,sigpropsd,pmodnames,deltamodnames,printlog))
     stopCluster(cl)
     gc()
   } else {
     multimodel <- vector('list',nchains)
-    multimodel[[nchains]] <- rjmcmcClosedSCR(nchains,mms,M,noccas,ntraps,spatialInputs,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[nchains]]),DMlist,deltalist,detlist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,printlog)
+    multimodel[[nchains]] <- rjmcmcClosedSCR(nchains,mms,M,noccas,ntraps,spatialInputs,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[nchains]]),DMlist,deltalist,detlist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,sigpropmean,sigpropsd,pmodnames,deltamodnames,printlog)
     gc()
   }
   
@@ -1315,7 +1325,11 @@ multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modl
   for(ichain in 1:nchains){
     pos.prob[[ichain]] <-hist(multimodel[[ichain]][,"M"],plot=F,breaks=0:nmod)$density
     if(all(deltamodnames!=~NULL)){
-      names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")  (",detmodnames,")") 
+      if(length(unique(detmodnames))>1){
+        names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,") ",detmodnames) 
+      } else {
+        names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,") \n")       
+      }
     } else {
       names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")  (",detmodnames,")")
     }
@@ -1327,7 +1341,11 @@ multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modl
   names(pos.prob) <- paste0("chain",1:nchains)
   pos.prob[["overall"]]<- hist(unlist(multimodel[, "M"]),plot = F, breaks = 0:nmod)$density
   if(all(deltamodnames!=~NULL)){
-    names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")  (",detmodnames,")")
+    if(length(unique(detmodnames))>1){
+      names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,") ",detmodnames)
+    } else {
+      names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,") \n") 
+    }
   } else {
     names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")  (",detmodnames,")")
   }

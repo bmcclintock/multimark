@@ -6,8 +6,8 @@
 \usage{
 multimodelClosedSCR(modlist, modprior = rep(1/length(modlist),
   length(modlist)), monparms = "N", miter = NULL, mburnin = 0,
-  mthin = 1, M1 = NULL, pbetapropsd = 1, sigppropshape = 6,
-  sigppropscale = 4, printlog = FALSE)
+  mthin = 1, M1 = NULL, pbetapropsd = 1, sigpropmean = 0.8,
+  sigpropsd = 0.4, printlog = FALSE)
 }
 \arguments{
 \item{modlist}{A list of individual model output lists returned by \code{\link{multimarkClosedSCR}} or \code{\link{markClosedSCR}}. The models must have the same number of chains and MCMC iterations.}
@@ -26,9 +26,9 @@ multimodelClosedSCR(modlist, modprior = rep(1/length(modlist),
 
 \item{pbetapropsd}{Scaler specifying the standard deviation of the Normal(0, pbetapropsd) proposal distribution for "\code{pbeta}"  parameters. Default is \code{pbetapropsd=1}. See Barker & Link (2013) for more details.}
 
-\item{sigppropshape}{Scaler specifying the shape parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}" (or "\code{sqrt(lambda)=lambda}" if \code{detection="exponential}). Only applies if models do not have the same detection function (i.e., ``half-normal'' or ``exponential''). Default is \code{sigppropshape=6}. See Barker & Link (2013) for more details.}
+\item{sigpropmean}{Scaler specifying the mean of the inverse Gamma proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}" (or "\code{sqrt(lambda)=lambda}" if \code{detection="exponential}). Only applies if models do not have the same detection function (i.e., ``half-normal'' or ``exponential''). Default is \code{sigpropmean=0.8}. See Barker & Link (2013) for more details.}
 
-\item{sigppropscale}{Scaler specifying the scale parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}" (or "\code{sqrt(lambda)=lambda}" if \code{detection="exponential}). Only applies if models do not have the same detection function (i.e., ``half-normal'' or ``exponential''). Default is \code{sigppropscale=4}. See Barker & Link (2013) for more details.}
+\item{sigpropsd}{Scaler specifying the standard deviation of the inverse Gamma proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}" (or "\code{sqrt(lambda)=lambda}" if \code{detection="exponential}). Only applies if models do not have the same detection function (i.e., ``half-normal'' or ``exponential''). Default is \code{sigpropsd=0.4}. See Barker & Link (2013) for more details.}
 
 \item{printlog}{Logical indicating whether to print the progress of chains and any errors to a log file in the working directory. Ignored when \code{nchains=1}. Updates are printed to log file as 1\% increments of \code{iter} of each chain are completed. With >1 chains, setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.}
 }
