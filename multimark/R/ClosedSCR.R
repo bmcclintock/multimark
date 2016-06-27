@@ -711,7 +711,7 @@ getPropCenter<-function(spatialInputs,propcenter){
 markClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=1024,covs=data.frame(),mod.p=~1,detection="half-normal",parms=c("pbeta","N"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propsigma=1,propcenter=NULL,sigma_bounds=NULL,mu0=0,sigma2_mu0=1.75,initial.values=NULL,scalemax=10,printlog=FALSE,...){
   if(any(Enc.Mat>1 | Enc.Mat<0)) stop("With a single mark type, encounter histories can only contain 0's (non-detections) and 1's (detections)")
   mms <- processdataSCR(Enc.Mat,trapCoords,studyArea,buffer,ncells,covs=covs,known=rep(1,nrow(Enc.Mat)),scalemax=scalemax)
-  out <- multimarkClosedSCR(mms=mms,mod.p=mod.p,mod.delta=~NULL,parms=parms,nchains=nchains,iter=iter,adapt=adapt,bin=bin,thin=thin,burnin=burnin,taccept=taccept,tuneadjust=tuneadjust,proppbeta=proppbeta,propsigma=propsigma,propcenter=propcenter,sigma_bounds=sigma_bounds,mu0=mu0,sigma2_mu0=sigma2_mu0,initial.values=initial.values,scalemax=scalemax,printlog=printlog,...)
+  out <- multimarkClosedSCR(mms=mms,mod.p=mod.p,mod.delta=~NULL,detection=detection,parms=parms,nchains=nchains,iter=iter,adapt=adapt,bin=bin,thin=thin,burnin=burnin,taccept=taccept,tuneadjust=tuneadjust,proppbeta=proppbeta,propsigma=propsigma,propcenter=propcenter,sigma_bounds=sigma_bounds,mu0=mu0,sigma2_mu0=sigma2_mu0,initial.values=initial.values,scalemax=scalemax,printlog=printlog,...)
   out$initial.values <- lapply(out$initial.values,function(x) list(pbeta=x$pbeta,sigma2_scr=x$sigma2_scr,N=x$N,centers=x$centers))
   return(out)
 }
