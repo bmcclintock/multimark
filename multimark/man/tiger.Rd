@@ -21,6 +21,9 @@ Royle, J.A., Karanth, K.U., Gopalaswamy, A.M. and Kumar, N.S. 2009. Bayesian inf
 \description{
 Example tiger data for \code{multimark} package.
 }
+\details{
+We thank Ullas Karanth, Wildlife Conservation Society, for providing the tiger data for use as an example with this package.
+}
 \examples{
 data(tiger)
 #plot the traps and available habitat within the study area

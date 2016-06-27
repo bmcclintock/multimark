@@ -169,6 +169,9 @@ simdataClosedSCR <- function(N=30,ntraps=9,noccas=5,pbeta=0.25,tau=0,sigma2_scr=
 #' #Plot the tiger example data
 #' plotSpatialData(trapCoords=tiger$trapCoords,studyArea=tiger$studyArea)
 plotSpatialData<-function(mms=NULL,trapCoords,studyArea,centers=NULL,trapLines=FALSE){
+  
+  cur.par<-par(no.readonly=TRUE)
+  
   if(!is.null(mms)){
     if(class(mms)=="multimarkSCRsetup"){
       studyArea<-mms@spatialInputs$studyArea
@@ -217,6 +220,8 @@ plotSpatialData<-function(mms=NULL,trapCoords,studyArea,centers=NULL,trapLines=F
     tmp<-legend(x="top",legend=c("traps                          ","available habitat", "activity centers"),pch=c(17,15,1),col=c(1,"green"),box.col="white",bty="o",bg="white",cex=.8)
   }
   points(trapCoords[,c("x","y")],pch=17)
+  
+  par(cur.par)
 }
 
 pstarintegrandSCR<-function(noccas,beta,sigma2,DM,spatialInputs,dexp){

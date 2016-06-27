@@ -31,6 +31,8 @@ NULL
 #'
 #' These data were obtained from the R package \code{SPACECAP} and modified by projecting onto a regular rectangular grid consisting of square grid cells (as is required by the spatial capture-recapture models in \code{multimark}). 
 #' 
+#' @details We thank Ullas Karanth, Wildlife Conservation Society, for providing the tiger data for use as an example with this package.
+#' 
 #' @seealso \code{\link{markClosedSCR}}
 #' @source 
 #' Gopalaswamy, A.M., Royle, J.A., Hines, J.E., Singh, P., Jathanna, D., Kumar, N. and Karanth, K.U. 2012. Program SPACECAP: software for estimating animal density using spatially explicit capture-recapture models. \emph{Methods in Ecology and Evolution} 3:1067-1072.
