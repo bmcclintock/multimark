@@ -320,7 +320,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
           }
         }
         //Rprintf("g %d i %d nl %f ol %f nprop %f oprop %f R %f \n",g,i,nl,ol,-log(numnn[centers[i]]),-log(numnn[centerstar]),exp(nl-log(numnn[centers[i]])-ol+log(numnn[centerstar])));
-        if(runif(0.0,1.0)<exp(nl-log(numnn[centers[i]])-ol+log(numnn[centerstar]))){
+        if(runif(0.0,1.0)<exp(nl-log(numnn[centerstar])-ol+log(numnn[centers[i]]))){
           centers[i] = centerstar;
           for(k=0; k<K; k++){
             dist2centers[k*supN+i] = diststar[k];
