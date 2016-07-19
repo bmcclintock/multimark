@@ -34,6 +34,7 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
   void PROPFREQ();
   void GETDELTA();
   double GETPSTAR();
+  double muprior();
 
   int T = *noccas;
   int supN = *M; 
@@ -182,7 +183,7 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
       }
       proppstar=GETPSTAR(npts, weight, node, logitpstar, sigma_zs, dimp, T);
       np=LIKE(propp,propc,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,supN,C,Ns,proppstar);
-      if(runif(0.0,1.0)<exp(np+dnorm(betastar[j],mu0[j],sqrt(sigma2_mu0[j]),1)-ll-dnorm(betas[j],mu0[j],sqrt(sigma2_mu0[j]),1))){
+      if(runif(0.0,1.0)<exp(np+(!j ? muprior(betastar[j]) : dnorm(betastar[j],mu0[j],sqrt(sigma2_mu0[j]),1))-ll-(!j ? muprior(betas[j]) : dnorm(betas[j],mu0[j],sqrt(sigma2_mu0[j]),1)))){
         betas[j]=betastar[j];
         for(t=0; t<T; t++){
           for(i=0; i<supN; i++){
@@ -522,12 +523,18 @@ double DDIRICHLET(double *x, double *alpha, int dim)
   return(logdens);
 }
 
+double muprior(double mu)
+{
+  double logdens = mu - log((1.+exp(mu))*(1.+exp(mu)));
+  return(logdens);
+}
+
 double POSTERIOR(double ll, double *beta, int *qs, double *z, double *deltavect, double alpha, double sigma_z, double Ns, double psi, double *mu0, double *sigma2_mu0, double *a0_delta, double a0_alpha, double b0_alpha, double A, double a0psi, double b0psi, int supN, int pdim, int modh, int datatype, int updatedelta, int deltatype)
 {
   double pos=ll;
   int i,j;
   for(j=0; j<pdim; j++){
-    pos += dnorm(beta[j],mu0[j],sqrt(sigma2_mu0[j]),1);
+    pos += (!j ? muprior(beta[j]) : dnorm(beta[j],mu0[j],sqrt(sigma2_mu0[j]),1));
   }
   if(modh){
     for(i=0; i<supN; i++){
