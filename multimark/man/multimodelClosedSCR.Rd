@@ -26,9 +26,9 @@ multimodelClosedSCR(modlist, modprior = rep(1/length(modlist),
 
 \item{pbetapropsd}{Scaler specifying the standard deviation of the Normal(0, pbetapropsd) proposal distribution for "\code{pbeta}"  parameters. Default is \code{pbetapropsd=1}. See Barker & Link (2013) for more details.}
 
-\item{sigpropmean}{Scaler specifying the mean of the inverse Gamma proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}" (or "\code{sqrt(lambda)=lambda}" if \code{detection="exponential}). Only applies if models do not have the same detection function (i.e., ``half-normal'' or ``exponential''). Default is \code{sigpropmean=0.8}. See Barker & Link (2013) for more details.}
+\item{sigpropmean}{Scaler specifying the mean of the inverse Gamma proposal distribution for \code{sigma2_scr} (or \code{lambda} if \code{detection=``exponential''}). Only applies if models do not have the same detection function (i.e., ``half-normal'' or ``exponential''). Default is \code{sigpropmean=0.8}. See Barker & Link (2013) for more details.}
 
-\item{sigpropsd}{Scaler specifying the standard deviation of the inverse Gamma proposal distribution for "\code{sigma_scr=sqrt(sigma2_scr)}" (or "\code{sqrt(lambda)=lambda}" if \code{detection="exponential}). Only applies if models do not have the same detection function (i.e., ``half-normal'' or ``exponential''). Default is \code{sigpropsd=0.4}. See Barker & Link (2013) for more details.}
+\item{sigpropsd}{Scaler specifying the standard deviation of the inverse Gamma proposal distribution for \code{sigma2_scr} (or \code{lambda} if \code{detection=``exponential''}). Only applies if models do not have the same detection function (i.e., ``half-normal'' or ``exponential''). Default is \code{sigpropsd=0.4}. See Barker & Link (2013) for more details.}
 
 \item{printlog}{Logical indicating whether to print the progress of chains and any errors to a log file in the working directory. Ignored when \code{nchains=1}. Updates are printed to log file as 1\% increments of \code{iter} of each chain are completed. With >1 chains, setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.}
 }

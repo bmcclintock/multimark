@@ -2,7 +2,7 @@ Package: multimark
 Type: Package
 Title: Capture-Mark-Recapture Analysis using Multiple Non-Invasive Marks
 Version: 2.0.0
-Date: 2016-05-23
+Date: 2016-09-01
 Depends:
     R (>= 3.2.1)
 Imports:
@@ -30,7 +30,7 @@ Description: Traditional and spatial capture-mark-recapture analysis with
     specified using simple formulae and fitted using Markov chain Monte Carlo.
     Addressing deficiencies in currently available software, 'multimark' also
     provides a user-friendly interface for performing Bayesian multimodel
-    inference using (spatial) capture-recapture data consisting of a single
+    inference using non-spatial or spatial capture-recapture data consisting of a single
     conventional mark or multiple non-invasive marks.
 License: GPL-2
 LazyData: yes
