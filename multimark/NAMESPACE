@@ -1,15 +1,23 @@
 export(
   markClosed,
+  markClosedSCR,
   multimarkClosed,
+  multimarkClosedSCR,
   markCJS,
   multimarkCJS,
   processdata,
+  processdataSCR,
   simdataClosed,
+  simdataClosedSCR,
   simdataCJS,
   getprobsClosed,
+  getprobsClosedSCR,
   getprobsCJS,
+  getdensityClosedSCR,
   multimodelClosed,
-  multimodelCJS
+  multimodelClosedSCR,
+  multimodelCJS,
+  plotSpatialData
 )
 
 import(parallel,Matrix,coda)
@@ -19,9 +27,13 @@ importFrom("RMark","process.data","make.design.data")
 importFrom("Brobdingnag","brob","as.brob","sum")
 importFrom("mvtnorm","dmvnorm")
 
-importFrom("graphics", "hist")
+importFrom("graphics", "hist", "legend", "lines", "par", "points")
 importFrom("methods", "setClass", "new", "validObject")
 importFrom("stats", "dbeta", "dbinom", "dcauchy", "dnorm", "dunif", "end", "formula", "integrate", "model.matrix", "pnorm", "rbeta", "rbinom", "rgamma", "rmultinom", "rnbinom", "rnorm", "runif", "start", "terms")
 importFrom("utils", "flush.console", "setTxtProgressBar", "txtProgressBar")
+importFrom("prodlim","row.match")
+importFrom("sp","points2grid","SpatialPoints","bbox","gridded","SpatialGrid","over","coordinates")
+importFrom("raster","extent","raster","rasterize")
+importFrom("grDevices","rainbow", "gray")
 
-useDynLib(multimark,ClosedC,ProbitCJSC)
+useDynLib(multimark,ClosedC,ClosedSCRC,ProbitCJSC)

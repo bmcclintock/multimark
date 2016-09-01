@@ -78,13 +78,23 @@ simdataClosed <- function(N=100,noccas=5,pbeta=-0.4,tau=0,sigma2_zp=0,delta_1=0.
   return(list(Enc.Mat=Enc.Mat,trueEnc.Mat=tEnc.Mat))
 }
 
-get_DMClosed<-function(mod.p,mod.delta,Enc.Mat,covs,type="Closed",...){
-  Enc.Mat[which(Enc.Mat>0)] <- 1
+get_DMClosed<-function(mod.p,mod.delta,Enc.Mat,covs,type="Closed",ntraps=1,detection=NULL,...){
+  if(!is.null(detection)){
+    Enc.Mat<-matrix(1,nrow=nrow(Enc.Mat)*ntraps,ncol=ncol(Enc.Mat)/ntraps,byrow=TRUE)
+  } else {
+    Enc.Mat[which(Enc.Mat>0)] <- 1
+  }
   ch<-as.character(as.matrix( apply(Enc.Mat, 1, paste, collapse = ""), ncol=1 ))
   if(length(which(ch==paste(rep(0,ncol(Enc.Mat)),collapse="")))){
     ch<-ch[-which(ch==paste(rep(0,ncol(Enc.Mat)),collapse=""))] 
   }
-  CH<-process.data(data.frame(ch,options(stringsAsFactors = FALSE)),model=type)
+  if(!is.null(detection)){
+    ch<-data.frame(ch=ch,trap=as.factor(rep(1:ntraps)),options(stringsAsFactors = FALSE))
+    CH<-process.data(ch,groups="trap",model=type)
+  } else {
+    ch<-data.frame(ch,options(stringsAsFactors = FALSE))
+    CH<-process.data(ch,model=type)
+  }
   temp<-make.design.data(CH,...)
   if(CH$nocc %% 2 == 0){
     temp$p$Time <- temp$p$Time+1-(CH$nocc/2)-.5
@@ -97,6 +107,13 @@ get_DMClosed<-function(mod.p,mod.delta,Enc.Mat,covs,type="Closed",...){
   modterms<-attributes(terms(mod.p))$term.labels
   if(any(modterms=="time")){
     mod.p<-formula(paste("~-1",paste(modterms,collapse="+"),sep="+"))
+  }
+  if(any(modterms=="trap")){
+    if(length(modterms)>1){
+      mod.p<-formula(paste("~-1",paste(modterms[-which(modterms=="trap")],collapse="+"),sep="+"))
+    } else {
+      mod.p<-formula(~1)  
+    }
   }
   if(any(modterms=="h")){
     if(length(modterms)>1){
@@ -114,23 +131,45 @@ get_DMClosed<-function(mod.p,mod.delta,Enc.Mat,covs,type="Closed",...){
   }
   DMp<-model.matrix(mod.p,temp$p)
   DMc<-model.matrix(mod.p,temp$c)
+  if(any(modterms=="trap")){
+    trapDM<-kronecker(diag(ntraps),rep(1,CH$nocc))
+    colnames(trapDM)<-paste0("trap",1:ntraps)
+    DMp<-cbind(DMp,trapDM)
+    DMc<-cbind(DMc,trapDM)
+  }
   
-  if(nrow(DMp)!=CH$nocc) stop(paste("model design matrix must have",CH$nocc,"rows"))
+  if(nrow(DMp)!=CH$nocc*ntraps) stop(paste("model design matrix must have",CH$nocc*ntraps,"rows"))
   
   if(!any(colnames(DMp)=="(Intercept)")){
-    DMp<-cbind(rep(1,CH$nocc),DMp)
+    DMp<-cbind(rep(1,CH$nocc*ntraps),DMp)
     colnames(DMp)[1]<-"(Intercept)"
-    DMc<-cbind(rep(1,CH$nocc),DMc)
+    DMc<-cbind(rep(1,CH$nocc*ntraps),DMc)
     colnames(DMc)[1]<-"(Intercept)"
   }
-  rownames(DMp) <- paste0("p[",1:CH$nocc,"]")
-  rownames(DMc) <- paste0("c[",1:CH$nocc,"]")
+  if(any(modterms=="trap")){
+    trapind<-as.numeric(substr(colnames(DMp)[substr(colnames(DMp),1,4)=="trap"],5,ntraps))
+    if(length(trapind)<ntraps){
+      (1:ntraps)[-trapind]
+    }
+  }
+  
+  if(is.null(detection)){
+    rownames(DMp) <- paste0("p[",1:CH$nocc,"]")
+    rownames(DMc) <- paste0("c[",1:CH$nocc,"]")
+  } else {
+    rownames(DMp) <- paste0("p[",1:CH$nocc,",",rep(1:ntraps,each=CH$nocc),"]")
+    rownames(DMc) <- paste0("c[",1:CH$nocc,",",rep(1:ntraps,each=CH$nocc),"]")
+  }
   
   deltattr <- attributes(terms(mod.delta))$term.labels
   if(length(deltattr)){
     if(deltattr!="type") stop("'mod.delta' must be '~1' or '~type'")
   }
-  return(list(p=DMp,c=DMc,mod.p.h=mod.p.h,mod.delta=mod.delta))
+  if(!is.null(detection)) {
+    return(list(p=DMp,c=DMc,mod.delta=mod.delta,mod.det=detection))
+  } else {
+    return(list(p=DMp,c=DMc,mod.p.h=mod.p.h,mod.delta=mod.delta))    
+  }
 }
 
 pstarintegrand<-function(beta,sigma,DM,gq){
@@ -495,7 +534,7 @@ markClosed<-function(Enc.Mat,covs=data.frame(),mod.p=~1,parms=c("pbeta","N"),nch
 #'
 #'  \code{data.type="always"} indicates both type 1 and type 2 encounters are always observed, but some encounter histories may still include only type 1 or type 2 encounters. Observed encounter histories can consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4). Latent encounter histories consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4).
 #'
-#' @param covs A data frame of temporal covariates for detection probabilities (ignored unless \code{mms=NULL}). The number of rows in the data frame must equal the number of sampling occasions. Covariate names cannot be "time", "age", or "h"; these names are reserved for temporal, behavioral, and individual effects when specifying \code{mod.p} and \code{mod.phi}.
+#' @param covs A data frame of temporal covariates for detection probabilities (ignored unless \code{mms=NULL}). The number of rows in the data frame must equal the number of sampling occasions. Covariate names cannot be "time", "c", or "h"; these names are reserved for temporal, behavioral, and individual effects when specifying \code{mod.p} and \code{mod.phi}.
 #' @param mms An optional object of class \code{multimarksetup-class}; if \code{NULL} it is created. See \code{\link{processdata}}.
 #' @param mod.p Model formula for detection probability. For example, \code{mod.p=~1} specifies no effects (i.e., intercept only), \code{mod.p~time} specifies temporal effects, \code{mod.p~c} specifies behavioral reponse (i.e., trap "happy" or "shy"), \code{mod.p~h} specifies individual heterogeneity, and \code{mod.p~time+c} specifies additive temporal and behavioral effects.
 #' @param mod.delta Model formula for conditional probabilities of type 1 (delta_1) and type 2 (delta_2) encounters, given detection. Currently only \code{mod.delta=~1} (i.e., \eqn{\delta_1 = \delta_2}) and \code{mod.delta=~type} (i.e., \eqn{\delta_1 \ne \delta_2}) are implemented.
@@ -695,26 +734,34 @@ getprobsClosed<-function(out,link="logit"){
   return(as.mcmc.list(pc))
 }
 
-checkparmsClosed <- function(mms,modlist,params,parmlist,M){    
+checkparmsClosed <- function(mms,modlist,params,parmlist,M,type=""){    
   deltatypeind <- which(lapply(modlist,function(x) any("~type"==x$mod.delta))==TRUE)
   if(length(deltatypeind)){
-    if(!all(lapply(params[deltatypeind],function(x) base::sum(match(x,c("delta_1","delta_2"),nomatch=0)))==base::sum(1:length(1:2)))) stop("required parameters not found for all models")
+    if(!all(lapply(params[deltatypeind],function(x) all(c("delta_1","delta_2") %in% x))==1)) stop("required parameters not found for all models")
   }
   delta1ind <- which(lapply(modlist,function(x) any("~1"==x$mod.delta))==TRUE)
   if(length(delta1ind)){
-    if(!all(lapply(params[delta1ind],function(x) base::sum(match(x,"delta",nomatch=0)))==1)) stop("required parameters not found for all models")
+    if(!all(lapply(params[delta1ind],function(x) "delta" %in% x)==1)) stop("required parameters not found for all models")
+  }
+  dettypeindhn<- which(lapply(modlist,function(x) any("half-normal"==x$mod.det))==TRUE)
+  if(length(dettypeindhn)){
+    if(!all(lapply(params[dettypeindhn],function(x) "sigma2_scr" %in% x)==1)) stop("required parameters not found for all models")
+  }
+  dettypeindexp<- which(lapply(modlist,function(x) any("exponential"==x$mod.det))==TRUE)
+  if(length(dettypeindexp)){
+    if(!all(lapply(params[dettypeindexp],function(x) "lambda" %in% x)==1)) stop("required parameters not found for all models")
   }
   if(length(deltatypeind) | length(delta1ind)){
     parmlist<-c(parmlist,"psi",paste0("H[",1:M,"]"))
     if(mms@data.type=="sometimes"){
       parmlist<-c(parmlist,"alpha")
     }
-    if((length(deltatypeind)+length(delta1ind))!=length(modlist)) stop("Cannot perform multimodel inference using both 'multimarkClosed()' and 'markClosed()' models")
+    if((length(deltatypeind)+length(delta1ind))!=length(modlist)) stop("Cannot perform multimodel inference using both 'multimarkClosed",type,"()' and 'markClosed",type,"()' models")
   }
   hind <- which(lapply(modlist,function(x) any("h"==attributes(terms(x$mod.p))$term.labels))==TRUE)  
   if(!length(hind)){
     if(!all(lapply(params,function(x) base::sum(match(x,parmlist,nomatch=0)))==base::sum(1:length(parmlist)))) stop("required parameters not found for all models")
-  } else {
+  } else if(type==""){
     if(!all(lapply(params[-hind],function(x) base::sum(match(x,parmlist,nomatch=0)))==base::sum(1:length(parmlist)))) stop("required parameters not found for all models")
     parmlist<-c(parmlist,"sigma2_zp",paste0("zp[",1:M,"]"))
     if(!all(lapply(params[hind],function(x) base::sum(match(x,parmlist,nomatch=0)))==base::sum(1:length(parmlist))))  stop("required parameters not found for all models")
@@ -749,11 +796,15 @@ monitorparmsClosed <- function(parms,parmlist,noccas){
   list(commonparms=commonparms,parms=parms,namesp=namesp,namesc=namesc,getlogitp=getlogitp,getlogitc=getlogitc)
 }
 
-checkmmClosedinput<-function(mmslist,modlist,nmod,nchains,iter,miter,mburnin,mthin,modprior,M1){
-  if(!all(match(unlist(unique(lapply(modlist,names))),c("mcmc","mod.p","mod.delta","DM","initial.values","priorparms","mms"),nomatch=0))) stop("each object in 'modlist' must be a list returned by multimarkClosed() or markClosed()")
+checkmmClosedinput<-function(mmslist,modlist,nmod,nchains,iter,miter,mburnin,mthin,modprior,M1,type=""){
+  if(type==""){
+    if(!all(match(unlist(unique(lapply(modlist,names))),c("mcmc","mod.p","mod.delta","DM","initial.values","priorparms","mms"),nomatch=0))) stop("each object in 'modlist' must be a list returned by multimarkClosed",type,"() or markClosed",type,"()")
+  } else {
+    if(!all(match(unlist(unique(lapply(modlist,names))),c("mcmc","mod.p","mod.delta","mod.det","DM","initial.values","priorparms","mms"),nomatch=0))) stop("each object in 'modlist' must be a list returned by multimarkClosed",type,"() or markClosed",type,"()")
+  }
   if(!all(lapply(modlist,function(x) is.mcmc.list(x$mcmc))==TRUE)) stop("mcmc output for each model must be an object of type 'mcmc.list'")
   if(nmod<2) stop("'modlist' must contain at least two models")
-  if(length(mmslist)!=1) stop("'multimarksetup' (mms) object must be identical for each model")
+  if(length(mmslist)!=1) stop("'multimark",type,"setup' (mms) object must be identical for each model")
   if(length(nchains)!=1) stop("all models must have same number of chains")
   if(length(iter)!=1) stop("all chains must have same number of iterations")
   if(miter<=mburnin) stop("'mburnin' must be less than ",miter)
@@ -762,7 +813,7 @@ checkmmClosedinput<-function(mmslist,modlist,nmod,nchains,iter,miter,mburnin,mth
   if(length(M1)!=nchains) stop("'M1' must be an integer vector of length ",nchains)
   if(!all(match(M1,1:nmod,nomatch=0))) stop("'M1' must be an integer vector of length ",nchains," with values ranging from 1 to ",nmod)
   mms<-mmslist[[1]]
-  if(class(mms)!="multimarksetup") stop("'mms' for each model must be an object of class 'multimarksetup'")
+  if(class(mms)!=paste0("multimark",type,"setup")) stop("'mms' for each model must be an object of class 'multimark",type,"setup'")
   return(mms)
 }
 
@@ -782,7 +833,11 @@ drawmissingClosed<-function(M.cur,missing,pbetapropsd,sigppropshape,sigppropscal
   names(missingsigp) <- missing$missingsigpparms[[M.cur]]
   missingzp <- rnorm(length(missing$missingzpparms[[M.cur]]),sd=missing$zppropsd+sqrt(missingsigp)*missing$usesigp)
   names(missingzp) <- missing$missingzpparms[[M.cur]]
-  missing <- c(missingpbeta,missingdelta,missingzp,missingsigp)
+  missingsigma2_scr <- rinvgamma(length(missing$missingsigma2_scrparms[[M.cur]]),shape=sigppropshape,scale=sigppropscale)
+  names(missingsigma2_scr) <- missing$missingsigma2_scrparms[[M.cur]]
+  missinglambda <- rinvgamma(length(missing$missinglambdaparms[[M.cur]]),shape=sigppropshape,scale=sigppropscale)
+  names(missinglambda) <- missing$missinglambdaparms[[M.cur]]
+  missing <- c(missingpbeta,missingdelta,missingzp,missingsigp,missingsigma2_scr,missinglambda)
   missing
 }
 
@@ -801,6 +856,8 @@ getbrobprobClosed<-function(imod,modprior,posterior,cur.parms,missing,pbetaprops
        + base::sum(dnorm(cur.parms[missing$missingpbetaparms[[imod]]],sd=pbetapropsd,log=TRUE))
        + base::sum(dnorm(cur.parms[missing$missingzpparms[[imod]]],sd=missing$zppropsd+sqrt(cur.parms[missing$missingsigpparms[[imod]]])*missing$usesigp,log=TRUE))
        + base::sum(dinvgamma(cur.parms[missing$missingsigpparms[[imod]]],shape=sigppropshape,scale=sigppropscale))
+       + base::sum(dinvgamma(cur.parms[missing$missingsigma2_scrparms[[imod]]],shape=sigppropshape,scale=sigppropscale))
+       + base::sum(dinvgamma(cur.parms[missing$missinglambdaparms[[imod]]],shape=sigppropshape,scale=sigppropscale))
        + deltadens)
 }
 
@@ -843,13 +900,17 @@ missingparmnamesClosed<-function(params,M,noccas,zppropsd){
   
   missingzpparms <- extractmissingparms(missingparms,"zp[")
   
+  missingsigma2_scrparms <- extractmissingparms(missingparms,"sigma2_scr")
+  
+  missinglambdaparms <- extractmissingparms(missingparms,"lambda")
+  
   if(is.null(zppropsd)){
     zppropsd <- 0
     usesigp <- 1
   } else {
     usesigp <-0
   }
-  list(commonparms=commonparms,missingparms=missingparms,missingpbetaparms=missingpbetaparms,missingdeltaparms=missingdeltaparms,missingsigpparms=missingsigpparms,missingzpparms=missingzpparms,zppropsd=zppropsd,usesigp=usesigp) 
+  list(commonparms=commonparms,missingparms=missingparms,missingpbetaparms=missingpbetaparms,missingdeltaparms=missingdeltaparms,missingsigpparms=missingsigpparms,missingzpparms=missingzpparms,zppropsd=zppropsd,usesigp=usesigp,missingsigma2_scrparms=missingsigma2_scrparms,missinglambdaparms=missinglambdaparms) 
 }
 
 rjmcmcClosed <- function(ichain,mms,M,noccas,data_type,alpha,C,All.hists,modlist,DMlist,deltalist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,gq,printlog){
@@ -938,24 +999,24 @@ rjmcmcClosed <- function(ichain,mms,M,noccas,data_type,alpha,C,All.hists,modlist
 #' This function performs Bayesian multimodel inference for a set of 'multimark' closed population abundance models using the reversible jump Markov chain Monte Carlo (RJMCMC) algorithm proposed by Barker & Link (2013).
 #'
 #'
-#' @param modlist A list of individual model output lists returned by \code{\link{multimarkClosed}}. The models must have the same number of chains and MCMC iterations.
+#' @param modlist A list of individual model output lists returned by \code{\link{multimarkClosed}} or \code{\link{markClosed}}. The models must have the same number of chains and MCMC iterations.
 #' @param modprior Vector of length \code{length(modlist)} containing prior model probabilities. Default is \code{modprior = rep(1/length(modlist), length(modlist))}.
-#' @param monparms Parameters to monitor. Only parameters common to all models can be monitored (e.g., "\code{pbeta[(Intercept)]}", "\code{N}", "\code{psi}"), but derived capture ("\code{p}") and recapture ("\code{c}") probabilities can also be monitored. Default is \code{monparms = "N"}.
+#' @param monparms Parameters to monitor. Only parameters common to all models can be monitored (e.g., "\code{pbeta[(Intercept)]}", "\code{N}"), but derived capture ("\code{p}") and recapture ("\code{c}") probabilities can also be monitored. Default is \code{monparms = "N"}.
 #' @param miter The number of RJMCMC iterations per chain. If \code{NULL}, then the number of MCMC iterations for each individual model chain is used.
 #' @param mburnin Number of burn-in iterations (\code{0 <= mburnin < miter}).
 #' @param mthin Thinning interval for monitored parameters.
 #' @param M1 Integer vector indicating the initial model for each chain, where \code{M1_j=i} initializes the RJMCMC algorithm for chain j in the model corresponding to \code{modlist[[i]]} for i=1,...,  \code{length(modlist)}. If \code{NULL}, the algorithm for all chains is initialized in the most general model. Default is \code{M1=NULL}.
 #' @param pbetapropsd Scaler specifying the standard deviation of the Normal(0, pbetapropsd) proposal distribution for "\code{pbeta}"  parameters. Default is \code{pbetapropsd=1}. See Barker & Link (2013) for more details.
 #' @param zppropsd Scaler specifying the standard deviation of the Normal(0, zppropsd) proposal distribution for "\code{zp}"  parameters. Only applies if at least one (but not all) model(s) include individual hetergeneity in detection probability. If \code{NULL}, zppropsd = sqrt(sigma2_zp) is used. Default is \code{zppropsd=NULL}. See Barker & Link (2013) for more details.  
-#' @param sigppropshape Scaler specifying the shape parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_zp=sqrt(sigma2_zp)}". Only applies if at least one (but not all) model(s) include individual hetergeneity in detection probability. Default is \code{sigppropshape=6}. See Barker & Link (2013) for more details.
-#' @param sigppropscale Scaler specifying the scale parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for "\code{sigma_zp=sqrt(sigma2_zp)}". Only applies if at least one (but not all) model(s) include individual hetergeneity in detection probability. Default is \code{sigppropscale=4}. See Barker & Link (2013) for more details.
+#' @param sigppropshape Scaler specifying the shape parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for \code{sigma_zp}. Only applies if at least one (but not all) model(s) include individual hetergeneity in detection probability. Default is \code{sigppropshape=6}. See Barker & Link (2013) for more details.
+#' @param sigppropscale Scaler specifying the scale parameter of the invGamma(shape = sigppropshape, scale = sigppropscale) proposal distribution for \code{sigma_zp}. Only applies if at least one (but not all) model(s) include individual hetergeneity in detection probability. Default is \code{sigppropscale=4}. See Barker & Link (2013) for more details.
 #' @param printlog Logical indicating whether to print the progress of chains and any errors to a log file in the working directory. Ignored when \code{nchains=1}. Updates are printed to log file as 1\% increments of \code{iter} of each chain are completed. With >1 chains, setting \code{printlog=TRUE} is probably most useful for Windows users because progress and errors are automatically printed to the R console for "Unix-like" machines (i.e., Mac and Linux) when \code{printlog=FALSE}. Default is \code{printlog=FALSE}.
-#' @details Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosed}} models to be included in \code{modlist}.
+#' @details Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosed}} or \code{\link{markClosed}} models to be included in \code{modlist}.
 #' @return A list containing the following:
 #' \item{rjmcmc}{Reversible jump Markov chain Monte Carlo object of class \code{\link[coda]{mcmc.list}}. Includes RJMCMC output for monitored parameters and the current model at each iteration ("\code{M}").}
 #' \item{pos.prob}{A list of calculated posterior model probabilities for each chain, including the overall posterior model probabilities across all chains.}
 #' @author Brett T. McClintock
-#' @seealso \code{\link{multimarkClosed}}, \code{\link{processdata}}
+#' @seealso \code{\link{multimarkClosed}}, \code{\link{markClosed}}, \code{\link{processdata}}
 #' @references
 #' Barker, R. J. and Link. W. A. 2013. Bayesian multimodel inference by RJMCMC: a Gibbs sampling approach. The American Statistician 67: 150-156.
 #' @examples
