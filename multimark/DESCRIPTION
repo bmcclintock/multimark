@@ -35,4 +35,4 @@ Description: Traditional and spatial capture-mark-recapture analysis with
 License: GPL-2
 LazyData: yes
 ByteCompile: TRUE
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1

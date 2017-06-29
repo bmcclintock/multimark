@@ -41,10 +41,9 @@ example.c <- multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,mod.p=~c)
 pc <- getprobsClosedSCR(example.c)
 summary(pc)}
 }
-\author{
-Brett T. McClintock
-}
 \seealso{
 \code{\link{multimarkClosedSCR}}
 }
-
+\author{
+Brett T. McClintock
+}

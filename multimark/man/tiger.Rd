@@ -43,4 +43,3 @@ summary(tiger.dot$mcmc)}
 \code{\link{markClosedSCR}}
 }
 \keyword{data}
-

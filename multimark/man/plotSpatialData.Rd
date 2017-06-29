@@ -28,4 +28,3 @@ plotSpatialData(trapCoords=tiger$trapCoords,studyArea=tiger$studyArea)
 \author{
 Brett T. McClintock
 }
-

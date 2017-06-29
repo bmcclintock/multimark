@@ -85,10 +85,9 @@ sim.dot<-markClosed(data)
 summary(sim.dot$mcmc)
 plot(sim.dot$mcmc)}
 }
-\author{
-Brett T. McClintock
-}
 \seealso{
 \code{\link{multimodelClosed}}
 }
-
+\author{
+Brett T. McClintock
+}

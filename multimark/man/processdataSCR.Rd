@@ -13,7 +13,7 @@ processdataSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
 
 \item{trapCoords}{A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating.}
 
-\item{studyArea}{is a 3-column matrix containing the coordinates for the centroids a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{studyArea=NULL} (the default), then a square study area grid composed of \code{ncells} cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}.}
+\item{studyArea}{is a 3-column matrix containing the coordinates for the centroids of a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must be square and have the same resolution. If \code{studyArea=NULL} (the default), then a square study area grid composed of \code{ncells} cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}.}
 
 \item{buffer}{A scaler in same units as \code{trapCoords} indicating the buffer around the bounding box of \code{trapCoords} for defining the study area when \code{studyArea=NULL}.  Ignored unless \code{studyArea=NULL}.}
 
@@ -61,9 +61,6 @@ setup <- processdataSCR(Enc.Mat,trapCoords,studyArea)
 example.dot<-multimarkClosedSCR(mms=setup)}
 
 }
-\author{
-Brett T. McClintock
-}
 \references{
 Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.
 
@@ -76,4 +73,6 @@ Royle, J.A., Karanth, K.U., Gopalaswamy, A.M. and Kumar, N.S. 2009. Bayesian inf
 \seealso{
 \code{\link{multimarkSCRsetup-class}}, \code{\link{multimarkClosedSCR}}
 }
-
+\author{
+Brett T. McClintock
+}

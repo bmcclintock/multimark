@@ -74,13 +74,12 @@ bobcat.M$pos.prob
 #multimodel posterior summary for abundance
 summary(bobcat.M$rjmcmc[,"N"])}
 }
-\author{
-Brett T. McClintock
-}
 \references{
 Barker, R. J. and Link. W. A. 2013. Bayesian multimodel inference by RJMCMC: a Gibbs sampling approach. The American Statistician 67: 150-156.
 }
 \seealso{
 \code{\link{multimarkClosed}}, \code{\link{markClosed}}, \code{\link{processdata}}
 }
-
+\author{
+Brett T. McClintock
+}

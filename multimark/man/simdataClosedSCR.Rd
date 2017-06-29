@@ -80,9 +80,6 @@ Please be very careful when specifying your own \code{spatialInputs}; \code{\lin
 #simulate data for data.type="sometimes" using defaults
 data<-simdataClosedSCR(data.type="sometimes")
 }
-\author{
-Brett T. McClintock
-}
 \references{
 Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.
 
@@ -93,4 +90,6 @@ Royle, J.A., Karanth, K.U., Gopalaswamy, A.M. and Kumar, N.S. 2009. Bayesian inf
 \seealso{
 \code{\link{processdataSCR}}, \code{\link{multimarkClosedSCR}}, \code{\link{markClosedSCR}}
 }
-
+\author{
+Brett T. McClintock
+}
