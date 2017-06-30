@@ -45,7 +45,7 @@ studyArea <- bobcatSCR$studyArea
 known <- c(rep(1,15),rep(0,nrow(Enc.Mat)-15))
 
 # specify prior bounds for sigma2_scr
-sig_bounds <- c(0.01,max(diff(range(studyArea[,"x"])),diff(range(studyArea[,"y"]))))
+sig_bounds <- c(0.1,max(diff(range(studyArea[,"x"])),diff(range(studyArea[,"y"]))))
 
 mmsSCR <- processdataSCR(Enc.Mat,trapCoords,studyArea,known=known)
 bobcatSCR.dot.type <- multimarkClosedSCR(mms=mmsSCR,iter=200,adapt=100,burnin=100,
