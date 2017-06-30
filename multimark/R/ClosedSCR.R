@@ -707,7 +707,7 @@ getPropCenter<-function(spatialInputs,propcenter){
 #' Enc.Mat<-tiger$Enc.Mat
 #' trapCoords<-tiger$trapCoords
 #' studyArea<-tiger$studyArea
-#' tiger.dot<-markClosedSCR(Enc.Mat,trapCoords,studyArea,iter=200,adapt=100,burnin=100)
+#' tiger.dot<-markClosedSCR(Enc.Mat,trapCoords,studyArea,iter=100,adapt=50,burnin=50)
 #' 
 #' #Posterior summary for monitored parameters
 #' summary(tiger.dot$mcmc)
@@ -925,7 +925,8 @@ multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncell
 #' Enc.Mat<-sim.data$Enc.Mat
 #' trapCoords<-sim.data$spatialInputs$trapCoords
 #' studyArea<-sim.data$spatialInputs$studyArea
-#' example.c <- multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,mod.p=~c)
+#' example.c <- multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,mod.p=~c,
+#'                                 iter=1000,adapt=500,burnin=500)
 #'   
 #' #Calculate capture and recapture probabilities
 #' pc <- getprobsClosedSCR(example.c)
@@ -1235,20 +1236,20 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
 #' setup<-processdataSCR(Enc.Mat,trapCoords,studyArea)
 #'  
 #' #Run single chain using the default model for simulated data. Note parms="all".
-#' example.dot <- multimarkClosedSCR(mms=setup,parms="all")
+#' example.dot <- multimarkClosedSCR(mms=setup,parms="all",iter=1000,adapt=500,burnin=500)
 #' 
 #' #Run single chain for simulated data with behavior effects. Note parms="all".
-#' example.c <- multimarkClosedSCR(mms=setup,mod.p=~c,parms="all")
+#' example.c <- multimarkClosedSCR(mms=setup,mod.p=~c,parms="all",iter=1000,adapt=500,burnin=500)
 #' 
 #' #Perform RJMCMC using defaults
 #' modlist <- list(mod1=example.dot,mod2=example.c)
-#' example.M <- multimodelClosedSCR(modlist=modlist,monparms=c("N","sigma2_scr"))
+#' example.M <- multimodelClosedSCR(modlist=modlist,monparms=c("N","D","sigma2_scr"))
 #' 
 #' #Posterior model probabilities
 #' example.M$pos.prob
 #'  
-#' #multimodel posterior summary for abundance
-#' summary(example.M$rjmcmc[,"N"])}
+#' #multimodel posterior summary for abundance and density
+#' summary(example.M$rjmcmc[,c("N","D")])}
 multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modlist)),monparms="N",miter=NULL,mburnin=0,mthin=1,M1=NULL,pbetapropsd=1,sigpropmean=0.8,sigpropsd=0.4,printlog=FALSE){
   
   nmod <- length(modlist)

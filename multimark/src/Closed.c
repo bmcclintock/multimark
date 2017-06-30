@@ -139,7 +139,7 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
     arate[j]=0.0;
   }
   
-  double indbase[*ncolBasis];
+  double indbase[*ncolBasis ? *ncolBasis : 1];
   for(j=0; j< *ncolBasis; j++){
     indbase[j]=0.0;
   }

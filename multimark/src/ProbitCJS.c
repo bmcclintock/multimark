@@ -167,7 +167,7 @@ void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, doub
   deltavect[1]=delta_2s;
   deltavect[2]=1.-delta_1s-delta_2s;
   
-  double indbase[*ncolBasis];
+  double indbase[*ncolBasis ? *ncolBasis : 1];
   for(j=0; j< *ncolBasis; j++){
     indbase[j]=0.0;
   }

@@ -50,7 +50,7 @@ NULL
 #' Enc.Mat<-tiger$Enc.Mat
 #' trapCoords<-tiger$trapCoords
 #' studyArea<-tiger$studyArea
-#' tiger.dot<-markClosedSCR(Enc.Mat,trapCoords,studyArea,iter=200,adapt=100,burnin=100)
+#' tiger.dot<-markClosedSCR(Enc.Mat,trapCoords,studyArea,iter=100,adapt=50,burnin=50)
 #' summary(tiger.dot$mcmc)}
 #' @keywords data
 NULL
