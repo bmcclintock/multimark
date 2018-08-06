@@ -37,10 +37,9 @@ sim.time <- multimarkCJS(data$Enc.Mat,mod.phi=~time)
 pphi <- getprobsCJS(sim.time)
 summary(pphi)}
 }
-\author{
-Brett T. McClintock
-}
 \seealso{
 \code{\link{multimarkCJS}}
 }
-
+\author{
+Brett T. McClintock
+}

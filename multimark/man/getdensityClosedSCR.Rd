@@ -38,10 +38,9 @@ example.dot <- multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,mod.p=~1)
 D <- getdensityClosedSCR(example.dot)
 summary(D)}
 }
-\author{
-Brett T. McClintock
-}
 \seealso{
 \code{\link{multimarkClosedSCR}}
 }
-
+\author{
+Brett T. McClintock
+}

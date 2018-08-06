@@ -1,8 +1,21 @@
+multimark 2.0.1 2017-06-30
+-----------------
+NEW FEATURES
+
+* Added bobcatSCR example data for spatial capture-recapture analysis using multimarkClosedSCR
+
+BUG FIXES
+
+* Typo corrections in help files
+
+
 multimark 2.0.0 2016-05-23
 -----------------
 NEW FEATURES
 
-* Added spatial capture-recapture model of Royle et al. (2009)
+* Added spatial capture-recapture model of Royle et al. (2009) using a semi-complete data likelihood (King et al. 2016)
+
+* Added tiger example data for spatial capture-recapture analysis using markClosedSCR
 
 * Increased capacity for handling hundreds of sampling occasions
 

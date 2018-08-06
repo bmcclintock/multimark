@@ -22,4 +22,3 @@ data(bobcat)
 \code{\link{multimarkClosed}}, \code{\link{processdata}}
 }
 \keyword{data}
-

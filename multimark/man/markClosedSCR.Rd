@@ -98,14 +98,11 @@ test<-markClosedSCR(Enc.Mat,trapCoords,studyArea,iter=10,burnin=0,bin=5)}
 Enc.Mat<-tiger$Enc.Mat
 trapCoords<-tiger$trapCoords
 studyArea<-tiger$studyArea
-tiger.dot<-markClosedSCR(Enc.Mat,trapCoords,studyArea)
+tiger.dot<-markClosedSCR(Enc.Mat,trapCoords,studyArea,iter=100,adapt=50,burnin=50)
 
 #Posterior summary for monitored parameters
 summary(tiger.dot$mcmc)
 plot(tiger.dot$mcmc)}
-}
-\author{
-Brett T. McClintock
 }
 \references{
 Gopalaswamy, A.M., Royle, J.A., Hines, J.E., Singh, P., Jathanna, D., Kumar, N. and Karanth, K.U. 2012. Program SPACECAP: software for estimating animal density using spatially explicit capture-recapture models. \emph{Methods in Ecology and Evolution} 3:1067-1072.
@@ -117,4 +114,6 @@ Royle, J.A., Karanth, K.U., Gopalaswamy, A.M. and Kumar, N.S. 2009. Bayesian inf
 \seealso{
 \code{\link{multimodelClosedSCR}}
 }
-
+\author{
+Brett T. McClintock
+}

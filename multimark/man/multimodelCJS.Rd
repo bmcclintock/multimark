@@ -73,10 +73,10 @@ data <- simdataCJS(noccas=5,phibeta=phibetaTime,data.type=data_type)
 setup <- processdata(data$Enc.Mat,data.type=data_type)
 
 #Run single chain using the default model. Note parms="all".
-sim.pdot.phidot <- multimarkCJS(mms=setup,parms="all")
+sim.pdot.phidot <- multimarkCJS(mms=setup,parms="all",iter=1000,adapt=500,burnin=500)
 
 #Run single chain with temporal trend for phi. Note parms="all".
-sim.pdot.phiTime <- multimarkCJS(mms=setup,mod.phi=~Time,parms="all")
+sim.pdot.phiTime <- multimarkCJS(mms=setup,mod.phi=~Time,parms="all",iter=1000,adapt=500,burnin=500)
 
 #Perform RJMCMC using defaults
 modlist <- list(mod1=sim.pdot.phidot,mod2=sim.pdot.phiTime)
@@ -88,13 +88,12 @@ sim.M$pos.prob
 #multimodel posterior summary for survival (display first cohort only)
 summary(sim.M$rjmcmc[,paste0("phi[1,",1:(noccas-1),"]")])}
 }
-\author{
-Brett T. McClintock
-}
 \references{
 Barker, R. J. and Link. W. A. 2013. Bayesian multimodel inference by RJMCMC: a Gibbs sampling approach. The American Statistician 67: 150-156.
 }
 \seealso{
 \code{\link{multimarkCJS}}, \code{\link{processdata}}
 }
-
+\author{
+Brett T. McClintock
+}

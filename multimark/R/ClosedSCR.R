@@ -404,6 +404,10 @@ checkSpatialInputs<-function(trapCoords,studyArea,centers=NULL){
   if(!gridded(SpatialGrid(points2grid(SpatialPoints(studyArea[,1:2]))))){
     stop("'studyArea' must be a regular grid ")
   } 
+  
+  cellsize<-sp::points2grid(sp::SpatialPoints(studyArea[,1:2]))@cellsize
+  if(!(diff(range(cellsize)) < .Machine$double.eps ^ 0.5)) stop("studyArea grid cells must be square")
+    
   if(any(is.na(over(SpatialPoints(trapCoords[,1:2]),SpatialGrid(points2grid(SpatialPoints(studyArea[,1:2]))))))){
     stop("'trapCoords' must be within 'studyArea'")
   }
@@ -703,7 +707,7 @@ getPropCenter<-function(spatialInputs,propcenter){
 #' Enc.Mat<-tiger$Enc.Mat
 #' trapCoords<-tiger$trapCoords
 #' studyArea<-tiger$studyArea
-#' tiger.dot<-markClosedSCR(Enc.Mat,trapCoords,studyArea)
+#' tiger.dot<-markClosedSCR(Enc.Mat,trapCoords,studyArea,iter=100,adapt=50,burnin=50)
 #' 
 #' #Posterior summary for monitored parameters
 #' summary(tiger.dot$mcmc)
@@ -723,7 +727,7 @@ markClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=102
 #'
 #' @param Enc.Mat A matrix containing the observed encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc. Ignored unless \code{mms=NULL}.
 #' @param trapCoords A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate (``x''), and the second column the y-coordinate (``y''). The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating. Ignored unless \code{mms=NULL}.
-#' @param studyArea is a 3-column matrix containing the coordinates for the centroids a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns (``x'' and ``y'') indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column (``avail'') indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{studyArea=NULL} (the default) and  \code{mms=NULL}, then a square study area grid composed of \code{ncells} cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}. Ignored unless \code{mms=NULL}.
+#' @param studyArea is a 3-column matrix containing the coordinates for the centroids of a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns (``x'' and ``y'') indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column (``avail'') indicates whether the cell is available habitat (=1) or not (=0). All cells must be square and have the same resolution. If \code{studyArea=NULL} (the default) and  \code{mms=NULL}, then a square study area grid composed of \code{ncells} cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}. Ignored unless \code{mms=NULL}.
 #' @param buffer A scaler in same units as \code{trapCoords} indicating the buffer around the bounding box of \code{trapCoords} for defining the study area when \code{studyArea=NULL}.  Ignored unless \code{studyArea=NULL} and \code{mms=NULL}.
 #' @param ncells The number of grid cells in the study area when \code{studyArea=NULL}. The square root of \code{ncells} must be a whole number. Default is \code{ncells=1024}. Ignored unless \code{studyArea=NULL} and \code{mms=NULL}.
 #' @param data.type Specifies the encounter history data type. All data types include non-detections (type 0 encounter), type 1 encounter (e.g., left-side), and type 2 encounters (e.g., right-side). When both type 1 and type 2 encounters occur for the same individual within a sampling occasion, these can either be "non-simultaneous" (type 3 encounter) or "simultaneous" (type 4 encounter). Three data types are currently permitted:
@@ -808,7 +812,7 @@ markClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=102
 #' studyArea <- sim.data$spatialInputs$studyArea
 #' 
 #' #Run single chain using the default model for simulated data
-#' example.dot<-multimarkSCRClosed(Enc.Mat,trapCoords,studyArea)
+#' example.dot<-multimarkClosedSCR(Enc.Mat,trapCoords,studyArea)
 #' 
 #' #Posterior summary for monitored parameters
 #' summary(example.dot$mcmc)
@@ -921,7 +925,8 @@ multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncell
 #' Enc.Mat<-sim.data$Enc.Mat
 #' trapCoords<-sim.data$spatialInputs$trapCoords
 #' studyArea<-sim.data$spatialInputs$studyArea
-#' example.c <- multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,mod.p=~c)
+#' example.c <- multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,mod.p=~c,
+#'                                 iter=1000,adapt=500,burnin=500)
 #'   
 #' #Calculate capture and recapture probabilities
 #' pc <- getprobsClosedSCR(example.c)
@@ -1231,20 +1236,20 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
 #' setup<-processdataSCR(Enc.Mat,trapCoords,studyArea)
 #'  
 #' #Run single chain using the default model for simulated data. Note parms="all".
-#' example.dot <- multimarkClosedSCR(mms=setup,parms="all")
+#' example.dot <- multimarkClosedSCR(mms=setup,parms="all",iter=1000,adapt=500,burnin=500)
 #' 
 #' #Run single chain for simulated data with behavior effects. Note parms="all".
-#' example.c <- multimarkClosedSCR(mms=setup,mod.p=~c,parms="all")
+#' example.c <- multimarkClosedSCR(mms=setup,mod.p=~c,parms="all",iter=1000,adapt=500,burnin=500)
 #' 
 #' #Perform RJMCMC using defaults
 #' modlist <- list(mod1=example.dot,mod2=example.c)
-#' example.M <- multimodelClosedSCR(modlist=modlist,monparms=c("N","sigma2_scr"))
+#' example.M <- multimodelClosedSCR(modlist=modlist,monparms=c("N","D","sigma2_scr"))
 #' 
 #' #Posterior model probabilities
 #' example.M$pos.prob
 #'  
-#' #multimodel posterior summary for abundance
-#' summary(example.M$rjmcmc[,"N"])}
+#' #multimodel posterior summary for abundance and density
+#' summary(example.M$rjmcmc[,c("N","D")])}
 multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modlist)),monparms="N",miter=NULL,mburnin=0,mthin=1,M1=NULL,pbetapropsd=1,sigpropmean=0.8,sigpropsd=0.4,printlog=FALSE){
   
   nmod <- length(modlist)

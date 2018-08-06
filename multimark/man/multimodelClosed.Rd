@@ -59,10 +59,10 @@ test<-multimodelClosed(modlist=list(mod1=test.dot,mod2=test.dot))
 setup <- processdata(bobcat)
  
 #Run single chain using the default model for bobcat data. Note parms="all".
-bobcat.dot <- multimarkClosed(mms=setup,parms="all")
+bobcat.dot <- multimarkClosed(mms=setup,parms="all",iter=1000,adapt=500,burnin=500)
 
 #Run single chain for bobcat data with time effects. Note parms="all".
-bobcat.time <- multimarkClosed(mms=setup,mod.p=~time,parms="all")
+bobcat.time <- multimarkClosed(mms=setup,mod.p=~time,parms="all",iter=1000,adapt=500,burnin=500)
 
 #Perform RJMCMC using defaults
 modlist <- list(mod1=bobcat.dot,mod2=bobcat.time)
@@ -74,13 +74,12 @@ bobcat.M$pos.prob
 #multimodel posterior summary for abundance
 summary(bobcat.M$rjmcmc[,"N"])}
 }
-\author{
-Brett T. McClintock
-}
 \references{
 Barker, R. J. and Link. W. A. 2013. Bayesian multimodel inference by RJMCMC: a Gibbs sampling approach. The American Statistician 67: 150-156.
 }
 \seealso{
 \code{\link{multimarkClosed}}, \code{\link{markClosed}}, \code{\link{processdata}}
 }
-
+\author{
+Brett T. McClintock
+}

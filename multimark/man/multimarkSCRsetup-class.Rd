@@ -34,6 +34,7 @@ A class of spatial 'mulitmark' model inputs
 
 \item{\code{spatialInputs}}{Object of class \code{"list"}. List is of length 4 containing \code{trapCoords} and \code{studyArea} after re-scaling coordinates based on \code{maxscale}, as well as the original (not re-scaled) grid cell resolution (\code{origCellRes}) and re-scaling range (\code{Srange}).}
 }}
+
 \section{Objects from the Class}{
 
 Objects can be created by calls of the form \code{processdata(Enc.Mat, ...)} or \code{new("multimarkSCRsetup", ...)}.
@@ -43,14 +44,14 @@ Objects can be created by calls of the form \code{processdata(Enc.Mat, ...)} or 
 
 No methods defined with class "multimarkSCRsetup".
 }
+
 \examples{
 showClass("multimarkSCRsetup")
-}
-\author{
-Brett T. McClintock
 }
 \seealso{
 \code{\link{processdataSCR}}
 }
+\author{
+Brett T. McClintock
+}
 \keyword{classes}
-

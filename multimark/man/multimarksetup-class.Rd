@@ -32,6 +32,7 @@ A class of 'mulitmark' model inputs
 
 \item{\code{covs}}{Object of class \code{"data.frame"}. Temporal covariates for detection probability (the number of rows in the data frame must equal the number of sampling occasions).}
 }}
+
 \section{Objects from the Class}{
 
 Objects can be created by calls of the form \code{processdata(Enc.Mat, ...)} or \code{new("multimarksetup", ...)}.
@@ -41,14 +42,14 @@ Objects can be created by calls of the form \code{processdata(Enc.Mat, ...)} or 
 
 No methods defined with class "multimarksetup".
 }
+
 \examples{
 showClass("multimarksetup")
-}
-\author{
-Brett T. McClintock
 }
 \seealso{
 \code{\link{processdata}}
 }
+\author{
+Brett T. McClintock
+}
 \keyword{classes}
-

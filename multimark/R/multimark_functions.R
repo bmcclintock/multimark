@@ -50,8 +50,60 @@ NULL
 #' Enc.Mat<-tiger$Enc.Mat
 #' trapCoords<-tiger$trapCoords
 #' studyArea<-tiger$studyArea
-#' tiger.dot<-markClosedSCR(Enc.Mat,trapCoords,studyArea,iter=200,adapt=100,burnin=100)
+#' tiger.dot<-markClosedSCR(Enc.Mat,trapCoords,studyArea,iter=100,adapt=50,burnin=50)
 #' summary(tiger.dot$mcmc)}
+#' @keywords data
+NULL
+
+#' Bobcat spatial capture-recapture data
+#' 
+#' Example spatial bobcat data for \code{multimark} package.
+#' @name bobcatSCR
+#' @docType data
+#' @format These spatial capture-recapture data with multiple mark types are summarized in a list of length 3 containing the following objects:
+#' 
+#' \code{Enc.Mat} is a 42 x (noccas*ntraps) matrix containing observed encounter histories for 42 bobcats across \code{noccas=187} sampling occasions and \code{ntraps=30} traps. The first 187 columns correspond to trap 1, the second 187 columns corresopond to trap 2, etc.
+#' 
+#' \code{trapCoords} is a matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating.
+#' 
+#' \code{studyArea} is a 3-column matrix containing the coordinates for the centroids of the contiguous grid of 1023 cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). The grid cells are 0.65x0.65km resolution. 
+#' 
+#' Bobcats are bilaterially asymmetrical, and sampling was conducted using camera stations consisting of a single camera. Because the left-side cannot be reconciled with the right-side, the two types of ``marks'' in this case are the pelage patterns on the left- and right-side of each individual. Encounter type 0 corresponds to non-detection, encounter type 1 corresponds to left-sided detection, encounter type 2 corresponds to right-sided detection. 
+#' 
+#' Both-sided encounters were never observed in this dataset, hence the most appropriate \code{multimark} data type is \code{data.type="never".}
+#' 
+#' The first 15 rows of \code{bobcatSCR$Enc.Mat} correspond to individuals for which both the left and right sides were known because they were physically captured for telemetry deployments prior to sampling surveys. The encounter histories for these 15 individuals are therefore known with certainty and should be specified as such using the \code{known} argument in \code{\link{processdataSCR}} and/or \code{\link{multimarkClosedSCR}} (see example below).
+#'
+#' These data were obtained from the R package \code{SPIM} (Augustine et al. 2017) and modified by projecting onto a regular rectangular grid consisting of square grid cells (as is required by the spatial capture-recapture models in \code{multimark}). 
+#' 
+#' @details We thank B. Augustine and co-authors for making these data publicly available in the \code{SPIM} package (Augustine et al. 2017).
+#' 
+#' @seealso \code{\link{multimarkClosedSCR}}, \code{\link{processdataSCR}}
+#' @source 
+#' Augustine, B., Royle, J.A., Kelly, M., Satter, C., Alonso, R., Boydston, E. and Crooks, K. 2017. Spatial capture-recapture with partial identity: an application to camera traps. bioRxiv doi: https://doi.org/10.1101/056804
+#' @examples
+#' data(bobcatSCR)
+#' #plot the traps and available habitat within the study area
+#' plotSpatialData(trapCoords=bobcatSCR$trapCoords,studyArea=bobcatSCR$studyArea)
+#' \donttest{
+#' # This example is excluded from testing to reduce package check time
+#' # Example uses unrealistically low values for nchain, iter, and burnin
+#' 
+#' # Fit spatial model to tiger data
+#' Enc.Mat <- bobcatSCR$Enc.Mat
+#' trapCoords <- bobcatSCR$trapCoords
+#' studyArea <- bobcatSCR$studyArea
+#' 
+#' # specify known encounter histories
+#' known <- c(rep(1,15),rep(0,nrow(Enc.Mat)-15))
+#' 
+#' # specify prior bounds for sigma2_scr
+#' sig_bounds <- c(0.1,max(diff(range(studyArea[,"x"])),diff(range(studyArea[,"y"]))))
+#' 
+#' mmsSCR <- processdataSCR(Enc.Mat,trapCoords,studyArea,known=known)
+#' bobcatSCR.dot.type <- multimarkClosedSCR(mms=mmsSCR,iter=200,adapt=100,burnin=100,
+#'                                          sigma_bounds=sig_bounds)
+#' summary(bobcatSCR.dot.type$mcmc)}
 #' @keywords data
 NULL
 
@@ -1005,7 +1057,7 @@ processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer(
 #'
 #' @param Enc.Mat A matrix containing the observed encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc. Ignored unless \code{mms=NULL}.
 #' @param trapCoords A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating.
-#' @param studyArea is a 3-column matrix containing the coordinates for the centroids a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{studyArea=NULL} (the default), then a square study area grid composed of \code{ncells} cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}.
+#' @param studyArea is a 3-column matrix containing the coordinates for the centroids of a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must be square and have the same resolution. If \code{studyArea=NULL} (the default), then a square study area grid composed of \code{ncells} cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}.
 #' @param buffer A scaler in same units as \code{trapCoords} indicating the buffer around the bounding box of \code{trapCoords} for defining the study area when \code{studyArea=NULL}.  Ignored unless \code{studyArea=NULL}.
 #' @param ncells The number of grid cells in the study area when \code{studyArea=NULL}. The square root of \code{ncells} must be a whole number. Default is \code{ncells=1024}. Ignored unless \code{studyArea=NULL}.
 #' @param data.type Specifies the encounter history data type. All data types include non-detections (type 0 encounter), type 1 encounter (e.g., left-side), and type 2 encounters (e.g., right-side). When both type 1 and type 2 encounters occur for the same individual within a sampling occasion, these can either be "non-simultaneous" (type 3 encounter) or "simultaneous" (type 4 encounter). Three data types are currently permitted:

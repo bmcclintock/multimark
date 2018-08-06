@@ -144,9 +144,6 @@ sim.age <- multimarkCJS(data$Enc.Mat,mod.phi=~age,
            parameters=list(Phi=list(age.bins=c(0,1,4))),right=FALSE)
 summary(getprobsCJS(sim.age))}
 }
-\author{
-Brett T. McClintock
-}
 \references{
 Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.
 
@@ -157,4 +154,6 @@ McClintock, B. T., Bailey, L. L., Dreher, B. P., and Link, W. A. 2014. Probit mo
 \seealso{
 \code{\link{processdata}}, \code{\link{multimodelCJS}}
 }
-
+\author{
+Brett T. McClintock
+}

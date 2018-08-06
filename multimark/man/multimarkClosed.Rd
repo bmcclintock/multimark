@@ -113,9 +113,6 @@ bobcat.dot<-multimarkClosed(bobcat)
 summary(bobcat.dot$mcmc)
 plot(bobcat.dot$mcmc)}
 }
-\author{
-Brett T. McClintock
-}
 \references{
 Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.
 
@@ -126,4 +123,6 @@ McClintock, B. T., Bailey, L. L., Dreher, B. P., and Link, W. A. 2014. Probit mo
 \seealso{
 \code{\link{bobcat}}, \code{\link{processdata}}, \code{\link{multimodelClosed}}
 }
-
+\author{
+Brett T. McClintock
+}

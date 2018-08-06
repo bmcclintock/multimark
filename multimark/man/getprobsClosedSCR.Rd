@@ -35,16 +35,16 @@ sim.data<-simdataClosedSCR()
 Enc.Mat<-sim.data$Enc.Mat
 trapCoords<-sim.data$spatialInputs$trapCoords
 studyArea<-sim.data$spatialInputs$studyArea
-example.c <- multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,mod.p=~c)
+example.c <- multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,mod.p=~c,
+                                iter=1000,adapt=500,burnin=500)
   
 #Calculate capture and recapture probabilities
 pc <- getprobsClosedSCR(example.c)
 summary(pc)}
 }
-\author{
-Brett T. McClintock
-}
 \seealso{
 \code{\link{multimarkClosedSCR}}
 }
-
+\author{
+Brett T. McClintock
+}

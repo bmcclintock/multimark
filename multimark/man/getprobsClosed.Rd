@@ -33,10 +33,9 @@ bobcat.c <- multimarkClosed(bobcat,mod.p=~c)
 pc <- getprobsClosed(bobcat.c)
 summary(pc)}
 }
-\author{
-Brett T. McClintock
-}
 \seealso{
 \code{\link{multimarkClosed}}
 }
-
+\author{
+Brett T. McClintock
+}
