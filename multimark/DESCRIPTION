@@ -1,12 +1,14 @@
 Package: multimark
 Type: Package
 Title: Capture-Mark-Recapture Analysis using Multiple Non-Invasive Marks
-Version: 2.0.2
-Date: 2017-06-30
+Version: 2.1.0
+Date: 2018-10-17
 Depends:
     R (>= 3.2.1)
 Imports:
     parallel,
+    doParallel,
+    foreach,
     Matrix,
     coda,
     statmod,
@@ -19,7 +21,8 @@ Imports:
     utils,
     prodlim,
     sp,
-    raster
+    raster,
+    doRNG
 Authors@R: c(person("Brett T.", "McClintock", email = "brett.mcclintock@noaa.gov",role = c("aut", "cre")),person("Acho", "Arnold",role = c("ctb","cph"), comment = "C original matrix library, https://github.com/najela/matrix.h"),person("Barry", "Brown",role = "ctb", comment = "Fortran original ranlib library"),person("James", "Lovato",role = "ctb", comment = "Fortran original ranlib library"),person("John", "Burkardt",role = "ctb", comment = "C original ranlib library, http://people.sc.fsu.edu/~jburkardt/c_src/ranlib"),person("Cleve", "Moler",role = "ctb", comment = "C original linpack library, http://www.kkant.net/geist/ranlib/"),person("Arjun", "Gopalaswamy",role = "ctb", comment = "modified snippets of R package SPACECAP code"))
 Description: Traditional and spatial capture-mark-recapture analysis with
     multiple non-invasive marks. The models implemented in 'multimark' combine

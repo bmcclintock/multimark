@@ -1,3 +1,10 @@
+multimark 2.1.0 2017-10-17
+-----------------
+CHANGES
+
+* doRNG now used for reproducible parallel processing
+
+
 multimark 2.0.1 2017-06-30
 -----------------
 NEW FEATURES

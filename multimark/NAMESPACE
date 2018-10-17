@@ -22,6 +22,15 @@ export(
 
 import(parallel,Matrix,coda)
 
+importFrom("parallel","makeCluster")
+importFrom("parallel","clusterExport")
+importFrom("parallel","stopCluster")
+importFrom("doParallel","registerDoParallel")
+importFrom("doParallel","stopImplicitCluster")
+importFrom("doRNG","%dorng%")
+importFrom("foreach","%dopar%")
+importFrom("foreach","foreach")
+
 importFrom("statmod","gauss.quad")
 importFrom("RMark","process.data","make.design.data")
 importFrom("Brobdingnag","brob","as.brob","sum")

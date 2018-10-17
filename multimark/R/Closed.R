@@ -655,7 +655,11 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
     modlog <- ifelse(mod.delta != ~NULL,"multimarkClosed","markClosed")
     cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0(modlog,"_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
     clusterExport(cl,list("mcmcClosed"),envir=environment())  
-    chains <- parLapply(cl,1:nchains, function(ichain) mcmcClosed(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,gq,maxnumbasis,a0delta,a0alpha,b0alpha,a,mu0,sigma2_mu0,a0psi,b0psi,printlog))
+    registerDoParallel(cl)
+    chains <- 
+      foreach(ichain = 1:nchains) %dorng% {
+        mcmcClosed(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,gq,maxnumbasis,a0delta,a0alpha,b0alpha,a,mu0,sigma2_mu0,a0psi,b0psi,printlog)
+      }
     stopCluster(cl)
     gc()
   } else {
@@ -1106,7 +1110,11 @@ multimodelClosed<-function(modlist,modprior=rep(1/length(modlist),length(modlist
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
     cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimodelClosed_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
     clusterExport(cl,list("rjmcmcClosed"),envir=environment())
-    multimodel <- parLapply(cl,1:nchains, function(ichain) rjmcmcClosed(ichain,mms,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1[ichain],monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,gq,printlog))
+    registerDoParallel(cl)
+    multimodel <- 
+      foreach(ichain = 1:nchains) %dorng% {
+        rjmcmcClosed(ichain,mms,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1[ichain],monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,gq,printlog)
+      }
     stopCluster(cl)
     gc()
   } else {
