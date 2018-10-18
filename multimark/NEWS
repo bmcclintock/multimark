@@ -2,7 +2,7 @@ multimark 2.1.0 2017-10-17
 -----------------
 CHANGES
 
-* doRNG now used for reproducible parallel processing
+* clusterSetRNGStream now used for reproducible parallel processing
 
 * NAMESPACE now generated using roxygen2
 

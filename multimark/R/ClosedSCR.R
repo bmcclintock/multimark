@@ -892,18 +892,14 @@ multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncell
   message("Updating...",ifelse(printlog | nchains==1,"","set 'printlog=TRUE' to follow progress of chains in a working directory log file"),"\n",sep="")
   if(printlog & nchains==1) printlog<-FALSE
   
-  ichain <- NULL #gets rid of no visible binding for global variable 'ichain' NOTE in R cmd check
-  
   if(nchains>1){
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
     modlog <- ifelse(mod.delta != ~NULL,"multimarkClosedSCR","markClosedSCR")
     cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0(modlog,"_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
     clusterExport(cl,list("mcmcClosedSCR"),envir=environment())  
-    registerDoParallel(cl)
-    chains <- 
-      foreach(ichain = 1:nchains) %dorng% {
-        mcmcClosedSCR(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,Prop.center,spatialInputs,maxnumbasis,a0delta,a0alpha,b0alpha,sigma_bounds,mu0,sigma2_mu0,a0psi,b0psi,printlog)
-      }
+    clusterSetRNGStream(cl)
+    chains <- parLapply(cl,1:nchains, function(ichain) 
+      mcmcClosedSCR(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,Prop.center,spatialInputs,maxnumbasis,a0delta,a0alpha,b0alpha,sigma_bounds,mu0,sigma2_mu0,a0psi,b0psi,printlog))
     stopCluster(cl)
     gc()
   } else {
@@ -1340,17 +1336,13 @@ multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modl
   message("Updating...",ifelse(printlog | nchains==1,"","set 'printlog=TRUE' to follow progress of chains in a working directory log file"),"\n",sep="")
   if(printlog & nchains==1) printlog<-FALSE
   
-  ichain <- NULL #gets rid of no visible binding for global variable 'ichain' NOTE in R cmd check
-  
   if(nchains>1){
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
-    cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimodelClosed_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
-    clusterExport(cl,list("rjmcmcClosed"),envir=environment())
-    registerDoParallel(cl)
-    multimodel <- 
-      foreach(ichain = 1:nchains) %dorng% {
-        rjmcmcClosedSCR(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,detlist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1[ichain],monitorparms,missing,pbetapropsd,sigpropmean,sigpropsd,pmodnames,deltamodnames,printlog)
-      }
+    cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimodelClosedSCR_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
+    clusterExport(cl,list("rjmcmcClosedSCR"),envir=environment())
+    clusterSetRNGStream(cl)
+    chains <- parLapply(cl,1:nchains, function(ichain) 
+        rjmcmcClosedSCR(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,detlist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1[ichain],monitorparms,missing,pbetapropsd,sigpropmean,sigpropsd,pmodnames,deltamodnames,printlog))
     stopCluster(cl)
     gc()
   } else {

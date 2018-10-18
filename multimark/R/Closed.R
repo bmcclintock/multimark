@@ -517,10 +517,7 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
 #' plot(sim.dot$mcmc)}
 #' 
 #' @export
-#' @importFrom parallel makeCluster clusterExport stopCluster detectCores
-#' @importFrom doParallel registerDoParallel stopImplicitCluster
-#' @importFrom doRNG %dorng%
-#' @importFrom foreach %dopar% foreach
+#' @importFrom parallel makeCluster clusterExport stopCluster detectCores parLapply clusterSetRNGStream
 #' @useDynLib multimark ClosedC ClosedSCRC ProbitCJSC
 markClosed<-function(Enc.Mat,covs=data.frame(),mod.p=~1,parms=c("pbeta","N"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,npoints=500,a=25,mu0=0,sigma2_mu0=1.75,initial.values=NULL,printlog=FALSE,...){
   if(any(Enc.Mat>1 | Enc.Mat<0)) stop("With a single mark type, encounter histories can only contain 0's (non-detections) and 1's (detections)")
@@ -665,18 +662,14 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
   message("Updating...",ifelse(printlog | nchains==1,"","set 'printlog=TRUE' to follow progress of chains in a working directory log file"),"\n",sep="")
   if(printlog & nchains==1) printlog<-FALSE
   
-  ichain <- NULL #gets rid of no visible binding for global variable 'ichain' NOTE in R cmd check
-  
   if(nchains>1){
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
     modlog <- ifelse(mod.delta != ~NULL,"multimarkClosed","markClosed")
     cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0(modlog,"_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
     clusterExport(cl,list("mcmcClosed"),envir=environment())  
-    registerDoParallel(cl)
-    chains <- 
-      foreach(ichain = 1:nchains) %dorng% {
-        mcmcClosed(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,gq,maxnumbasis,a0delta,a0alpha,b0alpha,a,mu0,sigma2_mu0,a0psi,b0psi,printlog)
-      }
+    clusterSetRNGStream(cl)
+    chains <- parLapply(cl,1:nchains, function(ichain) 
+        mcmcClosed(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,gq,maxnumbasis,a0delta,a0alpha,b0alpha,a,mu0,sigma2_mu0,a0psi,b0psi,printlog))
     stopCluster(cl)
     gc()
   } else {
@@ -1129,17 +1122,13 @@ multimodelClosed<-function(modlist,modprior=rep(1/length(modlist),length(modlist
   message("Updating...",ifelse(printlog | nchains==1,"","set 'printlog=TRUE' to follow progress of chains in a working directory log file"),"\n",sep="")
   if(printlog & nchains==1) printlog<-FALSE
   
-  ichain <- NULL #gets rid of no visible binding for global variable 'ichain' NOTE in R cmd check
-  
   if(nchains>1){
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
     cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimodelClosed_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
     clusterExport(cl,list("rjmcmcClosed"),envir=environment())
-    registerDoParallel(cl)
-    multimodel <- 
-      foreach(ichain = 1:nchains) %dorng% {
-        rjmcmcClosed(ichain,mms,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1[ichain],monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,gq,printlog)
-      }
+    clusterSetRNGStream(cl)
+    chains <- parLapply(cl,1:nchains, function(ichain) 
+        rjmcmcClosed(ichain,mms,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1[ichain],monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,gq,printlog))
     stopCluster(cl)
     gc()
   } else {
