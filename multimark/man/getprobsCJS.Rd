@@ -36,6 +36,7 @@ sim.time <- multimarkCJS(data$Enc.Mat,mod.phi=~time)
 #Calculate capture and survival probabilities for each cohort and time
 pphi <- getprobsCJS(sim.time)
 summary(pphi)}
+
 }
 \seealso{
 \code{\link{multimarkCJS}}

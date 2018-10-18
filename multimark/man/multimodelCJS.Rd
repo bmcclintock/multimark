@@ -87,6 +87,7 @@ sim.M$pos.prob
 
 #multimodel posterior summary for survival (display first cohort only)
 summary(sim.M$rjmcmc[,paste0("phi[1,",1:(noccas-1),"]")])}
+
 }
 \references{
 Barker, R. J. and Link. W. A. 2013. Bayesian multimodel inference by RJMCMC: a Gibbs sampling approach. The American Statistician 67: 150-156.

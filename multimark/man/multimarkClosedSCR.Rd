@@ -135,6 +135,7 @@ example.dot<-multimarkClosedSCR(Enc.Mat,trapCoords,studyArea)
 #Posterior summary for monitored parameters
 summary(example.dot$mcmc)
 plot(example.dot$mcmc)}
+
 }
 \references{
 Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.

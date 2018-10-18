@@ -32,6 +32,7 @@ bobcat.c <- multimarkClosed(bobcat,mod.p=~c)
 #Calculate capture and recapture probabilities
 pc <- getprobsClosed(bobcat.c)
 summary(pc)}
+
 }
 \seealso{
 \code{\link{multimarkClosed}}

@@ -84,6 +84,7 @@ sim.dot<-markClosed(data)
 #Posterior summary for monitored parameters
 summary(sim.dot$mcmc)
 plot(sim.dot$mcmc)}
+
 }
 \seealso{
 \code{\link{multimodelClosed}}

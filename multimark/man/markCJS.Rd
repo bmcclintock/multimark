@@ -116,6 +116,7 @@ plot(sim.dot$mcmc)
 sim.age <- markCJS(data,mod.phi=~age,
            parameters=list(Phi=list(age.bins=c(0,1,4))),right=FALSE)
 summary(getprobsCJS(sim.age))}
+
 }
 \seealso{
 \code{\link{processdata}}, \code{\link{multimodelCJS}}

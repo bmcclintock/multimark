@@ -33,6 +33,8 @@
 #' @examples
 #' #simulate data for data.type="sometimes" using defaults
 #' data<-simdataClosed(data.type="sometimes")
+#' 
+#' @export
 simdataClosed <- function(N=100,noccas=5,pbeta=-0.4,tau=0,sigma2_zp=0,delta_1=0.4,delta_2=0.4,alpha=0.5,data.type="never",link="logit"){
   
   if(length(pbeta)==1){
@@ -78,6 +80,7 @@ simdataClosed <- function(N=100,noccas=5,pbeta=-0.4,tau=0,sigma2_zp=0,delta_1=0.
   return(list(Enc.Mat=Enc.Mat,trueEnc.Mat=tEnc.Mat))
 }
 
+#' @importFrom RMark process.data make.design.data
 get_DMClosed<-function(mod.p,mod.delta,Enc.Mat,covs,type="Closed",ntraps=1,detection=NULL,...){
   if(!is.null(detection)){
     Enc.Mat<-matrix(1,nrow=nrow(Enc.Mat)*ntraps,ncol=ncol(Enc.Mat)/ntraps,byrow=TRUE)
@@ -512,6 +515,13 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
 #' #Posterior summary for monitored parameters
 #' summary(sim.dot$mcmc)
 #' plot(sim.dot$mcmc)}
+#' 
+#' @export
+#' @importFrom parallel makeCluster clusterExport stopCluster detectCores
+#' @importFrom doParallel registerDoParallel stopImplicitCluster
+#' @importFrom doRNG %dorng%
+#' @importFrom foreach %dopar% foreach
+#' @useDynLib multimark ClosedC ClosedSCRC ProbitCJSC
 markClosed<-function(Enc.Mat,covs=data.frame(),mod.p=~1,parms=c("pbeta","N"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,npoints=500,a=25,mu0=0,sigma2_mu0=1.75,initial.values=NULL,printlog=FALSE,...){
   if(any(Enc.Mat>1 | Enc.Mat<0)) stop("With a single mark type, encounter histories can only contain 0's (non-detections) and 1's (detections)")
   mms <- processdata(Enc.Mat,covs=covs,known=rep(1,nrow(Enc.Mat)))
@@ -594,6 +604,11 @@ markClosed<-function(Enc.Mat,covs=data.frame(),mod.p=~1,parms=c("pbeta","N"),nch
 #' #Posterior summary for monitored parameters
 #' summary(bobcat.dot$mcmc)
 #' plot(bobcat.dot$mcmc)}
+#' 
+#' @export
+#' @importFrom statmod gauss.quad
+#' @importFrom methods validObject
+#' @importFrom stats dbeta dbinom dcauchy dnorm dunif end formula integrate model.matrix pnorm rbeta rbinom rgamma rmultinom rnbinom rnorm runif start terms
 multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.p=~1,mod.delta=~type,parms=c("pbeta","delta","N"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,npoints=500,maxnumbasis=1,a0delta=1,a0alpha=1,b0alpha=1,a=25,mu0=0,sigma2_mu0=1.75,a0psi=1,b0psi=1,initial.values=NULL,known=integer(),printlog=FALSE,...){
   
   if(is.null(mms)) mms <- processdata(Enc.Mat,data.type,covs,known)
@@ -650,6 +665,8 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
   message("Updating...",ifelse(printlog | nchains==1,"","set 'printlog=TRUE' to follow progress of chains in a working directory log file"),"\n",sep="")
   if(printlog & nchains==1) printlog<-FALSE
   
+  ichain <- NULL #gets rid of no visible binding for global variable 'ichain' NOTE in R cmd check
+  
   if(nchains>1){
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
     modlog <- ifelse(mod.delta != ~NULL,"multimarkClosed","markClosed")
@@ -697,6 +714,8 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
 #' #Calculate capture and recapture probabilities
 #' pc <- getprobsClosed(bobcat.c)
 #' summary(pc)}
+#' 
+#' @export
 getprobsClosed<-function(out,link="logit"){
   
   DMp<-out$DM$p
@@ -845,6 +864,7 @@ drawmissingClosed<-function(M.cur,missing,pbetapropsd,sigppropshape,sigppropscal
   missing
 }
 
+#' @importFrom Brobdingnag brob as.brob sum
 getbrobprobClosed<-function(imod,modprior,posterior,cur.parms,missing,pbetapropsd,sigppropshape,sigppropscale){
   deltadens <- 0
   if(length(missing$missingdeltaparms[[imod]])){
@@ -917,6 +937,7 @@ missingparmnamesClosed<-function(params,M,noccas,zppropsd){
   list(commonparms=commonparms,missingparms=missingparms,missingpbetaparms=missingpbetaparms,missingdeltaparms=missingdeltaparms,missingsigpparms=missingsigpparms,missingzpparms=missingzpparms,zppropsd=zppropsd,usesigp=usesigp,missingsigma2_scrparms=missingsigma2_scrparms,missinglambdaparms=missinglambdaparms) 
 }
 
+#' @importFrom utils flush.console
 rjmcmcClosed <- function(ichain,mms,M,noccas,data_type,alpha,C,All.hists,modlist,DMlist,deltalist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,gq,printlog){
   
   multimodel <- matrix(0,nrow=(max(1,floor(miter/mthin)))-(floor(mburnin/mthin)),ncol=length(monitorparms$parms)+1,dimnames=list(NULL,c(monitorparms$parms,"M")))
@@ -1051,6 +1072,8 @@ rjmcmcClosed <- function(ichain,mms,M,noccas,data_type,alpha,C,All.hists,modlist
 #'  
 #' #multimodel posterior summary for abundance
 #' summary(bobcat.M$rjmcmc[,"N"])}
+#' 
+#' @export
 multimodelClosed<-function(modlist,modprior=rep(1/length(modlist),length(modlist)),monparms="N",miter=NULL,mburnin=0,mthin=1,M1=NULL,pbetapropsd=1,zppropsd=NULL,sigppropshape=6,sigppropscale=4,printlog=FALSE){
   
   nmod <- length(modlist)
@@ -1105,6 +1128,8 @@ multimodelClosed<-function(modlist,modprior=rep(1/length(modlist),length(modlist
 
   message("Updating...",ifelse(printlog | nchains==1,"","set 'printlog=TRUE' to follow progress of chains in a working directory log file"),"\n",sep="")
   if(printlog & nchains==1) printlog<-FALSE
+  
+  ichain <- NULL #gets rid of no visible binding for global variable 'ichain' NOTE in R cmd check
   
   if(nchains>1){
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")

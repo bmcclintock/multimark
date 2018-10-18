@@ -132,6 +132,10 @@ NULL
 #' @examples
 #' showClass("multimarksetup")
 #' @keywords classes
+#' 
+#' @importFrom methods setClass
+#' @import Matrix
+#' @import coda
 setClass("multimarksetup", representation=list(Enc.Mat="matrix",data.type="character",vAll.hists="integer",Aprime="sparseMatrix",indBasis="integer",ncolbasis="integer",knownx="integer",C="integer",L="integer",naivex="integer",covs="data.frame"),
          prototype=list(Enc.Mat=matrix(0,0,0),data.type=character(),vAll.hists=integer(),Aprime=Matrix(0,0,0),indBasis=integer(),ncolbasis=integer(),knownx=integer(),C=integer(),L=integer(),naivex=integer(),covs=data.frame()),
          package="multimark")
@@ -163,6 +167,8 @@ setClass("multimarksetup", representation=list(Enc.Mat="matrix",data.type="chara
 #' @examples
 #' showClass("multimarkSCRsetup")
 #' @keywords classes
+#' 
+#' @importFrom methods setClass
 setClass("multimarkSCRsetup", representation=list(Enc.Mat="matrix",data.type="character",vAll.hists="integer",Aprime="sparseMatrix",indBasis="integer",ncolbasis="integer",knownx="integer",C="integer",L="integer",naivex="integer",covs="data.frame",spatialInputs="list"),
          prototype=list(Enc.Mat=matrix(0,0,0),data.type=character(),vAll.hists=integer(),Aprime=Matrix(0,0,0),indBasis=integer(),ncolbasis=integer(),knownx=integer(),C=integer(),L=integer(),naivex=integer(),covs=data.frame(),spatialInputs=list(trapCoords=matrix(0,0,0),studyArea=matrix(0,0,0),origCellRes=numeric(),Srange=numeric())),
          package="multimark")
@@ -170,6 +176,7 @@ setClass("multimarkSCRsetup", representation=list(Enc.Mat="matrix",data.type="ch
 
 tol <- 1.e-6
 
+#' @importFrom prodlim row.match
 getfreq<-function(Enc.Mat,vAll.hists,data.type){
   
   All.hists<-matrix(vAll.hists,ncol=ncol(Enc.Mat),byrow=TRUE)
@@ -186,6 +193,7 @@ getfreq<-function(Enc.Mat,vAll.hists,data.type){
   as.vector(temp.x,mode="integer")
 }
 
+#' @importFrom prodlim row.match
 get_A<-function(Enc.Mat,data.type){
   
   noccas<-ncol(Enc.Mat)
@@ -363,6 +371,7 @@ get_Enc <- function(tEnc.Mat,data.type){
   Enc.Mat
 }
 
+#' @importFrom prodlim row.match
 get_H <- function(mms,x){
   
   if(all(x==mms@naivex)){
@@ -999,6 +1008,9 @@ get_known<-function(known,Enc.Mat,vAll.hists,data.type){
 #' 
 #' #Run single chain for bobcat data with temporal effects (i.e., mod.p=~time)
 #' bobcat.time <- multimarkClosed(mms=setup,mod.p=~time)}
+#' 
+#' @export
+#' @importFrom methods new
 processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer()){
   
   if(!is.matrix(Enc.Mat)) stop("'Enc.Mat' must be a matrix")
@@ -1105,6 +1117,9 @@ processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer(
 #' #Run single chain using the default model for simulated data
 #' example.dot<-multimarkClosedSCR(mms=setup)}
 #' 
+#' @export
+#' @importFrom methods new
+#' @importFrom sp points2grid SpatialPoints bbox gridded SpatialGrid over coordinates
 processdataSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=NULL,data.type="never",covs=data.frame(),known=integer(),scalemax=10){
   
   if(!is.matrix(Enc.Mat)) stop("'Enc.Mat' must be a matrix")
@@ -1220,6 +1235,7 @@ checkmats<-function(mat,dim,parm){
   mat
 }
 
+#' @importFrom utils setTxtProgressBar txtProgressBar
 inverseXB<-function(ichain,iout,betanames,mod.h,DM,noccas,varind,vars,parm,sigparm,link){
   
   if(!varind){

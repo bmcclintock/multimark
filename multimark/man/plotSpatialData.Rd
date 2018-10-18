@@ -24,6 +24,7 @@ This function plots the study area grid, available habitat, and trap coordinates
 \examples{
 #Plot the tiger example data
 plotSpatialData(trapCoords=tiger$trapCoords,studyArea=tiger$studyArea)
+
 }
 \author{
 Brett T. McClintock

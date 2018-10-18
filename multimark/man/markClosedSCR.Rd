@@ -103,6 +103,7 @@ tiger.dot<-markClosedSCR(Enc.Mat,trapCoords,studyArea,iter=100,adapt=50,burnin=5
 #Posterior summary for monitored parameters
 summary(tiger.dot$mcmc)
 plot(tiger.dot$mcmc)}
+
 }
 \references{
 Gopalaswamy, A.M., Royle, J.A., Hines, J.E., Singh, P., Jathanna, D., Kumar, N. and Karanth, K.U. 2012. Program SPACECAP: software for estimating animal density using spatially explicit capture-recapture models. \emph{Methods in Ecology and Evolution} 3:1067-1072.

@@ -79,6 +79,7 @@ example.M$pos.prob
  
 #multimodel posterior summary for abundance and density
 summary(example.M$rjmcmc[,c("N","D")])}
+
 }
 \references{
 Barker, R. J. and Link. W. A. 2013. Bayesian multimodel inference by RJMCMC: a Gibbs sampling approach. The American Statistician 67: 150-156.

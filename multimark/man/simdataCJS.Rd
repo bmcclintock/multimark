@@ -48,6 +48,7 @@ This function generates encounter histories from simulated open population captu
 \examples{
 #simulate data for data.type="sometimes" using defaults
 data<-simdataCJS(data.type="sometimes")
+
 }
 \references{
 Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.

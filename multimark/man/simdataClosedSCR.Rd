@@ -79,6 +79,7 @@ Please be very careful when specifying your own \code{spatialInputs}; \code{\lin
 \examples{
 #simulate data for data.type="sometimes" using defaults
 data<-simdataClosedSCR(data.type="sometimes")
+
 }
 \references{
 Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.

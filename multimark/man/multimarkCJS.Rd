@@ -143,6 +143,7 @@ plot(sim.dot$mcmc)
 sim.age <- multimarkCJS(data$Enc.Mat,mod.phi=~age,
            parameters=list(Phi=list(age.bins=c(0,1,4))),right=FALSE)
 summary(getprobsCJS(sim.age))}
+
 }
 \references{
 Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.

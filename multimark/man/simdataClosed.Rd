@@ -46,6 +46,7 @@ This function generates encounter histories from simulated closed population cap
 \examples{
 #simulate data for data.type="sometimes" using defaults
 data<-simdataClosed(data.type="sometimes")
+
 }
 \references{
 Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.

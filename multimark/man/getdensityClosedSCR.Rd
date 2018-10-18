@@ -37,6 +37,7 @@ example.dot <- multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,mod.p=~1)
 #Calculate capture and recapture probabilities
 D <- getdensityClosedSCR(example.dot)
 summary(D)}
+
 }
 \seealso{
 \code{\link{multimarkClosedSCR}}

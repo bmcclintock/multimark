@@ -57,6 +57,8 @@
 #' @examples
 #' #simulate data for data.type="sometimes" using defaults
 #' data<-simdataClosedSCR(data.type="sometimes")
+#' 
+#' @export
 simdataClosedSCR <- function(N=30,ntraps=9,noccas=5,pbeta=0.25,tau=0,sigma2_scr=0.75,lambda=0.75,delta_1=0.4,delta_2=0.4,alpha=0.5,data.type="never",detection="half-normal",spatialInputs=NULL,buffer=3*sqrt(sigma2_scr),ncells=1024,scalemax=10,plot=TRUE){
   
   if(length(pbeta)==1){
@@ -108,7 +110,7 @@ simdataClosedSCR <- function(N=30,ntraps=9,noccas=5,pbeta=0.25,tau=0,sigma2_scr=
     }
   }
   checkSpatialInputs(spatialInputs$trapCoords,spatialInputs$studyArea,centers=spatialInputs$centers)
-    
+  
   colnames(spatialInputs$trapCoords)<-c("x","y",paste0("occ",1:noccas))
   rownames(spatialInputs$trapCoords)<-paste0("trap",1:ntraps)
   colnames(spatialInputs$studyArea)<-c("x","y","avail")
@@ -168,6 +170,12 @@ simdataClosedSCR <- function(N=30,ntraps=9,noccas=5,pbeta=0.25,tau=0,sigma2_scr=
 #' @examples
 #' #Plot the tiger example data
 #' plotSpatialData(trapCoords=tiger$trapCoords,studyArea=tiger$studyArea)
+#' 
+#' @export
+#' @importFrom graphics hist legend lines par points
+#' @importFrom sp points2grid SpatialPoints bbox gridded SpatialGrid over coordinates
+#' @importFrom raster extent raster rasterize
+#' @importFrom grDevices rainbow gray
 plotSpatialData<-function(mms=NULL,trapCoords,studyArea,centers=NULL,trapLines=FALSE){
   
   cur.par<-par(no.readonly=TRUE)
@@ -182,7 +190,7 @@ plotSpatialData<-function(mms=NULL,trapCoords,studyArea,centers=NULL,trapLines=F
     }
   }
   checkSpatialInputs(trapCoords,studyArea,centers)
-
+  
   sAgrid<-SpatialGrid(points2grid(SpatialPoints(studyArea[,c("x","y")])))
   e<-extent(sAgrid)
   cells.dim<-attributes(sAgrid)$grid@cells.dim
@@ -192,7 +200,7 @@ plotSpatialData<-function(mms=NULL,trapCoords,studyArea,centers=NULL,trapLines=F
   colors <- c("white","green","green")
   sp::plot(x,breaks=breakpoints,col=colors,legend=FALSE)
   sp::plot(sAgrid,add=TRUE,col=gray(.75))
-
+  
   if(is.null(centers)){
     tmp<-legend(x="top",legend=c("traps                          ","available habitat"),pch=c(17,15),col=c(1,"green"),box.col="white",bty="o",bg="white",cex=.8)
   } else {
@@ -265,7 +273,7 @@ loglikeClosedSCR<-function(parms,DM,noccas,ntraps,C,All.hists,spatialInputs){
   indhist <- All.hists[Hind,]
   n<-length(Hind)
   #firstcap<- (C[Hind]>=matrix(rep(1:noccas,each=n),nrow=n,ncol=noccas))
-
+  
   msk <- t(spatialInputs$msk) #matrix(1,nrow=noccas,ncol=ntraps) 
   msk2 <- array(NA, c(n, noccas, ntraps))
   for(i in 1:n){
@@ -332,7 +340,7 @@ loglikeClosedSCR<-function(parms,DM,noccas,ntraps,C,All.hists,spatialInputs){
   #                           + (indhist==4) * p2 * (1. - delta_1 - delta_2) * alpha ))
   
   pstar <- pstarintegrandSCR(noccas,pbeta,sigma2,DM$p,spatialInputs,dexp)
-   
+  
   loglike <- loglike + dbinom(n,parms$N,pstar,1) - n * log(pstar)  
   loglike
 }
@@ -352,7 +360,7 @@ priorsClosedSCR<-function(parms,DM,priorparms,data_type,spatialInputs){
       priors <- priors + dbeta(parms$alpha,priorparms$a0alpha,priorparms$b0alpha,log=TRUE)
     }
     priors <- priors + (base::sum(dbinom((parms$H>1),1,parms$psi,log=TRUE))
-                         + dbeta(parms$psi,priorparms$a0psi,priorparms$b0psi,log=TRUE))
+                        + dbeta(parms$psi,priorparms$a0psi,priorparms$b0psi,log=TRUE))
   }
   
   #priors <- priors + log(2.0*dcauchy(sqrt(parms$sigma2_scr),0.0,priorparms$a,log=FALSE))
@@ -390,7 +398,7 @@ posteriorClosedSCR<-function(parms,DM,mms,priorparms,spatialInputs){
 }
 
 checkSpatialInputs<-function(trapCoords,studyArea,centers=NULL){
-
+  
   if(ncol(studyArea)!=3){
     stop("'studyArea' must have 3 columns")
   }
@@ -400,14 +408,14 @@ checkSpatialInputs<-function(trapCoords,studyArea,centers=NULL){
   if(!all(trapCoords[,-c(1,2)] %in% c(0,1))){
     stop("Indicators for each occasion in 'trapCoords' must be 0 or 1")
   }
-
+  
   if(!gridded(SpatialGrid(points2grid(SpatialPoints(studyArea[,1:2]))))){
     stop("'studyArea' must be a regular grid ")
   } 
   
   cellsize<-sp::points2grid(sp::SpatialPoints(studyArea[,1:2]))@cellsize
   if(!(diff(range(cellsize)) < .Machine$double.eps ^ 0.5)) stop("studyArea grid cells must be square")
-    
+  
   if(any(is.na(over(SpatialPoints(trapCoords[,1:2]),SpatialGrid(points2grid(SpatialPoints(studyArea[,1:2]))))))){
     stop("'trapCoords' must be within 'studyArea'")
   }
@@ -463,7 +471,7 @@ checkClosedSCR<-function(parms,parmlist,mms,DM,iter,adapt,bin,thin,burnin,taccep
 }
 
 mcmcClosedSCR<-function(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,Prop.center,spatialInputs,maxnumbasis,a0delta,a0alpha,b0alpha,sigma_bounds,mu0,sigma2_mu0,a0psi,b0psi,printlog){
-
+  
   ntraps<-nrow(spatialInputs$trapCoords)
   noccas<-ncol(mms@Enc.Mat)/ntraps
   M<-nrow(mms@Enc.Mat)
@@ -712,6 +720,8 @@ getPropCenter<-function(spatialInputs,propcenter){
 #' #Posterior summary for monitored parameters
 #' summary(tiger.dot$mcmc)
 #' plot(tiger.dot$mcmc)}
+#' 
+#' @export
 markClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=1024,covs=data.frame(),mod.p=~1,detection="half-normal",parms=c("pbeta","N"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propsigma=1,propcenter=NULL,sigma_bounds=NULL,mu0=0,sigma2_mu0=1.75,initial.values=NULL,scalemax=10,printlog=FALSE,...){
   if(any(Enc.Mat>1 | Enc.Mat<0)) stop("With a single mark type, encounter histories can only contain 0's (non-detections) and 1's (detections)")
   mms <- processdataSCR(Enc.Mat,trapCoords,studyArea,buffer,ncells,covs=covs,known=rep(1,nrow(Enc.Mat)),scalemax=scalemax)
@@ -817,6 +827,9 @@ markClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=102
 #' #Posterior summary for monitored parameters
 #' summary(example.dot$mcmc)
 #' plot(example.dot$mcmc)}
+#' 
+#' @export
+#' @importFrom methods validObject
 multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=1024,data.type="never",covs=data.frame(),mms=NULL,mod.p=~1,mod.delta=~type,detection="half-normal",parms=c("pbeta","delta","N"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propsigma=1,propcenter=NULL,maxnumbasis=1,a0delta=1,a0alpha=1,b0alpha=1,sigma_bounds=NULL,mu0=0,sigma2_mu0=1.75,a0psi=1,b0psi=1,initial.values=NULL,known=integer(),scalemax=10,printlog=FALSE,...){
   
   if(is.null(mms)) mms <- processdataSCR(Enc.Mat,trapCoords,studyArea,buffer,ncells,data.type,covs,known,scalemax)
@@ -879,6 +892,8 @@ multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncell
   message("Updating...",ifelse(printlog | nchains==1,"","set 'printlog=TRUE' to follow progress of chains in a working directory log file"),"\n",sep="")
   if(printlog & nchains==1) printlog<-FALSE
   
+  ichain <- NULL #gets rid of no visible binding for global variable 'ichain' NOTE in R cmd check
+  
   if(nchains>1){
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
     modlog <- ifelse(mod.delta != ~NULL,"multimarkClosedSCR","markClosedSCR")
@@ -888,7 +903,7 @@ multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncell
     chains <- 
       foreach(ichain = 1:nchains) %dorng% {
         mcmcClosedSCR(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,Prop.center,spatialInputs,maxnumbasis,a0delta,a0alpha,b0alpha,sigma_bounds,mu0,sigma2_mu0,a0psi,b0psi,printlog)
-    }
+      }
     stopCluster(cl)
     gc()
   } else {
@@ -935,6 +950,8 @@ multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncell
 #' #Calculate capture and recapture probabilities
 #' pc <- getprobsClosedSCR(example.c)
 #' summary(pc)}
+#' 
+#' @export
 getprobsClosedSCR<-function(out,link="cloglog"){
   
   DMp<-out$DM$p
@@ -1018,10 +1035,12 @@ getprobsClosedSCR<-function(out,link="cloglog"){
 #' #Calculate capture and recapture probabilities
 #' D <- getdensityClosedSCR(example.dot)
 #' summary(D)}
+#' 
+#' @export
 getdensityClosedSCR<-function(out){
   
   nchains<-length(out$mcmc)
-    
+  
   spatialInputs<-getSpatialInputs(out$mms)
   
   A <- out$mms@spatialInputs$origCellRes^2 * nrow(spatialInputs$studyArea)
@@ -1091,7 +1110,7 @@ getcurClosedSCRparmslist<-function(cur.parms,DM,M,noccas,data_type,alpha,centerm
   parmslist[[1]]$delta_1 <- cur.parms["delta_1"]
   parmslist[[1]]$delta_2 <- cur.parms["delta_2"]
   parmslist[[1]]$delta <- cur.parms["delta"]
-
+  
   if(data_type=="sometimes"){
     parmslist[[1]]$alpha <- cur.parms["alpha"]
   } else {
@@ -1100,6 +1119,8 @@ getcurClosedSCRparmslist<-function(cur.parms,DM,M,noccas,data_type,alpha,centerm
   parmslist
 }
 
+#' @importFrom utils flush.console
+#' @importFrom Brobdingnag brob as.brob sum
 rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,alpha,C,All.hists,modlist,DMlist,deltalist,detlist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,sigpropmean,sigpropsd,pmodnames,deltamodnames,printlog){
   
   multimodel <- matrix(0,nrow=(max(1,floor(miter/mthin)))-(floor(mburnin/mthin)),ncol=length(monitorparms$parms)+1,dimnames=list(NULL,c(monitorparms$parms,"M")))
@@ -1254,6 +1275,8 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
 #'  
 #' #multimodel posterior summary for abundance and density
 #' summary(example.M$rjmcmc[,c("N","D")])}
+#' 
+#' @export
 multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modlist)),monparms="N",miter=NULL,mburnin=0,mthin=1,M1=NULL,pbetapropsd=1,sigpropmean=0.8,sigpropsd=0.4,printlog=FALSE){
   
   nmod <- length(modlist)
@@ -1270,7 +1293,7 @@ multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modl
   mms<-checkmmClosedinput(mmslist,modlist,nmod,nchains,iter,miter,mburnin,mthin,modprior,M1,type="SCR")
   
   spatialInputs<-getSpatialInputs(mms)
-
+  
   noccas<-ncol(mms@spatialInputs$trapCoords[,-c(1,2),drop=FALSE])
   ntraps<-nrow(mms@spatialInputs$trapCoords)
   M<-nrow(mms@Enc.Mat)
@@ -1312,10 +1335,12 @@ multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modl
   } else {
     alpha <- numeric(0)
   }
- 
-
+  
+  
   message("Updating...",ifelse(printlog | nchains==1,"","set 'printlog=TRUE' to follow progress of chains in a working directory log file"),"\n",sep="")
   if(printlog & nchains==1) printlog<-FALSE
+  
+  ichain <- NULL #gets rid of no visible binding for global variable 'ichain' NOTE in R cmd check
   
   if(nchains>1){
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")

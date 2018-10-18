@@ -112,6 +112,7 @@ bobcat.dot<-multimarkClosed(bobcat)
 #Posterior summary for monitored parameters
 summary(bobcat.dot$mcmc)
 plot(bobcat.dot$mcmc)}
+
 }
 \references{
 Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.

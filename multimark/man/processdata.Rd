@@ -43,6 +43,7 @@ bobcat.dot<-multimarkClosed(mms=setup)
 
 #Run single chain for bobcat data with temporal effects (i.e., mod.p=~time)
 bobcat.time <- multimarkClosed(mms=setup,mod.p=~time)}
+
 }
 \references{
 Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.

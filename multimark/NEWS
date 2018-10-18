@@ -4,6 +4,8 @@ CHANGES
 
 * doRNG now used for reproducible parallel processing
 
+* NAMESPACE now generated using roxygen2
+
 
 multimark 2.0.1 2017-06-30
 -----------------
