@@ -1153,7 +1153,13 @@ processdataSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=NU
     if(sqrt(ncells)%%1) stop("The square root of 'ncells' must be a whole number")
     trapbbox<-bbox(trapCoords[,1:2])
     studyArea<-as.matrix(expand.grid(seq(trapbbox[1,1]-buffer,trapbbox[1,2]+buffer,length=sqrt(ncells)),seq(trapbbox[2,1]-buffer,trapbbox[2,2]+buffer,length=sqrt(ncells)))) #study area grid
-    studyArea<-cbind(studyArea,rep(1,ncells))
+    cellsize<-sp::points2grid(sp::SpatialPoints(studyArea[,1:2]))@cellsize
+    # make sure cell grid cells are square
+    if(!(diff(range(cellsize)) < .Machine$double.eps ^ 0.5)){
+      studyArea<-as.matrix(expand.grid(seq(trapbbox[1,1]-buffer,trapbbox[1,2]+buffer,mean(cellsize)),seq(trapbbox[2,1]-buffer,trapbbox[2,2]+buffer,mean(cellsize))))
+      if(nrow(studyArea)!=ncells) warning("trap bounding box and buffer required ncells = ",nrow(studyArea)," in order to create square grid cells")
+    }
+    studyArea<-cbind(studyArea,rep(1,nrow(studyArea)))
   }
 
   checkSpatialInputs(trapCoords,studyArea)
