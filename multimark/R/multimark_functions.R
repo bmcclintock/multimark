@@ -1160,7 +1160,9 @@ processdataSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=NU
       if(nrow(studyArea)!=ncells) warning("trap bounding box and buffer required ncells = ",nrow(studyArea)," in order to create square grid cells")
     }
     studyArea<-cbind(studyArea,rep(1,nrow(studyArea)))
-  }
+    origStudyArea <- studyArea
+    colnames(origStudyArea) <- c("x","y","avail")
+  } else origStudyArea <- studyArea
 
   checkSpatialInputs(trapCoords,studyArea)
   
@@ -1178,6 +1180,7 @@ processdataSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=NU
   
   spatialInputs=list()
   #availSpatialInputs$studyArea <- scale(G, center=minCoord, scale=rep(Grange,2))
+  spatialInputs$origStudyArea <- origStudyArea
   spatialInputs$studyArea <- studyArea
   spatialInputs$studyArea[,c("x","y")] <- scale(S, center=minCoord, scale=rep(Srange,2))
   spatialInputs$trapCoords <- trapCoords
