@@ -1341,7 +1341,7 @@ multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modl
     cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimodelClosedSCR_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
     clusterExport(cl,list("rjmcmcClosedSCR"),envir=environment())
     clusterSetRNGStream(cl)
-    chains <- parLapply(cl,1:nchains, function(ichain) 
+    multimodel <- parLapply(cl,1:nchains, function(ichain) 
         rjmcmcClosedSCR(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,detlist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1[ichain],monitorparms,missing,pbetapropsd,sigpropmean,sigpropsd,pmodnames,deltamodnames,printlog))
     stopCluster(cl)
     gc()
@@ -1364,7 +1364,7 @@ multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modl
       if(length(unique(detmodnames))>1){
         names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,") ",detmodnames) 
       } else {
-        names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,") \n")       
+        names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")")       
       }
     } else {
       names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")  (",detmodnames,")")
@@ -1380,7 +1380,7 @@ multimodelClosedSCR<-function(modlist,modprior=rep(1/length(modlist),length(modl
     if(length(unique(detmodnames))>1){
       names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,") ",detmodnames)
     } else {
-      names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,") \n") 
+      names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")") 
     }
   } else {
     names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")  (",detmodnames,")")

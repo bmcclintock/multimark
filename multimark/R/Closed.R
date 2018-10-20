@@ -1127,7 +1127,7 @@ multimodelClosed<-function(modlist,modprior=rep(1/length(modlist),length(modlist
     cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimodelClosed_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
     clusterExport(cl,list("rjmcmcClosed"),envir=environment())
     clusterSetRNGStream(cl)
-    chains <- parLapply(cl,1:nchains, function(ichain) 
+    multimodel <- parLapply(cl,1:nchains, function(ichain) 
         rjmcmcClosed(ichain,mms,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1[ichain],monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,gq,printlog))
     stopCluster(cl)
     gc()
