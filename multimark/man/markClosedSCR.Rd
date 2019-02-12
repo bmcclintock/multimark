@@ -8,9 +8,10 @@ markClosedSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
   ncells = 1024, covs = data.frame(), mod.p = ~1,
   detection = "half-normal", parms = c("pbeta", "N"), nchains = 1,
   iter = 12000, adapt = 1000, bin = 50, thin = 1, burnin = 2000,
-  taccept = 0.44, tuneadjust = 0.95, proppbeta = 0.1, propsigma = 1,
-  propcenter = NULL, sigma_bounds = NULL, mu0 = 0, sigma2_mu0 = 1.75,
-  initial.values = NULL, scalemax = 10, printlog = FALSE, ...)
+  taccept = 0.44, tuneadjust = 0.95, proppbeta = 0.1,
+  propsigma = 1, propcenter = NULL, sigma_bounds = NULL, mu0 = 0,
+  sigma2_mu0 = 1.75, initial.values = NULL, scalemax = 10,
+  printlog = FALSE, ...)
 }
 \arguments{
 \item{Enc.Mat}{A matrix containing the observed encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc.}

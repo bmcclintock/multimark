@@ -1142,6 +1142,12 @@ processdataSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=NU
   noccas<-ncol(trapCoords[,-c(1,2),drop=FALSE])
   ntraps<-nrow(trapCoords)
   if(ncol(Enc.Mat)!=noccas*ntraps) stop("Dimensions of 'Enc.Mat' and 'trapCoords' are not consistent")
+  msk <- t(trapCoords[,-c(1,2)])
+  Yaug <- array(0, dim=c(nrow(Enc.Mat), noccas, ntraps))
+  for(j in 1:nrow(Enc.Mat)){
+    Yaug[j, 1:noccas, 1:ntraps] <- matrix(Enc.Mat[j,],nrow=noccas,ncol=ntraps)#byrow=TRUE))#Y[j, 1:nT, 1:ntraps]
+    if(any(Yaug[j,,]>0 & msk==0)) stop("individual ",j," in Enc.Mat includes encounter(s) on inactive trap(s)!")
+  }  
   
   if(is.null(studyArea)){
     if(is.null(buffer) | is.null(ncells)){

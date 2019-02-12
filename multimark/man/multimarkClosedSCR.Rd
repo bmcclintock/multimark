@@ -4,16 +4,17 @@
 \alias{multimarkClosedSCR}
 \title{Fit spatially-explicit population abundance models for capture-mark-recapture data consisting of multiple non-invasive marks}
 \usage{
-multimarkClosedSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
-  ncells = 1024, data.type = "never", covs = data.frame(), mms = NULL,
-  mod.p = ~1, mod.delta = ~type, detection = "half-normal",
-  parms = c("pbeta", "delta", "N"), nchains = 1, iter = 12000,
-  adapt = 1000, bin = 50, thin = 1, burnin = 2000, taccept = 0.44,
-  tuneadjust = 0.95, proppbeta = 0.1, propsigma = 1, propcenter = NULL,
+multimarkClosedSCR(Enc.Mat, trapCoords, studyArea = NULL,
+  buffer = NULL, ncells = 1024, data.type = "never",
+  covs = data.frame(), mms = NULL, mod.p = ~1, mod.delta = ~type,
+  detection = "half-normal", parms = c("pbeta", "delta", "N"),
+  nchains = 1, iter = 12000, adapt = 1000, bin = 50, thin = 1,
+  burnin = 2000, taccept = 0.44, tuneadjust = 0.95,
+  proppbeta = 0.1, propsigma = 1, propcenter = NULL,
   maxnumbasis = 1, a0delta = 1, a0alpha = 1, b0alpha = 1,
   sigma_bounds = NULL, mu0 = 0, sigma2_mu0 = 1.75, a0psi = 1,
-  b0psi = 1, initial.values = NULL, known = integer(), scalemax = 10,
-  printlog = FALSE, ...)
+  b0psi = 1, initial.values = NULL, known = integer(),
+  scalemax = 10, printlog = FALSE, ...)
 }
 \arguments{
 \item{Enc.Mat}{A matrix containing the observed encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc. Ignored unless \code{mms=NULL}.}
