@@ -1,8 +1,10 @@
-multimark 2.1.0 2017-10-17
+multimark 2.1.0 2019-02-12
 -----------------
 CHANGES
 
 * clusterSetRNGStream now used for reproducible parallel processing
+
+* added error trap to processdataSCR if Enc.Mat includes non-zero encounters on inactive traps
 
 * NAMESPACE now generated using roxygen2
 
