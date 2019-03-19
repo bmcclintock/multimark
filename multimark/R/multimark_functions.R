@@ -959,7 +959,7 @@ get_known<-function(known,Enc.Mat,vAll.hists,data.type){
     if(length(known)!=M | base::sum(known)>M){
       stop(paste0("'known' must be an integer vector of length ",M," with sum between 0 and ",M))
     } else {
-      knownx <- getfreq(Enc.Mat[which(known>0),],vAll.hists,data.type)
+      knownx <- getfreq(Enc.Mat[which(known>0),,drop=FALSE],vAll.hists,data.type)
       knownx[1] <- integer(1) #ignore known all-zero histories
       if(base::sum(apply(Enc.Mat==3 | Enc.Mat==4,1,base::sum)>0)>base::sum(knownx)) stop("'known' vector misspecified. Encounter histories containing simultaneous encounters are known")     
     }
