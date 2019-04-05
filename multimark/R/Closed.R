@@ -941,7 +941,7 @@ rjmcmcClosed <- function(ichain,mms,M,noccas,data_type,alpha,C,All.hists,modlist
   
   commonparms <- monitorparms$commonparms
   
-  if(any(deltalist==~NULL)){
+  if(any(unlist(lapply(deltalist,function(x) {x== ~NULL })))){
     H<-get_H(mms,mms@naivex)
     names(H)<-paste0("H[",1:M,"]")
   } else {
@@ -1091,13 +1091,13 @@ multimodelClosed<-function(modlist,modprior=rep(1/length(modlist),length(modlist
   
   checkparmsClosed(mms,modlist,params,parmlist=c("pbeta[(Intercept)]","N","logPosterior"),M)
   
-  pmodnames <- unlist(lapply(modlist,function(x) x$mod.p)) 
-  deltamodnames <- unlist(lapply(modlist,function(x) x$mod.delta)) 
+  pmodnames <- lapply(modlist,function(x) x$mod.p) 
+  deltamodnames <- lapply(modlist,function(x) x$mod.delta) 
   
   message("\nPerforming closed population Bayesian multimodel inference by RJMCMC \n")
-  if(all(deltamodnames!=~NULL)) {
+  if(all(unlist(lapply(deltamodnames,function(x) {x!= ~NULL })))) {
     message(paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")\n"))
-  } else if(all(deltamodnames==~NULL)){
+  } else if(all(unlist(lapply(deltamodnames,function(x) {x== ~NULL})))){
     message(paste0("mod",1:nmod,": ","p(",pmodnames,")\n"))
   }
   
@@ -1147,7 +1147,7 @@ multimodelClosed<-function(modlist,modprior=rep(1/length(modlist),length(modlist
   pos.prob <- vector('list',nchains)
   for(ichain in 1:nchains){
     pos.prob[[ichain]] <-hist(multimodel[[ichain]][,"M"],plot=F,breaks=0:nmod)$density
-    if(all(deltamodnames!=~NULL)){
+    if(all(unlist(lapply(deltamodnames,function(x) {x!= ~NULL })))){
       names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")") 
     } else {
       names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")")
@@ -1159,7 +1159,7 @@ multimodelClosed<-function(modlist,modprior=rep(1/length(modlist),length(modlist
   multimodel <- as.mcmc.list(multimodel)
   names(pos.prob) <- paste0("chain",1:nchains)
   pos.prob[["overall"]]<- hist(unlist(multimodel[, "M"]),plot = F, breaks = 0:nmod)$density
-  if(all(deltamodnames!=~NULL)){
+  if(all(unlist(lapply(deltamodnames,function(x) {x!= ~NULL })))){
     names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")") 
   } else {
     names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")")

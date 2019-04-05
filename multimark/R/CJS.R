@@ -1193,7 +1193,7 @@ rjmcmcCJS <- function(ichain,mms,M,noccas,data_type,alpha,C,All.hists,modlist,DM
   
   commonparms <- monitorparms$commonparms
   
-  if(any(deltalist==~NULL)){
+  if(any(unlist(lapply(deltalist,function(x) {x== ~NULL })))){
     H<-get_H(mms,mms@naivex)
     names(H)<-paste0("H[",1:M,"]")
   } else {
@@ -1357,14 +1357,14 @@ multimodelCJS<-function(modlist,modprior=rep(1/length(modlist),length(modlist)),
   
   checkparmsCJS(mms,modlist,params,parmlist=c("pbeta[(Intercept)]","phibeta[(Intercept)]",paste0("q[",rep(1:M,each=noccas),",",1:noccas,"]"),"loglike"),M)
   
-  pmodnames <- unlist(lapply(modlist,function(x) x$mod.p)) 
-  phimodnames <- unlist(lapply(modlist,function(x) x$mod.phi))
-  deltamodnames <- unlist(lapply(modlist,function(x) x$mod.delta)) 
+  pmodnames <- lapply(modlist,function(x) x$mod.p)
+  phimodnames <- lapply(modlist,function(x) x$mod.phi)
+  deltamodnames <- lapply(modlist,function(x) x$mod.delta)
   
   message("\nPerforming open population Bayesian multimodel inference by RJMCMC \n")
-  if(all(deltamodnames!=~NULL)) {
+  if(all(unlist(lapply(deltamodnames,function(x) {x!= ~NULL })))) {
     message(paste0("mod",1:nmod,": ","p(",pmodnames,")phi(",phimodnames,")delta(",deltamodnames,")\n"))  
-  } else if(all(deltamodnames==~NULL)){
+  } else if(all(unlist(lapply(deltamodnames,function(x) {x== ~NULL})))){
     message(paste0("mod",1:nmod,": ","p(",pmodnames,")phi(",phimodnames,")\n"))
   }
   
@@ -1414,7 +1414,7 @@ multimodelCJS<-function(modlist,modprior=rep(1/length(modlist),length(modlist)),
   pos.prob <- vector('list',nchains)
   for(ichain in 1:nchains){
     pos.prob[[ichain]] <-hist(multimodel[[ichain]][,"M"],plot=F,breaks=0:nmod)$density
-    if(all(deltamodnames!=~NULL)){
+    if(all(unlist(lapply(deltamodnames,function(x) {x!= ~NULL })))){
       names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")phi(",phimodnames,")delta(",deltamodnames,")")
     } else {
       names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")phi(",phimodnames,")")
@@ -1426,7 +1426,7 @@ multimodelCJS<-function(modlist,modprior=rep(1/length(modlist),length(modlist)),
   multimodel <- as.mcmc.list(multimodel)
   names(pos.prob) <- paste0("chain",1:nchains)
   pos.prob[["overall"]]<- hist(unlist(multimodel[, "M"]),plot = F, breaks = 0:nmod)$density
-  if(all(deltamodnames!=~NULL)){
+  if(all(unlist(lapply(deltamodnames,function(x) {x!= ~NULL })))){
     names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")phi(",phimodnames,")delta(",deltamodnames,")")
   } else {
     names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")phi(",phimodnames,")")
