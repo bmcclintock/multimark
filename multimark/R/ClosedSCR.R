@@ -836,6 +836,9 @@ multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncell
   if(class(mms)!="multimarkSCRsetup") stop("'mms' must be an object of class 'multimarkSCRsetup'")
   validObject(mms)
   
+  match.arg(detection,c("half-normal","exponential"))
+  if(is.null(detection)) stop("detection function cannot be NULL")
+  
   if(class(mod.p)!="formula") stop("'mod.p' must be an object of class 'formula'")
   if(class(mod.delta)!="formula") stop("'mod.delta' must be an object of class 'formula'")
   DM<-get_DMClosed(mod.p,mod.delta,mms@Enc.Mat,covs=mms@covs,ntraps=nrow(mms@spatialInputs$trapCoords),detection=detection,...)

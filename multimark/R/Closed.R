@@ -119,6 +119,7 @@ get_DMClosed<-function(mod.p,mod.delta,Enc.Mat,covs,type="Closed",ntraps=1,detec
     }
   }
   if(any(modterms=="h")){
+    if(!is.null(detection)) stop("'h' models are not supported in markClosedSCR or multimarkClosedSCR")
     if(length(modterms)>1){
       mod.p<-formula(paste("~-1",paste(modterms[-which(modterms=="h")],collapse="+"),sep="+"))
     } else {
