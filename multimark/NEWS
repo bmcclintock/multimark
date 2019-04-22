@@ -1,4 +1,4 @@
-multimark 2.1.0 2019-03-18
+multimark 2.1.0 2019-04-21
 -----------------
 CHANGES
 
@@ -7,6 +7,10 @@ CHANGES
 * added error trap to processdataSCR if Enc.Mat includes non-zero encounters on inactive traps
 
 * NAMESPACE now generated using roxygen2
+
+BUG FIXES
+
+* when using processdataSCR to generate a study area, the number of grid cells are now automatically adjusted to ensure cells are square
 
 
 multimark 2.0.1 2017-06-30
