@@ -1169,8 +1169,10 @@ processdataSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=NU
     origStudyArea <- studyArea
     colnames(origStudyArea) <- c("x","y","avail")
   } else origStudyArea <- studyArea
-
+  
   checkSpatialInputs(trapCoords,studyArea)
+  
+  gridtol <- checkGridTol(studyArea,warn=FALSE)
   
   colnames(trapCoords)<-c("x","y",paste0("occ",1:noccas))
   rownames(trapCoords)<-paste0("trap",1:ntraps)
@@ -1191,9 +1193,9 @@ processdataSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=NU
   spatialInputs$studyArea[,c("x","y")] <- scale(S, center=minCoord, scale=rep(Srange,2))
   spatialInputs$trapCoords <- trapCoords
   spatialInputs$trapCoords[,c("x","y")] <- scale(trapCoords[,c(1,2)], center=minCoord, scale=rep(Srange,2))
-  spatialInputs$origCellRes <- sp::points2grid(sp::SpatialPoints(studyArea[,1:2]))@cellsize[1]
+  spatialInputs$origCellRes <- sp::points2grid(sp::SpatialPoints(studyArea[,1:2]),tolerance = gridtol)@cellsize[1]
   spatialInputs$Srange <- Srange
-  #availSpatialInputs$a <- sp::points2grid(sp::SpatialPoints(availSpatialInputs$studyArea[,1:2]))@cellsize[1]
+  #availSpatialInputs$a <- sp::points2grid(sp::SpatialPoints(availSpatialInputs$studyArea[,1:2]),tolerance = gridtol)@cellsize[1]
   #availSpatialInputs$A <- availSpatialInputs$a * sum(studyArea[,"avail"])
   #availSpatialInputs$dist2 <- getdist(availSpatialInputs$studyArea,availSpatialInputs$trapCoords)
   #availSpatialInputs$msk <- trapCoords[,-c(1,2)]

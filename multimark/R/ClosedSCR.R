@@ -176,6 +176,7 @@ simdataClosedSCR <- function(N=30,ntraps=9,noccas=5,pbeta=0.25,tau=0,sigma2_scr=
 #' @importFrom sp points2grid SpatialPoints bbox gridded SpatialGrid over coordinates
 #' @importFrom raster extent raster rasterize
 #' @importFrom grDevices rainbow gray
+#' @importFrom utils capture.output
 plotSpatialData<-function(mms=NULL,trapCoords,studyArea,centers=NULL,trapLines=FALSE){
   
   cur.par<-par(no.readonly=TRUE)
@@ -191,7 +192,9 @@ plotSpatialData<-function(mms=NULL,trapCoords,studyArea,centers=NULL,trapLines=F
   }
   checkSpatialInputs(trapCoords,studyArea,centers)
   
-  sAgrid<-SpatialGrid(points2grid(SpatialPoints(studyArea[,c("x","y")])))
+  gridtol <- checkGridTol(studyArea,warn=FALSE)
+  
+  sAgrid<-sp::SpatialGrid(sp::points2grid(sp::SpatialPoints(studyArea[,c("x","y")]),tolerance = gridtol))
   e<-extent(sAgrid)
   cells.dim<-attributes(sAgrid)$grid@cells.dim
   r<-raster(e,nrow=cells.dim["y"],ncol=cells.dim["x"])
@@ -397,6 +400,18 @@ posteriorClosedSCR<-function(parms,DM,mms,priorparms,spatialInputs){
   }
 }
 
+checkGridTol <- function(studyArea,warn=TRUE){
+  gridtol <- sqrt(.Machine$double.eps)
+  checkTol <- tryCatch(sp::points2grid(sp::SpatialPoints(studyArea[,1:2])),error=function(e) e)
+  if(inherits(checkTol,"error")){
+    tmp <- utils::capture.output(tryCatch(sp::points2grid(sp::SpatialPoints(studyArea[,1:2])),error=function(e){} ))
+    tmp <- tmp[-which(tmp=="NULL")]
+    gridtol <- as.numeric(gsub("suggested tolerance minimum:","",tmp))
+    if(warn) warning(gsub("Error in ","",checkTol),"   tolerance set to ",gridtol," -- if this number isn't very small then check studyArea coordinates!")
+  }
+  gridtol
+}
+
 checkSpatialInputs<-function(trapCoords,studyArea,centers=NULL){
   
   if(ncol(studyArea)!=3){
@@ -409,14 +424,16 @@ checkSpatialInputs<-function(trapCoords,studyArea,centers=NULL){
     stop("Indicators for each occasion in 'trapCoords' must be 0 or 1")
   }
   
-  if(!gridded(SpatialGrid(points2grid(SpatialPoints(studyArea[,1:2]))))){
+  gridtol <- checkGridTol(studyArea,warn=TRUE)
+  
+  if(!sp::gridded(SpatialGrid(sp::points2grid(sp::SpatialPoints(studyArea[,1:2]),tolerance = gridtol)))){
     stop("'studyArea' must be a regular grid ")
   } 
   
-  cellsize<-sp::points2grid(sp::SpatialPoints(studyArea[,1:2]))@cellsize
+  cellsize<-sp::points2grid(sp::SpatialPoints(studyArea[,1:2]),tolerance = gridtol)@cellsize
   if(!(diff(range(cellsize)) < .Machine$double.eps ^ 0.5)) stop("studyArea grid cells must be square")
   
-  if(any(is.na(over(SpatialPoints(trapCoords[,1:2]),SpatialGrid(points2grid(SpatialPoints(studyArea[,1:2]))))))){
+  if(any(is.na(sp::over(sp::SpatialPoints(trapCoords[,1:2]),sp::SpatialGrid(sp::points2grid(sp::SpatialPoints(studyArea[,1:2]),tolerance = gridtol)))))){
     stop("'trapCoords' must be within 'studyArea'")
   }
   if(!is.null(centers)){
@@ -627,7 +644,8 @@ getSpatialInputs<-function(mms){
   spatialInputs=list()
   spatialInputs$studyArea <- mms@spatialInputs$studyArea[which(mms@spatialInputs$studyArea[,"avail"]==1),c("x","y")]  # available habitat study area
   spatialInputs$trapCoords <- mms@spatialInputs$trapCoords[,c(1,2)]
-  spatialInputs$a <- sp::points2grid(sp::SpatialPoints(mms@spatialInputs$studyArea[,1:2]))@cellsize[1]
+  gridtol <- checkGridTol(mms@spatialInputs$studyArea,warn=FALSE)
+  spatialInputs$a <- sp::points2grid(sp::SpatialPoints(mms@spatialInputs$studyArea[,1:2]),tolerance = gridtol)@cellsize[1]
   spatialInputs$A <- spatialInputs$a * nrow(spatialInputs$studyArea)
   spatialInputs$dist2 <- getdist(spatialInputs$studyArea,spatialInputs$trapCoords)
   spatialInputs$msk <- mms@spatialInputs$trapCoords[,-c(1,2),drop=FALSE]
