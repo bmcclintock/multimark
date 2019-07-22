@@ -1070,6 +1070,7 @@ processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer(
 #' @param Enc.Mat A matrix containing the observed encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc. Ignored unless \code{mms=NULL}.
 #' @param trapCoords A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating.
 #' @param studyArea is a 3-column matrix containing the coordinates for the centroids of a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must be square and have the same resolution. If \code{studyArea=NULL} (the default), then a square study area grid composed of \code{ncells} cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}.
+#' Note that rows should be ordered in raster cell order (raster cell numbers start at 1 in the upper left corner, and increase from left to right, and then from top to bottom).
 #' @param buffer A scaler in same units as \code{trapCoords} indicating the buffer around the bounding box of \code{trapCoords} for defining the study area when \code{studyArea=NULL}.  Ignored unless \code{studyArea=NULL}.
 #' @param ncells The number of grid cells in the study area when \code{studyArea=NULL}. The square root of \code{ncells} must be a whole number. Default is \code{ncells=1024}. Ignored unless \code{studyArea=NULL}.
 #' @param data.type Specifies the encounter history data type. All data types include non-detections (type 0 encounter), type 1 encounter (e.g., left-side), and type 2 encounters (e.g., right-side). When both type 1 and type 2 encounters occur for the same individual within a sampling occasion, these can either be "non-simultaneous" (type 3 encounter) or "simultaneous" (type 4 encounter). Three data types are currently permitted:
@@ -1176,7 +1177,12 @@ processdataSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=NU
   
   colnames(trapCoords)<-c("x","y",paste0("occ",1:noccas))
   rownames(trapCoords)<-paste0("trap",1:ntraps)
+  
   colnames(studyArea)<-c("x","y","avail")
+  if(!isTRUE(all.equal(1:nrow(studyArea),order(-studyArea[,"y"], studyArea[,"x"])))) {
+    warning("studyArea rows do not appear to be in raster cell order; these will be reordered accordingly")
+    studyArea <- studyArea[order(-studyArea[,"y"], studyArea[,"x"]),] # put in raster cell order (left to right, top left to bottom right)
+  }
   rownames(studyArea)<-paste0("cell",1:nrow(studyArea))
   
   S <- studyArea[,c("x","y")] # total study area

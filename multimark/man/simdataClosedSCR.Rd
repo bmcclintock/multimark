@@ -45,7 +45,7 @@ simdataClosedSCR(N = 30, ntraps = 9, noccas = 5, pbeta = 0.25,
 
  \code{trapCoords} is a matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate (``x''), and the second column the y-coordinate (``y''). The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating.  
 
- \code{studyArea} is a 3-column matrix defining the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns (``x'' and ``y'') indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column (``avail'') indicates whether the cell is available habitat (=1) or not (=0). All grid cells must have the same resolution.
+ \code{studyArea} is a 3-column matrix defining the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns (``x'' and ``y'') indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column (``avail'') indicates whether the cell is available habitat (=1) or not (=0). All grid cells must have the same resolution. Note that rows should be ordered in raster cell order (raster cell numbers start at 1 in the upper left corner, and increase from left to right, and then from top to bottom).
   
  \code{centers} is a \code{N}-vector indicating the grid cell (i.e., the row of \code{studyArea}) that contains the true (latent) activity centers for each individual in the population. 
 

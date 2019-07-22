@@ -12,7 +12,8 @@ plotSpatialData(mms = NULL, trapCoords, studyArea, centers = NULL,
 
 \item{trapCoords}{A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate, and the second column the y-coordinate. The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating. Ignored unless \code{mms=NULL}.}
 
-\item{studyArea}{A 3-column matrix defining the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. Ignored unless \code{mms=NULL}.}
+\item{studyArea}{A 3-column matrix defining the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. Ignored unless \code{mms=NULL}.
+Note that rows should be ordered in raster cell order (raster cell numbers start at 1 in the upper left corner, and increase from left to right, and then from top to bottom).}
 
 \item{centers}{An optional vector indicating the grid cell (i.e., the row of \code{studyArea}) that contains the true (latent) activity centers for each individual. If \code{mms} is provided, then \code{centers} must be of length \code{nrow(Enc.Mat)} (i.e., a center must be provided for each observed individual).}
 

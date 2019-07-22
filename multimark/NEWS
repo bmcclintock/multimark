@@ -1,8 +1,10 @@
-multimark 2.1.1 2019-07-18
+multimark 2.1.1 2019-07-22
 -----------------
 CHANGES
 
 * for SCR models, the suggested tolerance limit from sp::points2grid is now used when 'studyArea' coordinate intervals are not constant
+
+* for SCR models, studyArea rows are now forced to be ordered by raster cell order (i.e. left to right, top to bottom)
 
 
 multimark 2.1.0 2019-04-21
