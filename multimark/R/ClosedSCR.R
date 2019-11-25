@@ -184,7 +184,7 @@ plotSpatialData<-function(mms=NULL,trapCoords,studyArea,centers=NULL,trapLines=F
   cur.par<-par(no.readonly=TRUE)
   
   if(!is.null(mms)){
-    if(class(mms)=="multimarkSCRsetup"){
+    if(inherits(mms,"multimarkSCRsetup")){
       studyArea<-mms@spatialInputs$studyArea
       trapCoords<-mms@spatialInputs$trapCoords
       Enc.Mat<-mms@Enc.Mat
@@ -860,14 +860,14 @@ markClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=102
 multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=1024,data.type="never",covs=data.frame(),mms=NULL,mod.p=~1,mod.delta=~type,detection="half-normal",parms=c("pbeta","delta","N"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propsigma=1,propcenter=NULL,maxnumbasis=1,a0delta=1,a0alpha=1,b0alpha=1,sigma_bounds=NULL,mu0=0,sigma2_mu0=1.75,a0psi=1,b0psi=1,initial.values=NULL,known=integer(),scalemax=10,printlog=FALSE,...){
   
   if(is.null(mms)) mms <- processdataSCR(Enc.Mat,trapCoords,studyArea,buffer,ncells,data.type,covs,known,scalemax)
-  if(class(mms)!="multimarkSCRsetup") stop("'mms' must be an object of class 'multimarkSCRsetup'")
+  if(!inherits(mms,"multimarkSCRsetup")) stop("'mms' must be an object of class 'multimarkSCRsetup'")
   validObject(mms)
   
   match.arg(detection,c("half-normal","exponential"))
   if(is.null(detection)) stop("detection function cannot be NULL")
   
-  if(class(mod.p)!="formula") stop("'mod.p' must be an object of class 'formula'")
-  if(class(mod.delta)!="formula") stop("'mod.delta' must be an object of class 'formula'")
+  if(!inherits(mod.p,"formula")) stop("'mod.p' must be an object of class 'formula'")
+  if(!inherits(mod.delta,"formula")) stop("'mod.delta' must be an object of class 'formula'")
   DM<-get_DMClosed(mod.p,mod.delta,mms@Enc.Mat,covs=mms@covs,ntraps=nrow(mms@spatialInputs$trapCoords),detection=detection,...)
   
   if(iter>0){

@@ -610,11 +610,11 @@ markClosed<-function(Enc.Mat,covs=data.frame(),mod.p=~1,parms=c("pbeta","N"),nch
 multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.p=~1,mod.delta=~type,parms=c("pbeta","delta","N"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,npoints=500,maxnumbasis=1,a0delta=1,a0alpha=1,b0alpha=1,a=25,mu0=0,sigma2_mu0=1.75,a0psi=1,b0psi=1,initial.values=NULL,known=integer(),printlog=FALSE,...){
   
   if(is.null(mms)) mms <- processdata(Enc.Mat,data.type,covs,known)
-  if(class(mms)!="multimarksetup") stop("'mms' must be an object of class 'multimarksetup'")
+  if(!inherits(mms,"multimarksetup")) stop("'mms' must be an object of class 'multimarksetup'")
   validObject(mms)
   
-  if(class(mod.p)!="formula") stop("'mod.p' must be an object of class 'formula'")
-  if(class(mod.delta)!="formula") stop("'mod.delta' must be an object of class 'formula'")
+  if(!inherits(mod.p,"formula")) stop("'mod.p' must be an object of class 'formula'")
+  if(!inherits(mod.delta,"formula")) stop("'mod.delta' must be an object of class 'formula'")
   DM<-get_DMClosed(mod.p,mod.delta,mms@Enc.Mat,covs=mms@covs,...)
   
   if(iter>0){
@@ -830,7 +830,7 @@ checkmmClosedinput<-function(mmslist,modlist,nmod,nchains,iter,miter,mburnin,mth
   if(length(M1)!=nchains) stop("'M1' must be an integer vector of length ",nchains)
   if(!all(match(M1,1:nmod,nomatch=0))) stop("'M1' must be an integer vector of length ",nchains," with values ranging from 1 to ",nmod)
   mms<-mmslist[[1]]
-  if(class(mms)!=paste0("multimark",type,"setup")) stop("'mms' for each model must be an object of class 'multimark",type,"setup'")
+  if(!inherits(mms,paste0("multimark",type,"setup"))) stop("'mms' for each model must be an object of class 'multimark",type,"setup'")
   return(mms)
 }
 
