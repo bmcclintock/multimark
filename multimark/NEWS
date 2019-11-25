@@ -1,3 +1,27 @@
+multimark 2.1.1 2019-11-25
+-----------------
+CHANGES
+
+* for SCR models, the suggested tolerance limit from sp::points2grid is now used when 'studyArea' coordinate intervals are not constant
+
+* for SCR models, studyArea rows are now forced to be ordered by raster cell order (i.e. left to right, top to bottom)
+
+
+multimark 2.1.0 2019-04-21
+-----------------
+CHANGES
+
+* clusterSetRNGStream now used for reproducible parallel processing
+
+* added error trap to processdataSCR if Enc.Mat includes non-zero encounters on inactive traps
+
+* NAMESPACE now generated using roxygen2
+
+BUG FIXES
+
+* when using processdataSCR to generate a study area, the number of grid cells are now automatically adjusted to ensure cells are square
+
+
 multimark 2.0.1 2017-06-30
 -----------------
 NEW FEATURES

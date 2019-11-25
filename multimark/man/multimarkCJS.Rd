@@ -7,13 +7,14 @@
 multimarkCJS(Enc.Mat, data.type = "never", covs = data.frame(),
   mms = NULL, mod.p = ~1, mod.phi = ~1, mod.delta = ~type,
   parms = c("pbeta", "phibeta", "delta"), nchains = 1, iter = 12000,
-  adapt = 1000, bin = 50, thin = 1, burnin = 2000, taccept = 0.44,
-  tuneadjust = 0.95, proppbeta = 0.1, propzp = 1, propsigmap = 1,
-  propphibeta = 0.1, propzphi = 1, propsigmaphi = 1, maxnumbasis = 1,
-  pbeta0 = 0, pSigma0 = 1, phibeta0 = 0, phiSigma0 = 1, l0p = 1,
-  d0p = 0.01, l0phi = 1, d0phi = 0.01, a0delta = 1, a0alpha = 1,
-  b0alpha = 1, a0psi = 1, b0psi = 1, initial.values = NULL,
-  known = integer(), link = "probit", printlog = FALSE, ...)
+  adapt = 1000, bin = 50, thin = 1, burnin = 2000,
+  taccept = 0.44, tuneadjust = 0.95, proppbeta = 0.1, propzp = 1,
+  propsigmap = 1, propphibeta = 0.1, propzphi = 1,
+  propsigmaphi = 1, maxnumbasis = 1, pbeta0 = 0, pSigma0 = 1,
+  phibeta0 = 0, phiSigma0 = 1, l0p = 1, d0p = 0.01, l0phi = 1,
+  d0phi = 0.01, a0delta = 1, a0alpha = 1, b0alpha = 1, a0psi = 1,
+  b0psi = 1, initial.values = NULL, known = integer(),
+  link = "probit", printlog = FALSE, ...)
 }
 \arguments{
 \item{Enc.Mat}{A matrix of observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions (ignored unless \code{mms=NULL}).}
@@ -143,6 +144,7 @@ plot(sim.dot$mcmc)
 sim.age <- multimarkCJS(data$Enc.Mat,mod.phi=~age,
            parameters=list(Phi=list(age.bins=c(0,1,4))),right=FALSE)
 summary(getprobsCJS(sim.age))}
+
 }
 \references{
 Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.

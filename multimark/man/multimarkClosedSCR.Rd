@@ -4,23 +4,25 @@
 \alias{multimarkClosedSCR}
 \title{Fit spatially-explicit population abundance models for capture-mark-recapture data consisting of multiple non-invasive marks}
 \usage{
-multimarkClosedSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
-  ncells = 1024, data.type = "never", covs = data.frame(), mms = NULL,
-  mod.p = ~1, mod.delta = ~type, detection = "half-normal",
-  parms = c("pbeta", "delta", "N"), nchains = 1, iter = 12000,
-  adapt = 1000, bin = 50, thin = 1, burnin = 2000, taccept = 0.44,
-  tuneadjust = 0.95, proppbeta = 0.1, propsigma = 1, propcenter = NULL,
+multimarkClosedSCR(Enc.Mat, trapCoords, studyArea = NULL,
+  buffer = NULL, ncells = 1024, data.type = "never",
+  covs = data.frame(), mms = NULL, mod.p = ~1, mod.delta = ~type,
+  detection = "half-normal", parms = c("pbeta", "delta", "N"),
+  nchains = 1, iter = 12000, adapt = 1000, bin = 50, thin = 1,
+  burnin = 2000, taccept = 0.44, tuneadjust = 0.95,
+  proppbeta = 0.1, propsigma = 1, propcenter = NULL,
   maxnumbasis = 1, a0delta = 1, a0alpha = 1, b0alpha = 1,
   sigma_bounds = NULL, mu0 = 0, sigma2_mu0 = 1.75, a0psi = 1,
-  b0psi = 1, initial.values = NULL, known = integer(), scalemax = 10,
-  printlog = FALSE, ...)
+  b0psi = 1, initial.values = NULL, known = integer(),
+  scalemax = 10, printlog = FALSE, ...)
 }
 \arguments{
 \item{Enc.Mat}{A matrix containing the observed encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc. Ignored unless \code{mms=NULL}.}
 
 \item{trapCoords}{A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate (``x''), and the second column the y-coordinate (``y''). The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating. Ignored unless \code{mms=NULL}.}
 
-\item{studyArea}{is a 3-column matrix containing the coordinates for the centroids of a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns (``x'' and ``y'') indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column (``avail'') indicates whether the cell is available habitat (=1) or not (=0). All cells must be square and have the same resolution. If \code{studyArea=NULL} (the default) and  \code{mms=NULL}, then a square study area grid composed of \code{ncells} cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}. Ignored unless \code{mms=NULL}.}
+\item{studyArea}{is a 3-column matrix containing the coordinates for the centroids of a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns (``x'' and ``y'') indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column (``avail'') indicates whether the cell is available habitat (=1) or not (=0). All cells must be square and have the same resolution. If \code{studyArea=NULL} (the default) and  \code{mms=NULL}, then a square study area grid composed of \code{ncells} cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}. Ignored unless \code{mms=NULL}.
+Note that rows should be ordered in raster cell order (raster cell numbers start at 1 in the upper left corner, and increase from left to right, and then from top to bottom).}
 
 \item{buffer}{A scaler in same units as \code{trapCoords} indicating the buffer around the bounding box of \code{trapCoords} for defining the study area when \code{studyArea=NULL}.  Ignored unless \code{studyArea=NULL} and \code{mms=NULL}.}
 
@@ -34,7 +36,7 @@ multimarkClosedSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
 
  \code{data.type="always"} indicates both type 1 and type 2 encounters are always observed, but some encounter histories may still include only type 1 or type 2 encounters. Observed encounter histories can consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4). Latent encounter histories consist of non-detections (0), type 1 encounters (1), type 2 encounters (2), and type 4 encounters (4).}
 
-\item{covs}{A data frame of temporal covariates for detection probabilities (ignored unless \code{mms=NULL}). The number of rows in the data frame must equal the number of sampling occasions. Covariate names cannot be "time", "c", or "h"; these names are reserved.}
+\item{covs}{A data frame of time- and/or trap-dependent covariates for detection probabilities (ignored unless \code{mms=NULL}). The number of rows in the data frame must equal the number of traps times the number of sampling occasions (\code{ntraps*noccas}), where the first \code{noccas} rows correspond to trap 1, the second \code{noccas} rows correspond to trap 2, etc. Covariate names cannot be "time", "age", or "h"; these names are reserved for temporal, behavioral, and individual effects when specifying \code{mod.p} and \code{mod.phi}.}
 
 \item{mms}{An optional object of class \code{multimarkSCRsetup-class}; if \code{NULL} it is created. See \code{\link{processdataSCR}}.}
 
@@ -135,6 +137,7 @@ example.dot<-multimarkClosedSCR(Enc.Mat,trapCoords,studyArea)
 #Posterior summary for monitored parameters
 summary(example.dot$mcmc)
 plot(example.dot$mcmc)}
+
 }
 \references{
 Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.

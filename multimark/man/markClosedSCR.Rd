@@ -8,28 +8,30 @@ markClosedSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
   ncells = 1024, covs = data.frame(), mod.p = ~1,
   detection = "half-normal", parms = c("pbeta", "N"), nchains = 1,
   iter = 12000, adapt = 1000, bin = 50, thin = 1, burnin = 2000,
-  taccept = 0.44, tuneadjust = 0.95, proppbeta = 0.1, propsigma = 1,
-  propcenter = NULL, sigma_bounds = NULL, mu0 = 0, sigma2_mu0 = 1.75,
-  initial.values = NULL, scalemax = 10, printlog = FALSE, ...)
+  taccept = 0.44, tuneadjust = 0.95, proppbeta = 0.1,
+  propsigma = 1, propcenter = NULL, sigma_bounds = NULL, mu0 = 0,
+  sigma2_mu0 = 1.75, initial.values = NULL, scalemax = 10,
+  printlog = FALSE, ...)
 }
 \arguments{
 \item{Enc.Mat}{A matrix containing the observed encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc.}
 
 \item{trapCoords}{A matrix of dimension \code{ntraps} x (2 + \code{noccas}) indicating the Cartesian coordinates and operating occasions for the traps, where rows correspond to trap, the first column the x-coordinate (``x''), and the second column the y-coordinate (``y''). The last \code{noccas} columns indicate whether or not the trap was operating on each of the occasions, where `1' indciates the trap was operating and `0' indicates the trap was not operating. Ignored unless \code{mms=NULL}.}
 
-\item{studyArea}{is a 3-column matrix containing the coordinates for the centroids a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns (``x'' and ``y'') indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column (``avail'') indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{studyArea=NULL} (the default) and  \code{mms=NULL}, then a square study area grid composed of \code{ncells} cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}. Ignored unless \code{mms=NULL}.}
+\item{studyArea}{is a 3-column matrix containing the coordinates for the centroids a contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns (``x'' and ``y'') indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column (``avail'') indicates whether the cell is available habitat (=1) or not (=0). All cells must have the same resolution. If \code{studyArea=NULL} (the default) and  \code{mms=NULL}, then a square study area grid composed of \code{ncells} cells of available habitat is drawn around the bounding box of \code{trapCoords} based on \code{buffer}. Ignored unless \code{mms=NULL}.
+Note that rows should be ordered by raster cell order (raster cell numbers start at 1 in the upper left corner, and increase from left to right, and then from top to bottom).}
 
 \item{buffer}{A scaler in same units as \code{trapCoords} indicating the buffer around the bounding box of \code{trapCoords} for defining the study area when \code{studyArea=NULL}.  Ignored unless \code{studyArea=NULL}.}
 
 \item{ncells}{The number of grid cells in the study area when \code{studyArea=NULL}. The square root of \code{ncells} must be a whole number. Default is \code{ncells=1024}. Ignored unless \code{studyArea=NULL} and \code{mms=NULL}.}
 
-\item{covs}{A data frame of temporal covariates for detection probabilities. The number of rows in the data frame must equal the number of sampling occasions. Covariate names cannot be "time", "c", or "h"; these names are reserved.}
+\item{covs}{A data frame of time- and/or trap-dependent covariates for detection probabilities (ignored unless \code{mms=NULL}). The number of rows in the data frame must equal the number of traps times the number of sampling occasions (\code{ntraps*noccas}), where the first \code{noccas} rows correspond to trap 1, the \code{noccas} rows correspond to trap 2, etc. Covariate names cannot be "time", "age", or "h"; these names are reserved for temporal, behavioral, and individual effects when specifying \code{mod.p} and \code{mod.phi}.}
 
 \item{mod.p}{Model formula for detection probability. For example, \code{mod.p=~1} specifies no effects (i.e., intercept only), \code{mod.p~time} specifies temporal effects, \code{mod.p~c} specifies behavioral reponse (i.e., trap "happy" or "shy"), \code{mod.p~trap} specifies trap effects, and \code{mod.p~time+c} specifies additive temporal and behavioral effects.}
 
 \item{detection}{Model for detection probability as a function of distance from activity centers . Must be "\code{half-normal}" (of the form \eqn{\exp{(-d^2 / (2*\sigma^2))}}, where \eqn{d} is distance) or "\code{exponential}" (of the form \eqn{\exp{(-d / \lambda)}}).}
 
-\item{parms}{A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are cloglog-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), cloglog-scale distance term for the detection function ("\code{sigma2_scr}" when \code{detection=``half-normal''} or "\code{lambda}" when \code{detection=``exponential''}), and the probability that a randomly selected individual from the \code{M = nrow(Enc.Mat)} observed individuals belongs to the \eqn{n} unique individuals encountered at least once ("\code{psi}"). Individual activity centers ("\code{centers}"), and the log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.}
+\item{parms}{A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are cloglog-scale detection probability parameters ("\code{pbeta}"), population abundance ("\code{N}"), and cloglog-scale distance term for the detection function ("\code{sigma2_scr}" when \code{detection=``half-normal''} or "\code{lambda}" when \code{detection=``exponential''}). Individual activity centers ("\code{centers}") and the log posterior density ("\code{logPosterior}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.}
 
 \item{nchains}{The number of parallel MCMC chains for the model.}
 
@@ -103,6 +105,7 @@ tiger.dot<-markClosedSCR(Enc.Mat,trapCoords,studyArea,iter=100,adapt=50,burnin=5
 #Posterior summary for monitored parameters
 summary(tiger.dot$mcmc)
 plot(tiger.dot$mcmc)}
+
 }
 \references{
 Gopalaswamy, A.M., Royle, J.A., Hines, J.E., Singh, P., Jathanna, D., Kumar, N. and Karanth, K.U. 2012. Program SPACECAP: software for estimating animal density using spatially explicit capture-recapture models. \emph{Methods in Ecology and Evolution} 3:1067-1072.

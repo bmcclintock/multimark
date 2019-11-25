@@ -41,6 +41,7 @@ example.c <- multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,mod.p=~c,
 #Calculate capture and recapture probabilities
 pc <- getprobsClosedSCR(example.c)
 summary(pc)}
+
 }
 \seealso{
 \code{\link{multimarkClosedSCR}}

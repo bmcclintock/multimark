@@ -5,13 +5,13 @@
 \title{Fit closed population abundance models for capture-mark-recapture data consisting of multiple non-invasive marks}
 \usage{
 multimarkClosed(Enc.Mat, data.type = "never", covs = data.frame(),
-  mms = NULL, mod.p = ~1, mod.delta = ~type, parms = c("pbeta", "delta",
-  "N"), nchains = 1, iter = 12000, adapt = 1000, bin = 50, thin = 1,
-  burnin = 2000, taccept = 0.44, tuneadjust = 0.95, proppbeta = 0.1,
-  propzp = 1, propsigmap = 1, npoints = 500, maxnumbasis = 1,
-  a0delta = 1, a0alpha = 1, b0alpha = 1, a = 25, mu0 = 0,
-  sigma2_mu0 = 1.75, a0psi = 1, b0psi = 1, initial.values = NULL,
-  known = integer(), printlog = FALSE, ...)
+  mms = NULL, mod.p = ~1, mod.delta = ~type, parms = c("pbeta",
+  "delta", "N"), nchains = 1, iter = 12000, adapt = 1000, bin = 50,
+  thin = 1, burnin = 2000, taccept = 0.44, tuneadjust = 0.95,
+  proppbeta = 0.1, propzp = 1, propsigmap = 1, npoints = 500,
+  maxnumbasis = 1, a0delta = 1, a0alpha = 1, b0alpha = 1, a = 25,
+  mu0 = 0, sigma2_mu0 = 1.75, a0psi = 1, b0psi = 1,
+  initial.values = NULL, known = integer(), printlog = FALSE, ...)
 }
 \arguments{
 \item{Enc.Mat}{A matrix of observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions (ignored unless \code{mms=NULL}).}
@@ -112,6 +112,7 @@ bobcat.dot<-multimarkClosed(bobcat)
 #Posterior summary for monitored parameters
 summary(bobcat.dot$mcmc)
 plot(bobcat.dot$mcmc)}
+
 }
 \references{
 Bonner, S. J., and Holmberg J. 2013. Mark-recapture with multiple, non-invasive marks. \emph{Biometrics} 69: 766-775.

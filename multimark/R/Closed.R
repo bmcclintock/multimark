@@ -33,6 +33,8 @@
 #' @examples
 #' #simulate data for data.type="sometimes" using defaults
 #' data<-simdataClosed(data.type="sometimes")
+#' 
+#' @export
 simdataClosed <- function(N=100,noccas=5,pbeta=-0.4,tau=0,sigma2_zp=0,delta_1=0.4,delta_2=0.4,alpha=0.5,data.type="never",link="logit"){
   
   if(length(pbeta)==1){
@@ -78,6 +80,7 @@ simdataClosed <- function(N=100,noccas=5,pbeta=-0.4,tau=0,sigma2_zp=0,delta_1=0.
   return(list(Enc.Mat=Enc.Mat,trueEnc.Mat=tEnc.Mat))
 }
 
+#' @importFrom RMark process.data make.design.data
 get_DMClosed<-function(mod.p,mod.delta,Enc.Mat,covs,type="Closed",ntraps=1,detection=NULL,...){
   if(!is.null(detection)){
     Enc.Mat<-matrix(1,nrow=nrow(Enc.Mat)*ntraps,ncol=ncol(Enc.Mat)/ntraps,byrow=TRUE)
@@ -116,6 +119,7 @@ get_DMClosed<-function(mod.p,mod.delta,Enc.Mat,covs,type="Closed",ntraps=1,detec
     }
   }
   if(any(modterms=="h")){
+    if(!is.null(detection)) stop("'h' models are not supported in markClosedSCR or multimarkClosedSCR")
     if(length(modterms)>1){
       mod.p<-formula(paste("~-1",paste(modterms[-which(modterms=="h")],collapse="+"),sep="+"))
     } else {
@@ -512,6 +516,10 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
 #' #Posterior summary for monitored parameters
 #' summary(sim.dot$mcmc)
 #' plot(sim.dot$mcmc)}
+#' 
+#' @export
+#' @importFrom parallel makeCluster clusterExport stopCluster detectCores parLapply clusterSetRNGStream
+#' @useDynLib multimark ClosedC ClosedSCRC ProbitCJSC
 markClosed<-function(Enc.Mat,covs=data.frame(),mod.p=~1,parms=c("pbeta","N"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,npoints=500,a=25,mu0=0,sigma2_mu0=1.75,initial.values=NULL,printlog=FALSE,...){
   if(any(Enc.Mat>1 | Enc.Mat<0)) stop("With a single mark type, encounter histories can only contain 0's (non-detections) and 1's (detections)")
   mms <- processdata(Enc.Mat,covs=covs,known=rep(1,nrow(Enc.Mat)))
@@ -594,14 +602,19 @@ markClosed<-function(Enc.Mat,covs=data.frame(),mod.p=~1,parms=c("pbeta","N"),nch
 #' #Posterior summary for monitored parameters
 #' summary(bobcat.dot$mcmc)
 #' plot(bobcat.dot$mcmc)}
+#' 
+#' @export
+#' @importFrom statmod gauss.quad
+#' @importFrom methods validObject
+#' @importFrom stats dbeta dbinom dcauchy dnorm dunif end formula integrate model.matrix pnorm rbeta rbinom rgamma rmultinom rnbinom rnorm runif start terms
 multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.p=~1,mod.delta=~type,parms=c("pbeta","delta","N"),nchains=1,iter=12000,adapt=1000,bin=50,thin=1,burnin=2000,taccept=0.44,tuneadjust=0.95,proppbeta=0.1,propzp=1,propsigmap=1,npoints=500,maxnumbasis=1,a0delta=1,a0alpha=1,b0alpha=1,a=25,mu0=0,sigma2_mu0=1.75,a0psi=1,b0psi=1,initial.values=NULL,known=integer(),printlog=FALSE,...){
   
   if(is.null(mms)) mms <- processdata(Enc.Mat,data.type,covs,known)
-  if(class(mms)!="multimarksetup") stop("'mms' must be an object of class 'multimarksetup'")
+  if(!inherits(mms,"multimarksetup")) stop("'mms' must be an object of class 'multimarksetup'")
   validObject(mms)
   
-  if(class(mod.p)!="formula") stop("'mod.p' must be an object of class 'formula'")
-  if(class(mod.delta)!="formula") stop("'mod.delta' must be an object of class 'formula'")
+  if(!inherits(mod.p,"formula")) stop("'mod.p' must be an object of class 'formula'")
+  if(!inherits(mod.delta,"formula")) stop("'mod.delta' must be an object of class 'formula'")
   DM<-get_DMClosed(mod.p,mod.delta,mms@Enc.Mat,covs=mms@covs,...)
   
   if(iter>0){
@@ -655,7 +668,9 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
     modlog <- ifelse(mod.delta != ~NULL,"multimarkClosed","markClosed")
     cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0(modlog,"_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
     clusterExport(cl,list("mcmcClosed"),envir=environment())  
-    chains <- parLapply(cl,1:nchains, function(ichain) mcmcClosed(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,gq,maxnumbasis,a0delta,a0alpha,b0alpha,a,mu0,sigma2_mu0,a0psi,b0psi,printlog))
+    clusterSetRNGStream(cl)
+    chains <- parLapply(cl,1:nchains, function(ichain) 
+        mcmcClosed(ichain,mms,DM,params,inits,iter,adapt,bin,thin,burnin,taccept,tuneadjust,Prop.sd,gq,maxnumbasis,a0delta,a0alpha,b0alpha,a,mu0,sigma2_mu0,a0psi,b0psi,printlog))
     stopCluster(cl)
     gc()
   } else {
@@ -693,6 +708,8 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
 #' #Calculate capture and recapture probabilities
 #' pc <- getprobsClosed(bobcat.c)
 #' summary(pc)}
+#' 
+#' @export
 getprobsClosed<-function(out,link="logit"){
   
   DMp<-out$DM$p
@@ -813,7 +830,7 @@ checkmmClosedinput<-function(mmslist,modlist,nmod,nchains,iter,miter,mburnin,mth
   if(length(M1)!=nchains) stop("'M1' must be an integer vector of length ",nchains)
   if(!all(match(M1,1:nmod,nomatch=0))) stop("'M1' must be an integer vector of length ",nchains," with values ranging from 1 to ",nmod)
   mms<-mmslist[[1]]
-  if(class(mms)!=paste0("multimark",type,"setup")) stop("'mms' for each model must be an object of class 'multimark",type,"setup'")
+  if(!inherits(mms,paste0("multimark",type,"setup"))) stop("'mms' for each model must be an object of class 'multimark",type,"setup'")
   return(mms)
 }
 
@@ -841,6 +858,7 @@ drawmissingClosed<-function(M.cur,missing,pbetapropsd,sigppropshape,sigppropscal
   missing
 }
 
+#' @importFrom Brobdingnag brob as.brob sum
 getbrobprobClosed<-function(imod,modprior,posterior,cur.parms,missing,pbetapropsd,sigppropshape,sigppropscale){
   deltadens <- 0
   if(length(missing$missingdeltaparms[[imod]])){
@@ -913,6 +931,7 @@ missingparmnamesClosed<-function(params,M,noccas,zppropsd){
   list(commonparms=commonparms,missingparms=missingparms,missingpbetaparms=missingpbetaparms,missingdeltaparms=missingdeltaparms,missingsigpparms=missingsigpparms,missingzpparms=missingzpparms,zppropsd=zppropsd,usesigp=usesigp,missingsigma2_scrparms=missingsigma2_scrparms,missinglambdaparms=missinglambdaparms) 
 }
 
+#' @importFrom utils flush.console
 rjmcmcClosed <- function(ichain,mms,M,noccas,data_type,alpha,C,All.hists,modlist,DMlist,deltalist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,gq,printlog){
   
   multimodel <- matrix(0,nrow=(max(1,floor(miter/mthin)))-(floor(mburnin/mthin)),ncol=length(monitorparms$parms)+1,dimnames=list(NULL,c(monitorparms$parms,"M")))
@@ -922,7 +941,7 @@ rjmcmcClosed <- function(ichain,mms,M,noccas,data_type,alpha,C,All.hists,modlist
   
   commonparms <- monitorparms$commonparms
   
-  if(any(deltalist==~NULL)){
+  if(any(unlist(lapply(deltalist,function(x) {x== ~NULL })))){
     H<-get_H(mms,mms@naivex)
     names(H)<-paste0("H[",1:M,"]")
   } else {
@@ -1047,6 +1066,8 @@ rjmcmcClosed <- function(ichain,mms,M,noccas,data_type,alpha,C,All.hists,modlist
 #'  
 #' #multimodel posterior summary for abundance
 #' summary(bobcat.M$rjmcmc[,"N"])}
+#' 
+#' @export
 multimodelClosed<-function(modlist,modprior=rep(1/length(modlist),length(modlist)),monparms="N",miter=NULL,mburnin=0,mthin=1,M1=NULL,pbetapropsd=1,zppropsd=NULL,sigppropshape=6,sigppropscale=4,printlog=FALSE){
   
   nmod <- length(modlist)
@@ -1070,13 +1091,13 @@ multimodelClosed<-function(modlist,modprior=rep(1/length(modlist),length(modlist
   
   checkparmsClosed(mms,modlist,params,parmlist=c("pbeta[(Intercept)]","N","logPosterior"),M)
   
-  pmodnames <- unlist(lapply(modlist,function(x) x$mod.p)) 
-  deltamodnames <- unlist(lapply(modlist,function(x) x$mod.delta)) 
+  pmodnames <- lapply(modlist,function(x) x$mod.p) 
+  deltamodnames <- lapply(modlist,function(x) x$mod.delta) 
   
   message("\nPerforming closed population Bayesian multimodel inference by RJMCMC \n")
-  if(all(deltamodnames!=~NULL)) {
+  if(all(unlist(lapply(deltamodnames,function(x) {x!= ~NULL })))) {
     message(paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")\n"))
-  } else if(all(deltamodnames==~NULL)){
+  } else if(all(unlist(lapply(deltamodnames,function(x) {x== ~NULL})))){
     message(paste0("mod",1:nmod,": ","p(",pmodnames,")\n"))
   }
   
@@ -1106,7 +1127,9 @@ multimodelClosed<-function(modlist,modprior=rep(1/length(modlist),length(modlist
     if(nchains>detectCores()) warning("Number of parallel chains (nchains) is greater than number of cores \n")
     cl <- makeCluster( nchains ,outfile=ifelse(printlog,paste0("multimodelClosed_log_",format(Sys.time(), "%Y-%b-%d_%H%M.%S"),".txt"),""))
     clusterExport(cl,list("rjmcmcClosed"),envir=environment())
-    multimodel <- parLapply(cl,1:nchains, function(ichain) rjmcmcClosed(ichain,mms,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1[ichain],monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,gq,printlog))
+    clusterSetRNGStream(cl)
+    multimodel <- parLapply(cl,1:nchains, function(ichain) 
+        rjmcmcClosed(ichain,mms,M,noccas,data_type,alpha,C,All.hists,lapply(modlist,function(x) x$mcmc[[ichain]]),DMlist,deltalist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1[ichain],monitorparms,missing,pbetapropsd,sigppropshape,sigppropscale,pmodnames,deltamodnames,gq,printlog))
     stopCluster(cl)
     gc()
   } else {
@@ -1124,7 +1147,7 @@ multimodelClosed<-function(modlist,modprior=rep(1/length(modlist),length(modlist
   pos.prob <- vector('list',nchains)
   for(ichain in 1:nchains){
     pos.prob[[ichain]] <-hist(multimodel[[ichain]][,"M"],plot=F,breaks=0:nmod)$density
-    if(all(deltamodnames!=~NULL)){
+    if(all(unlist(lapply(deltamodnames,function(x) {x!= ~NULL })))){
       names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")") 
     } else {
       names(pos.prob[[ichain]]) <- paste0("mod",1:nmod,": ","p(",pmodnames,")")
@@ -1136,7 +1159,7 @@ multimodelClosed<-function(modlist,modprior=rep(1/length(modlist),length(modlist
   multimodel <- as.mcmc.list(multimodel)
   names(pos.prob) <- paste0("chain",1:nchains)
   pos.prob[["overall"]]<- hist(unlist(multimodel[, "M"]),plot = F, breaks = 0:nmod)$density
-  if(all(deltamodnames!=~NULL)){
+  if(all(unlist(lapply(deltamodnames,function(x) {x!= ~NULL })))){
     names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")delta(",deltamodnames,")") 
   } else {
     names(pos.prob$overall) <- paste0("mod",1:nmod,": ","p(",pmodnames,")")

@@ -6,12 +6,12 @@
 \usage{
 markCJS(Enc.Mat, covs = data.frame(), mod.p = ~1, mod.phi = ~1,
   parms = c("pbeta", "phibeta"), nchains = 1, iter = 12000,
-  adapt = 1000, bin = 50, thin = 1, burnin = 2000, taccept = 0.44,
-  tuneadjust = 0.95, proppbeta = 0.1, propzp = 1, propsigmap = 1,
-  propphibeta = 0.1, propzphi = 1, propsigmaphi = 1, pbeta0 = 0,
-  pSigma0 = 1, phibeta0 = 0, phiSigma0 = 1, l0p = 1, d0p = 0.01,
-  l0phi = 1, d0phi = 0.01, initial.values = NULL, link = "probit",
-  printlog = FALSE, ...)
+  adapt = 1000, bin = 50, thin = 1, burnin = 2000,
+  taccept = 0.44, tuneadjust = 0.95, proppbeta = 0.1, propzp = 1,
+  propsigmap = 1, propphibeta = 0.1, propzphi = 1,
+  propsigmaphi = 1, pbeta0 = 0, pSigma0 = 1, phibeta0 = 0,
+  phiSigma0 = 1, l0p = 1, d0p = 0.01, l0phi = 1, d0phi = 0.01,
+  initial.values = NULL, link = "probit", printlog = FALSE, ...)
 }
 \arguments{
 \item{Enc.Mat}{A matrix of observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions. With a single mark type, encounter histories consist of only non-detections (0) and type 1 encounters (1).}
@@ -116,6 +116,7 @@ plot(sim.dot$mcmc)
 sim.age <- markCJS(data,mod.phi=~age,
            parameters=list(Phi=list(age.bins=c(0,1,4))),right=FALSE)
 summary(getprobsCJS(sim.age))}
+
 }
 \seealso{
 \code{\link{processdata}}, \code{\link{multimodelCJS}}
