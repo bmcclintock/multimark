@@ -4,9 +4,17 @@
 \alias{processdataSCR}
 \title{Generate model inputs for fitting spatial 'multimark' models}
 \usage{
-processdataSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
-  ncells = NULL, data.type = "never", covs = data.frame(),
-  known = integer(), scalemax = 10)
+processdataSCR(
+  Enc.Mat,
+  trapCoords,
+  studyArea = NULL,
+  buffer = NULL,
+  ncells = NULL,
+  data.type = "never",
+  covs = data.frame(),
+  known = integer(),
+  scalemax = 10
+)
 }
 \arguments{
 \item{Enc.Mat}{A matrix containing the observed encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc. Ignored unless \code{mms=NULL}.}

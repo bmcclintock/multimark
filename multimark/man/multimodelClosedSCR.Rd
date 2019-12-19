@@ -4,10 +4,19 @@
 \alias{multimodelClosedSCR}
 \title{Multimodel inference for 'multimark' spatial population abundance models}
 \usage{
-multimodelClosedSCR(modlist, modprior = rep(1/length(modlist),
-  length(modlist)), monparms = "N", miter = NULL, mburnin = 0,
-  mthin = 1, M1 = NULL, pbetapropsd = 1, sigpropmean = 0.8,
-  sigpropsd = 0.4, printlog = FALSE)
+multimodelClosedSCR(
+  modlist,
+  modprior = rep(1/length(modlist), length(modlist)),
+  monparms = "N",
+  miter = NULL,
+  mburnin = 0,
+  mthin = 1,
+  M1 = NULL,
+  pbetapropsd = 1,
+  sigpropmean = 0.8,
+  sigpropsd = 0.4,
+  printlog = FALSE
+)
 }
 \arguments{
 \item{modlist}{A list of individual model output lists returned by \code{\link{multimarkClosedSCR}} or \code{\link{markClosedSCR}}. The models must have the same number of chains and MCMC iterations.}

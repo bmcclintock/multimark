@@ -4,12 +4,24 @@
 \alias{multimodelCJS}
 \title{Multimodel inference for 'multimark' open population survival models}
 \usage{
-multimodelCJS(modlist, modprior = rep(1/length(modlist),
-  length(modlist)), monparms = "phi", miter = NULL, mburnin = 0,
-  mthin = 1, M1 = NULL, pbetapropsd = 1, zppropsd = NULL,
-  phibetapropsd = 1, zphipropsd = NULL, sigppropshape = 1,
-  sigppropscale = 0.01, sigphipropshape = 1, sigphipropscale = 0.01,
-  printlog = FALSE)
+multimodelCJS(
+  modlist,
+  modprior = rep(1/length(modlist), length(modlist)),
+  monparms = "phi",
+  miter = NULL,
+  mburnin = 0,
+  mthin = 1,
+  M1 = NULL,
+  pbetapropsd = 1,
+  zppropsd = NULL,
+  phibetapropsd = 1,
+  zphipropsd = NULL,
+  sigppropshape = 1,
+  sigppropscale = 0.01,
+  sigphipropshape = 1,
+  sigphipropscale = 0.01,
+  printlog = FALSE
+)
 }
 \arguments{
 \item{modlist}{A list of individual model output lists returned by \code{\link{multimarkCJS}}. The models must have the same number of chains and MCMC iterations.}

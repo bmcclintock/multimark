@@ -4,9 +4,18 @@
 \alias{simdataClosed}
 \title{Simulate closed population capture-mark-recapture data arising from multiple non-invasive marks}
 \usage{
-simdataClosed(N = 100, noccas = 5, pbeta = -0.4, tau = 0,
-  sigma2_zp = 0, delta_1 = 0.4, delta_2 = 0.4, alpha = 0.5,
-  data.type = "never", link = "logit")
+simdataClosed(
+  N = 100,
+  noccas = 5,
+  pbeta = -0.4,
+  tau = 0,
+  sigma2_zp = 0,
+  delta_1 = 0.4,
+  delta_2 = 0.4,
+  alpha = 0.5,
+  data.type = "never",
+  link = "logit"
+)
 }
 \arguments{
 \item{N}{True population size or abundance.}

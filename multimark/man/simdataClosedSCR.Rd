@@ -4,11 +4,25 @@
 \alias{simdataClosedSCR}
 \title{Simulate spatially-explicit capture-mark-recapture data from a (demographically) closed population with multiple non-invasive marks}
 \usage{
-simdataClosedSCR(N = 30, ntraps = 9, noccas = 5, pbeta = 0.25,
-  tau = 0, sigma2_scr = 0.75, lambda = 0.75, delta_1 = 0.4,
-  delta_2 = 0.4, alpha = 0.5, data.type = "never",
-  detection = "half-normal", spatialInputs = NULL, buffer = 3 *
-  sqrt(sigma2_scr), ncells = 1024, scalemax = 10, plot = TRUE)
+simdataClosedSCR(
+  N = 30,
+  ntraps = 9,
+  noccas = 5,
+  pbeta = 0.25,
+  tau = 0,
+  sigma2_scr = 0.75,
+  lambda = 0.75,
+  delta_1 = 0.4,
+  delta_2 = 0.4,
+  alpha = 0.5,
+  data.type = "never",
+  detection = "half-normal",
+  spatialInputs = NULL,
+  buffer = 3 * sqrt(sigma2_scr),
+  ncells = 1024,
+  scalemax = 10,
+  plot = TRUE
+)
 }
 \arguments{
 \item{N}{True population size or abundance.}

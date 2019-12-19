@@ -4,10 +4,20 @@
 \alias{multimodelClosed}
 \title{Multimodel inference for 'multimark' closed population abundance models}
 \usage{
-multimodelClosed(modlist, modprior = rep(1/length(modlist),
-  length(modlist)), monparms = "N", miter = NULL, mburnin = 0,
-  mthin = 1, M1 = NULL, pbetapropsd = 1, zppropsd = NULL,
-  sigppropshape = 6, sigppropscale = 4, printlog = FALSE)
+multimodelClosed(
+  modlist,
+  modprior = rep(1/length(modlist), length(modlist)),
+  monparms = "N",
+  miter = NULL,
+  mburnin = 0,
+  mthin = 1,
+  M1 = NULL,
+  pbetapropsd = 1,
+  zppropsd = NULL,
+  sigppropshape = 6,
+  sigppropscale = 4,
+  printlog = FALSE
+)
 }
 \arguments{
 \item{modlist}{A list of individual model output lists returned by \code{\link{multimarkClosed}} or \code{\link{markClosed}}. The models must have the same number of chains and MCMC iterations.}
