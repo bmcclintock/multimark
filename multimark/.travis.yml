@@ -1,0 +1,8 @@
+language: r
+r:
+ - release
+ - devel
+cache: packages
+cran: https://cran.rstudio.com/
+  
+r_check_args: --as-cran
