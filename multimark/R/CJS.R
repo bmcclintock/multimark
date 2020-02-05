@@ -699,10 +699,6 @@ processCJSchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin){
 #' @author Brett T. McClintock
 #' @seealso \code{\link{processdata}}, \code{\link{multimodelCJS}}
 #' @examples
-#' \dontshow{
-#' data<-simdataCJS(delta_1=1,delta_2=0)$Enc.Mat
-#' test<-markCJS(data,iter=10,burnin=0)
-#' test.age <- markCJS(data,mod.phi=~age,iter=10,burnin=0,parameters=list(Phi=list(age.bins=c(0,1,4))),right=FALSE)}
 #' \donttest{
 #' # These examples are excluded from testing to reduce package check time
 #' # Example uses unrealistically low values for nchain, iter, and burnin
@@ -804,9 +800,6 @@ markCJS<-function(Enc.Mat,covs=data.frame(),mod.p=~1,mod.phi=~1,parms=c("pbeta",
 #'
 #' McClintock, B. T., Bailey, L. L., Dreher, B. P., and Link, W. A. 2014. Probit models for capture-recapture data subject to imperfect detection, individual heterogeneity and misidentification. \emph{The Annals of Applied Statistics} 8: 2461-2484.
 #' @examples
-#' \dontshow{
-#' test<-multimarkCJS(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0)
-#' test.age <- multimarkCJS(Enc.Mat=bobcat,mod.phi=~age,iter=10,burnin=0,parameters=list(Phi=list(age.bins=c(0,1,7))),right=FALSE)}
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
 #' # Example uses unrealistically low values for nchain, iter, and burnin
@@ -927,8 +920,6 @@ multimarkCJS<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,mod.
 #' @author Brett T. McClintock
 #' @seealso \code{\link{multimarkCJS}}
 #' @examples
-#' \dontshow{
-#' test<-getprobsCJS(multimarkCJS(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0))}
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
 #' # Example uses unrealistically low values for nchain, iter, and burnin
@@ -1302,9 +1293,6 @@ rjmcmcCJS <- function(ichain,mms,M,noccas,data_type,alpha,C,All.hists,modlist,DM
 #' Barker, R. J. and Link. W. A. 2013. Bayesian multimodel inference by RJMCMC: a Gibbs sampling approach. The American Statistician 67: 150-156.
 #' @examples
 #' \dontshow{
-#' setup<-processdata(bobcat)
-#' test.dot<-multimarkCJS(mms=setup,parms="all",iter=10,burnin=0)
-#' test<-multimodelCJS(modlist=list(mod1=test.dot,mod2=test.dot))
 #' set.seed(10)
 #' }
 #' \donttest{

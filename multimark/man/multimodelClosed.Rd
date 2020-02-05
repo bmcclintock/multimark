@@ -56,11 +56,6 @@ This function performs Bayesian multimodel inference for a set of 'multimark' cl
 Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosed}} or \code{\link{markClosed}} models to be included in \code{modlist}.
 }
 \examples{
-\dontshow{
-setup<-processdata(bobcat)
-test.dot<-multimarkClosed(mms=setup,parms="all",iter=10,burnin=0,bin=5)
-test<-multimodelClosed(modlist=list(mod1=test.dot,mod2=test.dot))
-}
 \donttest{
 # This example is excluded from testing to reduce package check time
 # Example uses unrealistically low values for nchain, iter, and burnin

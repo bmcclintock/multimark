@@ -53,15 +53,6 @@ This function performs Bayesian multimodel inference for a set of 'multimark' sp
 Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosedSCR}} or \code{\link{markClosedSCR}} models to be included in \code{modlist}.
 }
 \examples{
-\dontshow{
-sim.data<-simdataClosedSCR()
-Enc.Mat<-sim.data$Enc.Mat
-trapCoords<-sim.data$spatialInputs$trapCoords
-studyArea<-sim.data$spatialInputs$studyArea
-setup<-processdataSCR(Enc.Mat,trapCoords,studyArea)
-test.dot<-multimarkClosedSCR(mms=setup,parms="all",iter=10,burnin=0,bin=5)
-test<-multimodelClosedSCR(modlist=list(mod1=test.dot,mod2=test.dot))
-}
 \donttest{
 # This example is excluded from testing to reduce package check time
 # Example uses unrealistically low values for nchain, iter, and burnin

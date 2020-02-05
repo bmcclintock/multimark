@@ -69,9 +69,6 @@ Note that setting \code{parms="all"} is required when fitting individual \code{\
 }
 \examples{
 \dontshow{
-setup<-processdata(bobcat)
-test.dot<-multimarkCJS(mms=setup,parms="all",iter=10,burnin=0)
-test<-multimodelCJS(modlist=list(mod1=test.dot,mod2=test.dot))
 set.seed(10)
 }
 \donttest{

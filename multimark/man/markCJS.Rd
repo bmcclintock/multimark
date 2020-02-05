@@ -118,10 +118,6 @@ This function fits Cormack-Jolly-Seber (CJS) open population models for survival
 The first time \code{markCJS} (or \code{\link{markClosed}}) is called, it will likely produce a firewall warning alerting users that R has requested the ability to accept incoming network connections. Incoming network connections are required to use parallel processing as implemented in \code{multimarkCJS}. Note that setting \code{parms="all"} is required for any \code{markCJS} model output to be used in \code{\link{multimodelCJS}}.
 }
 \examples{
-\dontshow{
-data<-simdataCJS(delta_1=1,delta_2=0)$Enc.Mat
-test<-markCJS(data,iter=10,burnin=0)
-test.age <- markCJS(data,mod.phi=~age,iter=10,burnin=0,parameters=list(Phi=list(age.bins=c(0,1,4))),right=FALSE)}
 \donttest{
 # These examples are excluded from testing to reduce package check time
 # Example uses unrealistically low values for nchain, iter, and burnin

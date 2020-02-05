@@ -1,3 +1,12 @@
+multimark 2.1.2 2020-02-05
+-----------------
+CHANGES
+
+* remove unnecessary dependencies on doParallel, foreach, and doRNG
+
+* tweaked tests in order to pass MKL case at CRAN
+
+
 multimark 2.1.1 2019-11-25
 -----------------
 CHANGES

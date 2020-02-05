@@ -17,12 +17,6 @@ An object of class \code{\link[coda]{mcmc.list}} containing the following:
 This function calculates posterior population density estimates from \code{\link{multimarkClosedSCR}} output as D = N/A, where D is density, N is abundance, and A is the area of available habitat within the study area.
 }
 \examples{
-\dontshow{
-sim.data<-simdataClosedSCR()
-Enc.Mat<-sim.data$Enc.Mat
-trapCoords<-sim.data$spatialInputs$trapCoords
-studyArea<-sim.data$spatialInputs$studyArea
-test<-getdensityClosedSCR(multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,iter=10,burnin=0,bin=5))}
 \donttest{
 # This example is excluded from testing to reduce package check time
 # Example uses unrealistically low values for nchain, iter, and burnin

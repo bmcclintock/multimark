@@ -143,12 +143,6 @@ This function fits spatially-explicit population abundance models for capture-ma
 The first time \code{multimarkSCRClosed} is called, it will likely produce a firewall warning alerting users that R has requested the ability to accept incoming network connections. Incoming network connections are required to use parallel processing as implemented in \code{multimarkClosed}. Note that setting \code{parms="all"} is required for any \code{multimarkClosed} model output to be used in \code{\link{multimodelClosed}}.
 }
 \examples{
-\dontshow{
-sim.data<-simdataClosedSCR(N=30,noccas=5,ntraps=4)
-Enc.Mat <- sim.data$Enc.Mat
-trapCoords <- sim.data$spatialInputs$trapCoords
-studyArea <- sim.data$spatialInputs$studyArea
-test<-multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,iter=10,burnin=0,bin=5)}
 \donttest{
 # This example is excluded from testing to reduce package check time
 # Example uses unrealistically low values for nchain, iter, and burnin
