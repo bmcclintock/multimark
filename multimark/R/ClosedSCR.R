@@ -727,12 +727,6 @@ getPropCenter<-function(spatialInputs,propcenter){
 #' Royle, J.A., Karanth, K.U., Gopalaswamy, A.M. and Kumar, N.S. 2009. Bayesian inference in camera trapping studies for a class of spatial capture-recapture models.  \emph{Ecology} 90: 3233-3244.
 #'
 #' @examples
-#' \dontshow{
-#' sim.data<-simdataClosedSCR(delta_1=1,delta_2=0)
-#' Enc.Mat<-sim.data$Enc.Mat
-#' trapCoords<-sim.data$spatialInputs$trapCoords
-#' studyArea<-sim.data$spatialInputs$studyArea
-#' test<-markClosedSCR(Enc.Mat,trapCoords,studyArea,iter=10,burnin=0,bin=5)}
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
 #' # Example uses unrealistically low values for nchain, iter, and burnin
@@ -832,12 +826,6 @@ markClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=102
 #' Royle, J.A., Karanth, K.U., Gopalaswamy, A.M. and Kumar, N.S. 2009. Bayesian inference in camera trapping studies for a class of spatial capture-recapture models.  \emph{Ecology} 90: 3233-3244.
 #'
 #' @examples
-#' \dontshow{
-#' sim.data<-simdataClosedSCR(N=30,noccas=5,ntraps=4)
-#' Enc.Mat <- sim.data$Enc.Mat
-#' trapCoords <- sim.data$spatialInputs$trapCoords
-#' studyArea <- sim.data$spatialInputs$studyArea
-#' test<-multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,iter=10,burnin=0,bin=5)}
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
 #' # Example uses unrealistically low values for nchain, iter, and burnin
@@ -955,12 +943,6 @@ multimarkClosedSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncell
 #' @author Brett T. McClintock
 #' @seealso \code{\link{multimarkClosedSCR}}
 #' @examples
-#' \dontshow{
-#' sim.data<-simdataClosedSCR()
-#' Enc.Mat<-sim.data$Enc.Mat
-#' trapCoords<-sim.data$spatialInputs$trapCoords
-#' studyArea<-sim.data$spatialInputs$studyArea
-#' test<-getprobsClosedSCR(multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,iter=10,burnin=0,bin=5))}
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
 #' # Example uses unrealistically low values for nchain, iter, and burnin
@@ -1041,12 +1023,6 @@ getprobsClosedSCR<-function(out,link="cloglog"){
 #' @author Brett T. McClintock
 #' @seealso \code{\link{multimarkClosedSCR}}
 #' @examples
-#' \dontshow{
-#' sim.data<-simdataClosedSCR()
-#' Enc.Mat<-sim.data$Enc.Mat
-#' trapCoords<-sim.data$spatialInputs$trapCoords
-#' studyArea<-sim.data$spatialInputs$studyArea
-#' test<-getdensityClosedSCR(multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,iter=10,burnin=0,bin=5))}
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
 #' # Example uses unrealistically low values for nchain, iter, and burnin
@@ -1266,15 +1242,6 @@ rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,a
 #' @references
 #' Barker, R. J. and Link. W. A. 2013. Bayesian multimodel inference by RJMCMC: a Gibbs sampling approach. The American Statistician 67: 150-156.
 #' @examples
-#' \dontshow{
-#' sim.data<-simdataClosedSCR()
-#' Enc.Mat<-sim.data$Enc.Mat
-#' trapCoords<-sim.data$spatialInputs$trapCoords
-#' studyArea<-sim.data$spatialInputs$studyArea
-#' setup<-processdataSCR(Enc.Mat,trapCoords,studyArea)
-#' test.dot<-multimarkClosedSCR(mms=setup,parms="all",iter=10,burnin=0,bin=5)
-#' test<-multimodelClosedSCR(modlist=list(mod1=test.dot,mod2=test.dot))
-#' }
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
 #' # Example uses unrealistically low values for nchain, iter, and burnin

@@ -4,10 +4,20 @@
 \alias{multimodelClosed}
 \title{Multimodel inference for 'multimark' closed population abundance models}
 \usage{
-multimodelClosed(modlist, modprior = rep(1/length(modlist),
-  length(modlist)), monparms = "N", miter = NULL, mburnin = 0,
-  mthin = 1, M1 = NULL, pbetapropsd = 1, zppropsd = NULL,
-  sigppropshape = 6, sigppropscale = 4, printlog = FALSE)
+multimodelClosed(
+  modlist,
+  modprior = rep(1/length(modlist), length(modlist)),
+  monparms = "N",
+  miter = NULL,
+  mburnin = 0,
+  mthin = 1,
+  M1 = NULL,
+  pbetapropsd = 1,
+  zppropsd = NULL,
+  sigppropshape = 6,
+  sigppropscale = 4,
+  printlog = FALSE
+)
 }
 \arguments{
 \item{modlist}{A list of individual model output lists returned by \code{\link{multimarkClosed}} or \code{\link{markClosed}}. The models must have the same number of chains and MCMC iterations.}
@@ -46,11 +56,6 @@ This function performs Bayesian multimodel inference for a set of 'multimark' cl
 Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosed}} or \code{\link{markClosed}} models to be included in \code{modlist}.
 }
 \examples{
-\dontshow{
-setup<-processdata(bobcat)
-test.dot<-multimarkClosed(mms=setup,parms="all",iter=10,burnin=0,bin=5)
-test<-multimodelClosed(modlist=list(mod1=test.dot,mod2=test.dot))
-}
 \donttest{
 # This example is excluded from testing to reduce package check time
 # Example uses unrealistically low values for nchain, iter, and burnin

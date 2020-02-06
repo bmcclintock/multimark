@@ -503,8 +503,6 @@ processClosedchains<-function(chains,params,DM,M,noccas,nchains,iter,burnin,thin
 #' @author Brett T. McClintock
 #' @seealso \code{\link{multimodelClosed}}
 #' @examples
-#' \dontshow{
-#' test<-markClosed(Enc.Mat=simdataClosed(delta_1=1,delta_2=0)$Enc.Mat,iter=10,burnin=0,bin=5)}
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
 #' # Example uses unrealistically low values for nchain, iter, and burnin
@@ -590,8 +588,6 @@ markClosed<-function(Enc.Mat,covs=data.frame(),mod.p=~1,parms=c("pbeta","N"),nch
 #' 
 #' McClintock, B. T., Bailey, L. L., Dreher, B. P., and Link, W. A. 2014. Probit models for capture-recapture data subject to imperfect detection, individual heterogeneity and misidentification. \emph{The Annals of Applied Statistics} 8: 2461-2484.
 #' @examples
-#' \dontshow{
-#' test<-multimarkClosed(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0,bin=5)}
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
 #' # Example uses unrealistically low values for nchain, iter, and burnin
@@ -696,8 +692,6 @@ multimarkClosed<-function(Enc.Mat,data.type="never",covs=data.frame(),mms=NULL,m
 #' @author Brett T. McClintock
 #' @seealso \code{\link{multimarkClosed}}
 #' @examples
-#' \dontshow{
-#' test<-getprobsClosed(multimarkClosed(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0,bin=5))}
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
 #' # Example uses unrealistically low values for nchain, iter, and burnin
@@ -1039,11 +1033,6 @@ rjmcmcClosed <- function(ichain,mms,M,noccas,data_type,alpha,C,All.hists,modlist
 #' @references
 #' Barker, R. J. and Link. W. A. 2013. Bayesian multimodel inference by RJMCMC: a Gibbs sampling approach. The American Statistician 67: 150-156.
 #' @examples
-#' \dontshow{
-#' setup<-processdata(bobcat)
-#' test.dot<-multimarkClosed(mms=setup,parms="all",iter=10,burnin=0,bin=5)
-#' test<-multimodelClosed(modlist=list(mod1=test.dot,mod2=test.dot))
-#' }
 #' \donttest{
 #' # This example is excluded from testing to reduce package check time
 #' # Example uses unrealistically low values for nchain, iter, and burnin

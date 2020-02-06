@@ -4,12 +4,30 @@
 \alias{markClosed}
 \title{Fit closed population abundance models for ``traditional'' capture-mark-recapture data consisting of a single mark type}
 \usage{
-markClosed(Enc.Mat, covs = data.frame(), mod.p = ~1,
-  parms = c("pbeta", "N"), nchains = 1, iter = 12000, adapt = 1000,
-  bin = 50, thin = 1, burnin = 2000, taccept = 0.44,
-  tuneadjust = 0.95, proppbeta = 0.1, propzp = 1, propsigmap = 1,
-  npoints = 500, a = 25, mu0 = 0, sigma2_mu0 = 1.75,
-  initial.values = NULL, printlog = FALSE, ...)
+markClosed(
+  Enc.Mat,
+  covs = data.frame(),
+  mod.p = ~1,
+  parms = c("pbeta", "N"),
+  nchains = 1,
+  iter = 12000,
+  adapt = 1000,
+  bin = 50,
+  thin = 1,
+  burnin = 2000,
+  taccept = 0.44,
+  tuneadjust = 0.95,
+  proppbeta = 0.1,
+  propzp = 1,
+  propsigmap = 1,
+  npoints = 500,
+  a = 25,
+  mu0 = 0,
+  sigma2_mu0 = 1.75,
+  initial.values = NULL,
+  printlog = FALSE,
+  ...
+)
 }
 \arguments{
 \item{Enc.Mat}{A matrix of observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions. With a single mark type, encounter histories consist of only non-detections (0) and type 1 encounters (1).}
@@ -72,8 +90,6 @@ This function fits closed population abundance models for ``traditional'' captur
 The first time \code{markClosed} (or \code{\link{markCJS}}) is called, it will likely produce a firewall warning alerting users that R has requested the ability to accept incoming network connections. Incoming network connections are required to use parallel processing as implemented in \code{markClosed}. Note that setting \code{parms="all"} is required for any \code{markClosed} model output to be used in \code{\link{multimodelClosed}}.
 }
 \examples{
-\dontshow{
-test<-markClosed(Enc.Mat=simdataClosed(delta_1=1,delta_2=0)$Enc.Mat,iter=10,burnin=0,bin=5)}
 \donttest{
 # This example is excluded from testing to reduce package check time
 # Example uses unrealistically low values for nchain, iter, and burnin

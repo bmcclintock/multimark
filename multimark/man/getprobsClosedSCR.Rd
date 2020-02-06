@@ -20,12 +20,6 @@ An object of class \code{\link[coda]{mcmc.list}} containing the following:
 This function calculates posterior spatial capture (\eqn{p}) and recapture (\eqn{c}) probabilities (at zero distance from an activity center) for each sampling occasion from \code{\link{multimarkClosedSCR}} output.
 }
 \examples{
-\dontshow{
-sim.data<-simdataClosedSCR()
-Enc.Mat<-sim.data$Enc.Mat
-trapCoords<-sim.data$spatialInputs$trapCoords
-studyArea<-sim.data$spatialInputs$studyArea
-test<-getprobsClosedSCR(multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,iter=10,burnin=0,bin=5))}
 \donttest{
 # This example is excluded from testing to reduce package check time
 # Example uses unrealistically low values for nchain, iter, and burnin

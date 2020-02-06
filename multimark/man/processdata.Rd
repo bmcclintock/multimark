@@ -4,8 +4,12 @@
 \alias{processdata}
 \title{Generate model inputs for fitting 'multimark' models}
 \usage{
-processdata(Enc.Mat, data.type = "never", covs = data.frame(),
-  known = integer())
+processdata(
+  Enc.Mat,
+  data.type = "never",
+  covs = data.frame(),
+  known = integer()
+)
 }
 \arguments{
 \item{Enc.Mat}{A matrix of observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions (ignored unless \code{mms=NULL}).}

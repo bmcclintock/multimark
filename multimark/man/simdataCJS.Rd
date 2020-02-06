@@ -4,9 +4,19 @@
 \alias{simdataCJS}
 \title{Simulate open population capture-mark-recapture data arising from multiple non-invasive marks}
 \usage{
-simdataCJS(N = 100, noccas = 5, pbeta = -0.25, sigma2_zp = 0,
-  phibeta = 1.6, sigma2_zphi = 0, delta_1 = 0.4, delta_2 = 0.4,
-  alpha = 0.5, data.type = "never", link = "probit")
+simdataCJS(
+  N = 100,
+  noccas = 5,
+  pbeta = -0.25,
+  sigma2_zp = 0,
+  phibeta = 1.6,
+  sigma2_zphi = 0,
+  delta_1 = 0.4,
+  delta_2 = 0.4,
+  alpha = 0.5,
+  data.type = "never",
+  link = "probit"
+)
 }
 \arguments{
 \item{N}{Number of individuals.}

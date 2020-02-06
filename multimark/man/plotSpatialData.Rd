@@ -4,8 +4,13 @@
 \alias{plotSpatialData}
 \title{Plot spatial capture-mark-recapture data}
 \usage{
-plotSpatialData(mms = NULL, trapCoords, studyArea, centers = NULL,
-  trapLines = FALSE)
+plotSpatialData(
+  mms = NULL,
+  trapCoords,
+  studyArea,
+  centers = NULL,
+  trapLines = FALSE
+)
 }
 \arguments{
 \item{mms}{An optional object of class \code{multimarkSCRsetup-class} from which the (re-scaled) study area and trap coordinates are plotted.}

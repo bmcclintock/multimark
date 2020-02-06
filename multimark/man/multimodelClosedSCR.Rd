@@ -4,10 +4,19 @@
 \alias{multimodelClosedSCR}
 \title{Multimodel inference for 'multimark' spatial population abundance models}
 \usage{
-multimodelClosedSCR(modlist, modprior = rep(1/length(modlist),
-  length(modlist)), monparms = "N", miter = NULL, mburnin = 0,
-  mthin = 1, M1 = NULL, pbetapropsd = 1, sigpropmean = 0.8,
-  sigpropsd = 0.4, printlog = FALSE)
+multimodelClosedSCR(
+  modlist,
+  modprior = rep(1/length(modlist), length(modlist)),
+  monparms = "N",
+  miter = NULL,
+  mburnin = 0,
+  mthin = 1,
+  M1 = NULL,
+  pbetapropsd = 1,
+  sigpropmean = 0.8,
+  sigpropsd = 0.4,
+  printlog = FALSE
+)
 }
 \arguments{
 \item{modlist}{A list of individual model output lists returned by \code{\link{multimarkClosedSCR}} or \code{\link{markClosedSCR}}. The models must have the same number of chains and MCMC iterations.}
@@ -44,15 +53,6 @@ This function performs Bayesian multimodel inference for a set of 'multimark' sp
 Note that setting \code{parms="all"} is required when fitting individual \code{\link{multimarkClosedSCR}} or \code{\link{markClosedSCR}} models to be included in \code{modlist}.
 }
 \examples{
-\dontshow{
-sim.data<-simdataClosedSCR()
-Enc.Mat<-sim.data$Enc.Mat
-trapCoords<-sim.data$spatialInputs$trapCoords
-studyArea<-sim.data$spatialInputs$studyArea
-setup<-processdataSCR(Enc.Mat,trapCoords,studyArea)
-test.dot<-multimarkClosedSCR(mms=setup,parms="all",iter=10,burnin=0,bin=5)
-test<-multimodelClosedSCR(modlist=list(mod1=test.dot,mod2=test.dot))
-}
 \donttest{
 # This example is excluded from testing to reduce package check time
 # Example uses unrealistically low values for nchain, iter, and burnin

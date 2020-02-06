@@ -4,17 +4,45 @@
 \alias{multimarkClosedSCR}
 \title{Fit spatially-explicit population abundance models for capture-mark-recapture data consisting of multiple non-invasive marks}
 \usage{
-multimarkClosedSCR(Enc.Mat, trapCoords, studyArea = NULL,
-  buffer = NULL, ncells = 1024, data.type = "never",
-  covs = data.frame(), mms = NULL, mod.p = ~1, mod.delta = ~type,
-  detection = "half-normal", parms = c("pbeta", "delta", "N"),
-  nchains = 1, iter = 12000, adapt = 1000, bin = 50, thin = 1,
-  burnin = 2000, taccept = 0.44, tuneadjust = 0.95,
-  proppbeta = 0.1, propsigma = 1, propcenter = NULL,
-  maxnumbasis = 1, a0delta = 1, a0alpha = 1, b0alpha = 1,
-  sigma_bounds = NULL, mu0 = 0, sigma2_mu0 = 1.75, a0psi = 1,
-  b0psi = 1, initial.values = NULL, known = integer(),
-  scalemax = 10, printlog = FALSE, ...)
+multimarkClosedSCR(
+  Enc.Mat,
+  trapCoords,
+  studyArea = NULL,
+  buffer = NULL,
+  ncells = 1024,
+  data.type = "never",
+  covs = data.frame(),
+  mms = NULL,
+  mod.p = ~1,
+  mod.delta = ~type,
+  detection = "half-normal",
+  parms = c("pbeta", "delta", "N"),
+  nchains = 1,
+  iter = 12000,
+  adapt = 1000,
+  bin = 50,
+  thin = 1,
+  burnin = 2000,
+  taccept = 0.44,
+  tuneadjust = 0.95,
+  proppbeta = 0.1,
+  propsigma = 1,
+  propcenter = NULL,
+  maxnumbasis = 1,
+  a0delta = 1,
+  a0alpha = 1,
+  b0alpha = 1,
+  sigma_bounds = NULL,
+  mu0 = 0,
+  sigma2_mu0 = 1.75,
+  a0psi = 1,
+  b0psi = 1,
+  initial.values = NULL,
+  known = integer(),
+  scalemax = 10,
+  printlog = FALSE,
+  ...
+)
 }
 \arguments{
 \item{Enc.Mat}{A matrix containing the observed encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc. Ignored unless \code{mms=NULL}.}
@@ -115,12 +143,6 @@ This function fits spatially-explicit population abundance models for capture-ma
 The first time \code{multimarkSCRClosed} is called, it will likely produce a firewall warning alerting users that R has requested the ability to accept incoming network connections. Incoming network connections are required to use parallel processing as implemented in \code{multimarkClosed}. Note that setting \code{parms="all"} is required for any \code{multimarkClosed} model output to be used in \code{\link{multimodelClosed}}.
 }
 \examples{
-\dontshow{
-sim.data<-simdataClosedSCR(N=30,noccas=5,ntraps=4)
-Enc.Mat <- sim.data$Enc.Mat
-trapCoords <- sim.data$spatialInputs$trapCoords
-studyArea <- sim.data$spatialInputs$studyArea
-test<-multimarkClosedSCR(Enc.Mat,trapCoords,studyArea,iter=10,burnin=0,bin=5)}
 \donttest{
 # This example is excluded from testing to reduce package check time
 # Example uses unrealistically low values for nchain, iter, and burnin

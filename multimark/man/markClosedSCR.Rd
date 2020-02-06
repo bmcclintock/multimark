@@ -4,14 +4,35 @@
 \alias{markClosedSCR}
 \title{Fit spatial population abundance models for ``traditional'' capture-mark-recapture data consisting of a single mark type}
 \usage{
-markClosedSCR(Enc.Mat, trapCoords, studyArea = NULL, buffer = NULL,
-  ncells = 1024, covs = data.frame(), mod.p = ~1,
-  detection = "half-normal", parms = c("pbeta", "N"), nchains = 1,
-  iter = 12000, adapt = 1000, bin = 50, thin = 1, burnin = 2000,
-  taccept = 0.44, tuneadjust = 0.95, proppbeta = 0.1,
-  propsigma = 1, propcenter = NULL, sigma_bounds = NULL, mu0 = 0,
-  sigma2_mu0 = 1.75, initial.values = NULL, scalemax = 10,
-  printlog = FALSE, ...)
+markClosedSCR(
+  Enc.Mat,
+  trapCoords,
+  studyArea = NULL,
+  buffer = NULL,
+  ncells = 1024,
+  covs = data.frame(),
+  mod.p = ~1,
+  detection = "half-normal",
+  parms = c("pbeta", "N"),
+  nchains = 1,
+  iter = 12000,
+  adapt = 1000,
+  bin = 50,
+  thin = 1,
+  burnin = 2000,
+  taccept = 0.44,
+  tuneadjust = 0.95,
+  proppbeta = 0.1,
+  propsigma = 1,
+  propcenter = NULL,
+  sigma_bounds = NULL,
+  mu0 = 0,
+  sigma2_mu0 = 1.75,
+  initial.values = NULL,
+  scalemax = 10,
+  printlog = FALSE,
+  ...
+)
 }
 \arguments{
 \item{Enc.Mat}{A matrix containing the observed encounter histories with rows corresponding to individuals and (\code{ntraps}*\code{noccas}) columns corresponding to traps and sampling occasions.  The first \code{noccas} columns correspond to trap 1, the second \code{noccas} columns corresopond to trap 2, etc.}
@@ -86,12 +107,6 @@ This function fits spatial population abundance models for ``traditional'' captu
 The first time \code{markClosedSCR} is called, it will likely produce a firewall warning alerting users that R has requested the ability to accept incoming network connections. Incoming network connections are required to use parallel processing as implemented in \code{markClosed}. Note that setting \code{parms="all"} is required for any \code{markClosed} model output to be used in \code{\link{multimodelClosed}}.
 }
 \examples{
-\dontshow{
-sim.data<-simdataClosedSCR(delta_1=1,delta_2=0)
-Enc.Mat<-sim.data$Enc.Mat
-trapCoords<-sim.data$spatialInputs$trapCoords
-studyArea<-sim.data$spatialInputs$studyArea
-test<-markClosedSCR(Enc.Mat,trapCoords,studyArea,iter=10,burnin=0,bin=5)}
 \donttest{
 # This example is excluded from testing to reduce package check time
 # Example uses unrealistically low values for nchain, iter, and burnin

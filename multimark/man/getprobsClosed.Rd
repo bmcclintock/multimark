@@ -20,8 +20,6 @@ An object of class \code{\link[coda]{mcmc.list}} containing the following:
 This function calculates posterior capture (\eqn{p}) and recapture (\eqn{c}) probabilities for each sampling occasion from \code{\link{multimarkClosed}} output.
 }
 \examples{
-\dontshow{
-test<-getprobsClosed(multimarkClosed(Enc.Mat=bobcat,data.type="never",iter=10,burnin=0,bin=5))}
 \donttest{
 # This example is excluded from testing to reduce package check time
 # Example uses unrealistically low values for nchain, iter, and burnin

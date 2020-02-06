@@ -4,14 +4,39 @@
 \alias{markCJS}
 \title{Fit open population survival models for ``traditional'' capture-mark-recapture data consisting of a single mark type}
 \usage{
-markCJS(Enc.Mat, covs = data.frame(), mod.p = ~1, mod.phi = ~1,
-  parms = c("pbeta", "phibeta"), nchains = 1, iter = 12000,
-  adapt = 1000, bin = 50, thin = 1, burnin = 2000,
-  taccept = 0.44, tuneadjust = 0.95, proppbeta = 0.1, propzp = 1,
-  propsigmap = 1, propphibeta = 0.1, propzphi = 1,
-  propsigmaphi = 1, pbeta0 = 0, pSigma0 = 1, phibeta0 = 0,
-  phiSigma0 = 1, l0p = 1, d0p = 0.01, l0phi = 1, d0phi = 0.01,
-  initial.values = NULL, link = "probit", printlog = FALSE, ...)
+markCJS(
+  Enc.Mat,
+  covs = data.frame(),
+  mod.p = ~1,
+  mod.phi = ~1,
+  parms = c("pbeta", "phibeta"),
+  nchains = 1,
+  iter = 12000,
+  adapt = 1000,
+  bin = 50,
+  thin = 1,
+  burnin = 2000,
+  taccept = 0.44,
+  tuneadjust = 0.95,
+  proppbeta = 0.1,
+  propzp = 1,
+  propsigmap = 1,
+  propphibeta = 0.1,
+  propzphi = 1,
+  propsigmaphi = 1,
+  pbeta0 = 0,
+  pSigma0 = 1,
+  phibeta0 = 0,
+  phiSigma0 = 1,
+  l0p = 1,
+  d0p = 0.01,
+  l0phi = 1,
+  d0phi = 0.01,
+  initial.values = NULL,
+  link = "probit",
+  printlog = FALSE,
+  ...
+)
 }
 \arguments{
 \item{Enc.Mat}{A matrix of observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions. With a single mark type, encounter histories consist of only non-detections (0) and type 1 encounters (1).}
@@ -93,10 +118,6 @@ This function fits Cormack-Jolly-Seber (CJS) open population models for survival
 The first time \code{markCJS} (or \code{\link{markClosed}}) is called, it will likely produce a firewall warning alerting users that R has requested the ability to accept incoming network connections. Incoming network connections are required to use parallel processing as implemented in \code{multimarkCJS}. Note that setting \code{parms="all"} is required for any \code{markCJS} model output to be used in \code{\link{multimodelCJS}}.
 }
 \examples{
-\dontshow{
-data<-simdataCJS(delta_1=1,delta_2=0)$Enc.Mat
-test<-markCJS(data,iter=10,burnin=0)
-test.age <- markCJS(data,mod.phi=~age,iter=10,burnin=0,parameters=list(Phi=list(age.bins=c(0,1,4))),right=FALSE)}
 \donttest{
 # These examples are excluded from testing to reduce package check time
 # Example uses unrealistically low values for nchain, iter, and burnin
