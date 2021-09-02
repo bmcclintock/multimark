@@ -4,7 +4,8 @@
 \name{tiger}
 \alias{tiger}
 \title{Tiger data}
-\format{These spatial capture-recapture data with a single mark type are summarized in a list of length 3 containing the following objects:
+\format{
+These spatial capture-recapture data with a single mark type are summarized in a list of length 3 containing the following objects:
 
 \code{Enc.Mat} is a 44 x (noccas*ntraps) matrix containing observed encounter histories for 44 tigers across \code{noccas=48} sampling occasions and \code{ntraps=120} traps.
 
@@ -12,7 +13,8 @@
 
 \code{studyArea} is a 3-column matrix containing the coordinates for the centroids of the contiguous grid of cells that define the study area and available habitat. Each row corresponds to a grid cell. The first 2 columns indicate the Cartesian x- and y-coordinate for the centroid of each grid cell, and the third column indicates whether the cell is available habitat (=1) or not (=0). The grid cells are 0.336 km^2 resolution. 
 
-These data were obtained from the R package \code{SPACECAP} and modified by projecting onto a regular rectangular grid consisting of square grid cells (as is required by the spatial capture-recapture models in \code{multimark}).}
+These data were obtained from the R package \code{SPACECAP} and modified by projecting onto a regular rectangular grid consisting of square grid cells (as is required by the spatial capture-recapture models in \code{multimark}).
+}
 \source{
 Gopalaswamy, A.M., Royle, J.A., Hines, J.E., Singh, P., Jathanna, D., Kumar, N. and Karanth, K.U. 2012. Program SPACECAP: software for estimating animal density using spatially explicit capture-recapture models. \emph{Methods in Ecology and Evolution} 3:1067-1072.
 

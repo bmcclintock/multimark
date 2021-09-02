@@ -1,3 +1,14 @@
+multimark 2.1.3 2021-09-01
+-----------------
+CHANGES
+
+* at the request of CRAN, removed implicit conversions in C code that triggered compilation warnings on macOS with -Wconversion -Wno-sign-conversion in CFLAGS
+
+BUG FIXES
+
+* MCMC algorithm for markClosedSCR and multimarkClosedSCR incorrectly calculated detection probabilities for the M - N members of the superpopulation whenever their latent activity centers were updated. This relatively minor bug should have little impact on MCMC results, but previous analyses using markClosedSCR or multimarkClosedSCR should be revisited to confirm
+
+
 multimark 2.1.2 2020-02-05
 -----------------
 CHANGES

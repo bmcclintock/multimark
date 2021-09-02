@@ -30,11 +30,6 @@
 *
 * To copy a matrix into another, use @ref matrix_copy.
 *
-* To multiply two matrices, use @ref matrix_multiply.
-*
-* To multiply a matrix by itself 'n' times (i.e raise the matrix to the nth power)
-* use @ref matrix_pow.
-*
 * To add or subtract two matrices, use @ref matrix_add or @ref matrix_subtract
 * respectively.
 *
@@ -68,7 +63,7 @@ int row_size;
 /** The number of columns in the matrix */
 int col_size;
 /** The individual entries in the matrix */
-float **matrix_entry;
+double **matrix_entry;
 };
 /**
 * Represents the @link _Matrix matrix structure@endlink which holds the matrix entries.
@@ -133,22 +128,6 @@ void matrix_copy(Matrix *matrix1, Matrix *matrix2);
 * @param matrix2 The second matrix for the multiplication
 * @return The location of a matrix which holds the result
 * of the multiplication
-*/
-Matrix *matrix_multiply(const Matrix *matrix1, const Matrix *matrix2);
-/**
-* Multiplies a matrix by itself 'n' times
-*
-* @param matrix The matrix which is to self multiplied 'n' times
-* @param index The number of times the matrix is to be multiplied to
-* itself
-* @return The location of the matrix which holds the results
-* of the multiplications
-*/
-Matrix *matrix_pow(Matrix *matrix, int index);
-/**
-* Free an entire matrix
-*
-* @param matrix The matrix to free.
 */
 void matrix_free(Matrix *matrix);
 /**

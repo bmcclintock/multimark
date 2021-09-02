@@ -335,12 +335,12 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
         centers[i] = centerstar;
         for(k=0; k<K; k++){
           dist2centers[k*supN+i] = dist2[k*ncells+centers[i]];
-          tmp = 1.0/(*dexp * sigma2_scrs) * dist2centers[k*supN+i];
+          temp = 1.0/(*dexp * sigma2_scrs) * dist2centers[k*supN+i];
           for(t=0; t<T; t++){
-            p[i*T*K+k*T+t]=invcloglog((cloglogp[k*T+t]-tmp)) * msk[k*T+t];
-            c[i*T*K+k*T+t]=invcloglog((cloglogc[k*T+t]-tmp)) * msk[k*T+t];   
-            //p[i*T*K+k*T+t]=exp(-tmp) * msk[k*T+t];
-            //c[i*T*K+k*T+t]=exp(-tmp) * msk[k*T+t]; 
+            p[i*T*K+k*T+t]=invcloglog((cloglogp[k*T+t]-temp)) * msk[k*T+t];
+            c[i*T*K+k*T+t]=invcloglog((cloglogc[k*T+t]-temp)) * msk[k*T+t];   
+            //p[i*T*K+k*T+t]=exp(-temp) * msk[k*T+t];
+            //c[i*T*K+k*T+t]=exp(-temp) * msk[k*T+t]; 
           }
         }
         accept[dimp+1+i]+=1;
