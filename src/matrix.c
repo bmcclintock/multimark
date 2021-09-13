@@ -79,10 +79,10 @@ Matrix *matrix_alloc(int row_size, int col_size)
   //Allocating memory for the new matrix structure
   new_matrix->row_size = row_size;
   new_matrix->col_size = col_size;
-  new_matrix->matrix_entry = malloc( new_matrix->row_size *sizeof(float *));
+  new_matrix->matrix_entry = malloc( new_matrix->row_size *sizeof(double *));
   for(j = 0 ; j < new_matrix->row_size ; j++)
   {
-    new_matrix->matrix_entry[j] = malloc( new_matrix->col_size*sizeof(float) );
+    new_matrix->matrix_entry[j] = malloc( new_matrix->col_size*sizeof(double) );
   }
   return new_matrix;
 }
@@ -97,91 +97,6 @@ void matrix_copy(Matrix *matrix1, Matrix *matrix2)
     {
       matrix2->matrix_entry[i][j] = matrix1->matrix_entry[i][j];
     }
-  }
-}
-
-Matrix *matrix_multiply(const Matrix *matrix1, const Matrix *matrix2)
-{
-  int i, j,k, sum;
-  if (matrix1->col_size != matrix2->row_size)
-  {
-    Rprintf("ERROR: The number columns of matrix1 != number of rows in matrix2!: please report to <brett.mcclintock@noaa.gov> \n");
-  }
-  Matrix *result = matrix_alloc( matrix1->row_size,matrix2->col_size);
-  for (i = 0; i < matrix1->row_size; i += 1)
-    {
-    for (k = 0; k < matrix2->col_size; k += 1)
-    {
-      sum = 0;
-      for (j = 0; j < matrix1->col_size; j += 1)
-      {
-        sum += matrix1->matrix_entry[i][j] * matrix2->matrix_entry[j][k];
-      }
-      result->matrix_entry[i][k] = sum;
-    }
-  }
-  return result;
-}
-
-Matrix * matrix_pow(Matrix *matrix, int index)
-{
-  if(index == 1)
-  {
-    Matrix *result = matrix_alloc (matrix->row_size, matrix->col_size);
-    matrix_copy(matrix, result);
-    return result;
-  }
-  else
-  {
-    int i, j,k,l,sum,count;
-    Matrix *temp = matrix_alloc (matrix->row_size, matrix->col_size); //Allocating space for a temporal matrix
-    Matrix *result = matrix_alloc (matrix->row_size, matrix->col_size); //Allocating space for the result matrix
-    matrix_copy(matrix, temp);
-    count = index/2 -1;
-    if (count < 1)
-    {
-      matrix_copy(matrix, result);
-    }
-    else
-    {
-      for (l = 0; l < count; l += 1)
-      {
-        for (i = 0; i < matrix->row_size; i += 1)
-        {
-          for (k = 0; k < matrix->col_size; k += 1)
-          {
-            sum = 0;
-            for (j = 0; j < matrix->col_size; j += 1)
-            {
-              sum += (temp->matrix_entry[i][j] * matrix->matrix_entry[j][k]);
-            }
-            result->matrix_entry[i][k] = sum;
-          }
-        }
-        /* Copying the result matrix into the temp matrix for further
-        * multiplication */
-        matrix_copy(result, temp);
-      }
-    }
-    /* Freeing the temp matrix */
-    matrix_free(temp);
-    if (index%2 == 0)
-    {
-      Matrix *result_final = matrix_multiply(result, result);
-      /* Freeing the result Matrix */
-      matrix_free(result);
-      return result_final;
-    }
-    else
-    {
-      Matrix *temp = matrix_multiply(matrix, result);
-      Matrix *result_final = matrix_multiply(temp, result);
-      /* Freeing the temp matrix */
-      matrix_free(temp);
-      /* Freeing the result Matrix */
-      matrix_free(result);
-      return result_final;
-    }//End of else statement
   }
 }
 
@@ -200,7 +115,7 @@ void matrix_free( Matrix *matrix)
 void row_divide(Matrix *matrix, int pivot)
 {
   int j;
-  float divisor = matrix->matrix_entry[pivot][pivot],
+  double divisor = matrix->matrix_entry[pivot][pivot],
   result;
   for(j = pivot; j < matrix->col_size; j++)
   {
@@ -213,7 +128,7 @@ void row_divide(Matrix *matrix, int pivot)
 void row_operation(Matrix *multiplier_matrix,Matrix *matrix, int pivot, int row_index)
 {
   int j;
-  float multiplier = (matrix->matrix_entry[row_index][pivot] / matrix->matrix_entry[pivot][pivot]);
+  double multiplier = (matrix->matrix_entry[row_index][pivot] / matrix->matrix_entry[pivot][pivot]);
   //Loop which checks if matrix is provided to store the multiplier
   if(multiplier_matrix != NULL)
   {
@@ -228,7 +143,7 @@ void row_operation(Matrix *multiplier_matrix,Matrix *matrix, int pivot, int row_
 void matrix_row_reduce( Matrix *matrix, int zero_control )
 {
   int pivot, row_index;
-  //float multiplier;
+  //double multiplier;
   for( pivot = 0; pivot < matrix->row_size ; pivot++)
   {
     error_zeros(matrix, zero_control); //Function checks if there are too many zeros in a single row
@@ -256,7 +171,7 @@ void matrix_row_reduce( Matrix *matrix, int zero_control )
 void LU_decompose(Matrix *upper_triangular, Matrix *lower_triangular)
 {
   int pivot, row_index;
-  //float multiplier;
+  //double multiplier;
   for( pivot = 0; pivot < upper_triangular->row_size ; pivot++)
   {
     error_zeros(upper_triangular, upper_triangular->col_size); //Function checks if there are too many zeros in a single row

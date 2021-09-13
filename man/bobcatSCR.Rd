@@ -4,7 +4,8 @@
 \name{bobcatSCR}
 \alias{bobcatSCR}
 \title{Bobcat spatial capture-recapture data}
-\format{These spatial capture-recapture data with multiple mark types are summarized in a list of length 3 containing the following objects:
+\format{
+These spatial capture-recapture data with multiple mark types are summarized in a list of length 3 containing the following objects:
 
 \code{Enc.Mat} is a 42 x (noccas*ntraps) matrix containing observed encounter histories for 42 bobcats across \code{noccas=187} sampling occasions and \code{ntraps=30} traps. The first 187 columns correspond to trap 1, the second 187 columns corresopond to trap 2, etc.
 
@@ -18,7 +19,8 @@ Both-sided encounters were never observed in this dataset, hence the most approp
 
 The first 15 rows of \code{bobcatSCR$Enc.Mat} correspond to individuals for which both the left and right sides were known because they were physically captured for telemetry deployments prior to sampling surveys. The encounter histories for these 15 individuals are therefore known with certainty and should be specified as such using the \code{known} argument in \code{\link{processdataSCR}} and/or \code{\link{multimarkClosedSCR}} (see example below).
 
-These data were obtained from the R package \code{SPIM} (Augustine et al. 2017) and modified by projecting onto a regular rectangular grid consisting of square grid cells (as is required by the spatial capture-recapture models in \code{multimark}).}
+These data were obtained from the R package \code{SPIM} (Augustine et al. 2017) and modified by projecting onto a regular rectangular grid consisting of square grid cells (as is required by the spatial capture-recapture models in \code{multimark}).
+}
 \source{
 Augustine, B., Royle, J.A., Kelly, M., Satter, C., Alonso, R., Boydston, E. and Crooks, K. 2017. Spatial capture-recapture with partial identity: an application to camera traps. bioRxiv doi: https://doi.org/10.1101/056804
 }

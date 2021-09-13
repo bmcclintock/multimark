@@ -289,11 +289,12 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
       tmp = (int) floor(runif(0.0,numnn[centers[i]]));
       centerstar = NNvect[cumnumnn[centers[i]]+tmp];
       //Rprintf("g %d i %d tmp %d centerstar %d center %d numnn[center] %d cumnumnn[center] %d \n",g,i,tmp,centerstar,centers[i],numnn[centers[i]],cumnumnn[centers[i]]);
-      if(qs[i]){
-        for(k=0; k<K; k++){
+      
+      for(k=0; k<K; k++){
+        diststar[k] = dist2[k*ncells+centerstar];
+        temp = 1.0/(*dexp * sigma2_scrs) * diststar[k];
+        if(qs[i]){
           firstcap = C[Hs[i]*K+k];
-          diststar[k] = dist2[k*ncells+centerstar];
-          temp = 1.0/(*dexp * sigma2_scrs) * diststar[k];
           for(t=0; t<firstcap; t++) {
             propp[k*T+t] = invcloglog(cloglogp[k*T+t]-temp) * msk[k*T+t];
             propc[k*T+t] = invcloglog(cloglogc[k*T+t]-temp) * msk[k*T+t];
@@ -318,29 +319,23 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
             //  tmpl=0;
             //}
           }
-        }
-        //Rprintf("g %d i %d nl %f ol %f nprop %f oprop %f R %f \n",g,i,nl,ol,-log(numnn[centers[i]]),-log(numnn[centerstar]),exp(nl-log(numnn[centers[i]])-ol+log(numnn[centerstar])));
-        if(runif(0.0,1.0)<exp(nl-log(numnn[centerstar])-ol+log(numnn[centers[i]]))){
-          centers[i] = centerstar;
-          for(k=0; k<K; k++){
-            dist2centers[k*supN+i] = diststar[k];
-            for(t=0; t<T; t++){
-              p[i*T*K+k*T+t]=propp[k*T+t];
-              c[i*T*K+k*T+t]=propc[k*T+t];              
-            }
+        } else {
+          for(t=0; t<T; t++){
+            propp[k*T+t]=invcloglog((cloglogp[k*T+t]-temp)) * msk[k*T+t];
+            propc[k*T+t]=invcloglog((cloglogc[k*T+t]-temp)) * msk[k*T+t];   
+            //p[i*T*K+k*T+t]=exp(-temp) * msk[k*T+t];
+            //c[i*T*K+k*T+t]=exp(-temp) * msk[k*T+t]; 
           }
-          accept[dimp+1+i]+=1;
         }
-      } else if(runif(0.0,1.0)<exp(nl-log(numnn[centers[i]])-ol+log(numnn[centerstar]))){
+      }
+      //Rprintf("g %d i %d nl %f ol %f nprop %f oprop %f R %f \n",g,i,nl,ol,-log(numnn[centers[i]]),-log(numnn[centerstar]),exp(nl-log(numnn[centers[i]])-ol+log(numnn[centerstar])));
+      if(runif(0.0,1.0)<exp(nl-log(numnn[centerstar])-ol+log(numnn[centers[i]]))){
         centers[i] = centerstar;
         for(k=0; k<K; k++){
-          dist2centers[k*supN+i] = dist2[k*ncells+centers[i]];
-          tmp = 1.0/(*dexp * sigma2_scrs) * dist2centers[k*supN+i];
+          dist2centers[k*supN+i] = diststar[k];
           for(t=0; t<T; t++){
-            p[i*T*K+k*T+t]=invcloglog((cloglogp[k*T+t]-tmp)) * msk[k*T+t];
-            c[i*T*K+k*T+t]=invcloglog((cloglogc[k*T+t]-tmp)) * msk[k*T+t];   
-            //p[i*T*K+k*T+t]=exp(-tmp) * msk[k*T+t];
-            //c[i*T*K+k*T+t]=exp(-tmp) * msk[k*T+t]; 
+            p[i*T*K+k*T+t]=propp[k*T+t];
+            c[i*T*K+k*T+t]=propc[k*T+t];              
           }
         }
         accept[dimp+1+i]+=1;
