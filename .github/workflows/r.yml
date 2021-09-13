@@ -12,7 +12,7 @@ on:
       
 defaults:
   run:
-    working-directory: multimark
+    working-directory: ./multimark
 
 name: R-CMD-check
 
