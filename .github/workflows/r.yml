@@ -9,6 +9,10 @@ on:
     branches:
       - master
       - develop
+      
+defaults:
+  run:
+    working-directory: multimark
 
 name: R-CMD-check
 
@@ -62,14 +66,12 @@ jobs:
           do
             eval sudo $cmd
           done < <(Rscript -e 'writeLines(remotes::system_requirements("ubuntu", "20.04"))')
-        working-directory: ./multimark
 
       - name: Install dependencies
         run: |
           remotes::install_deps(dependencies = TRUE)
           remotes::install_cran("devtools")
           remotes::install_cran("rcmdcheck")
-        working-directory: ./multimark
         shell: Rscript {0}
 
       - name: Check
@@ -78,7 +80,6 @@ jobs:
         run: |
           options(crayon.enabled = TRUE)
           rcmdcheck::rcmdcheck(args = c("--no-manual", "--as-cran"), error_on = "warning", check_dir = "check")
-        working-directory: ./multimark
         shell: Rscript {0}
 
       - name: Upload check results
