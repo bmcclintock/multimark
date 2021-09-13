@@ -6,13 +6,13 @@ on:
       - master
       - develop
     paths:
-      - 'multimark'  # << the subdirectory where your packages live goes here
+      - 'multimark/**'  # << the subdirectory where your packages live goes here
   pull_request:
     branches:
       - master
       - develop
     paths:
-      - 'multimark'  # << the subdirectory where your packages live goes here
+      - 'multimark/**'  # << the subdirectory where your packages live goes here
 
 name: R-CMD-check
 
