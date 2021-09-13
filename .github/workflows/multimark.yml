@@ -1,166 +1,63 @@
-# For help debugging build failures open an issue on the RStudio community with the 'github-actions' tag.
-# https://community.rstudio.com/new-topic?category=Package%20development&tags=github-actions
+# Workflow derived from https://github.com/r-lib/actions/tree/master/examples
+# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
 on:
   push:
-    branches:
-      - master
-      - develop
-    paths:
-      - 'multimark/'  # << the subdirectory where your packages live goes here
+    branches: [master, develop]
   pull_request:
-    branches:
-      - master
-      - develop
-    paths:
-      - 'multimark/'  # << the subdirectory where your packages live goes here
+    branches: [master, develop]
 
 name: R-CMD-check
 
 jobs:
   R-CMD-check:
+    runs-on: ${{ matrix.config.os }}
+
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+
     strategy:
       fail-fast: false
       matrix:
-        pkgs:  # << list the individual directories where each package lives
-          - {label: multimark, dir: multimark}
         config:
           - {os: macOS-latest,   r: 'release'}
           - {os: windows-latest, r: 'release'}
           - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
           - {os: ubuntu-latest,   r: 'release'}
 
-    runs-on: ${{ matrix.config.os }}
-    defaults:
-      run:
-        working-directory: ${{ matrix.pkgs.dir }}
-
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
-      RSPM: ${{ matrix.config.rspm }}
-
-    name: ${{ matrix.config.os }} | (R-${{ matrix.config.r }}) | ${{ matrix.pkgs.label }}
+      R_KEEP_PKG_SOURCE: yes
 
     steps:
       - uses: actions/checkout@v2
 
-      - uses: dorny/paths-filter@v2.10.1
-        id: filter
-        with:
-          filters: |
-            path:
-              - ${{ matrix.pkgs.dir }}/**/*
-      - uses: r-lib/actions/setup-r@v1
-        if: steps.filter.outputs.path == 'true'
-        with:
-            r-version: ${{ matrix.config.r }}
-
       - uses: r-lib/actions/setup-pandoc@v1
-        if: steps.filter.outputs.path == 'true'
 
-      - name: Ensure `.github' directory exists
-        if: steps.filter.outputs.path == 'true'
-        run: mkdir -p .github
-
-      - name: Check for renv breadcrumbs
-        if: steps.filter.outputs.path == 'true'
-        id: check_renv
-        uses: andstor/file-existence-action@v1
+      - uses: r-lib/actions/setup-r@v1
         with:
-          files: "${{ matrix.pkgs.dir }}/renv.lock, ${{ matrix.pkgs.dir }}/renv/activate.R"
+          r-version: ${{ matrix.config.r }}
+          http-user-agent: ${{ matrix.config.http-user-agent }}
+          use-public-rspm: true
 
-      - name: Install remotes and rcmdcheck
-        if: steps.filter.outputs.path == 'true'
-        run: install.packages(c('remotes', 'rcmdcheck'))
-        shell: Rscript {0}
-
-      - name: Install system dependencies
-        if: |
-          steps.filter.outputs.path == 'true' &&
-          runner.os == 'Linux'
-        run: |
-          while read -r cmd
-          do
-            eval sudo $cmd
-          done < <(Rscript -e 'writeLines(remotes::system_requirements("ubuntu", "20.04"))')
-      - name: Query dependencies (no renv)
-        if: |
-          steps.filter.outputs.path == 'true' &&
-          steps.check_renv.outputs.files_exists == 'false'
-        run: |
-          saveRDS(remotes::dev_package_deps(dependencies = TRUE), ".github/depends.Rds", version = 2)
-          writeLines(sprintf("R-%i.%i", getRversion()$major, getRversion()$minor), ".github/R-version")
-        shell: Rscript {0}
-
-      - name: Determine renv package directory (renv) [Linux]
-        if: |
-          steps.filter.outputs.path == 'true' &&
-          steps.check_renv.outputs.files_exists == 'true' &&
-          startsWith(runner.os, 'Linux')
-        run: |
-          echo "renv_dir=~/.local/share/renv" >> $GITHUB_ENV
-      - name: Determine renv package directory (renv) [macOS]
-        if: |
-          steps.filter.outputs.path == 'true' &&
-          steps.check_renv.outputs.files_exists == 'true' &&
-          startsWith(runner.os, 'macOS')
-        run: |
-          echo "renv_dir=~/Library/Application Support/renv" >> $GITHUB_ENV
-      - name: Determine renv package directory (renv) [Windows]
-        if: |
-          steps.filter.outputs.path == 'true' &&
-          steps.check_renv.outputs.files_exists == 'true' &&
-          startsWith(runner.os, 'Windows')
-        run: |
-          echo "renv_dir=~\AppData\Local\renv" >> $GITHUB_ENV
-      - name: Cache packages (renv)
-        if: |
-          steps.filter.outputs.path == 'true' &&
-          steps.check_renv.outputs.files_exists == 'true'
-        uses: actions/cache@v2
+      - uses: r-lib/actions/setup-r-dependencies@v1
         with:
-          path: ${{ env.renv_dir }}
-          key: ${{ runner.os }}-renv-${{ matrix.pkgs.label }}-${{ hashFiles('**/renv.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-renv-${{ matrix.pkgs.label }}-
-            ${{ runner.os }}-renv-
-      - name: Restore R package cache (no renv)
-        if: |
-          steps.filter.outputs.path == 'true' &&
-          steps.check_renv.outputs.files_exists == 'false'
-        uses: actions/cache@v2
-        with:
-          path: ${{ env.R_LIBS_USER }}
-          key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-${{ matrix.pkgs.label }}-1-${{ hashFiles('.github/depends.Rds') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-${{ matrix.pkgs.label }}-1-
-            ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-
-      - name: Restore R packages (renv)
-        if: |
-          steps.filter.outputs.path == 'true' &&
-          steps.check_renv.outputs.files_exists == 'true'
-        shell: Rscript {0}
-        run: |
-          if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
-          renv::restore()
-      - name: Install R package dependencies (no renv)
-        if: |
-          steps.filter.outputs.path == 'true' &&
-          steps.check_renv.outputs.files_exists == 'false'
-        run: |
-          remotes::install_deps(dependencies = TRUE)
-        shell: Rscript {0}
+          extra-packages: rcmdcheck
 
       - name: Check
-        if: steps.filter.outputs.path == 'true'
+        env:
+          _R_CHECK_CRAN_INCOMING_: false
         run: |
           options(crayon.enabled = TRUE)
-          rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")
+          rcmdcheck::rcmdcheck(args = c("--no-manual", "--as-cran"), error_on = "warning", check_dir = "check")
         shell: Rscript {0}
 
+      - name: Show testthat output
+        if: always()
+        run: find check -name 'testthat.Rout*' -exec cat '{}' \; || true
+        shell: bash
+
       - name: Upload check results
-        if: steps.filter.outputs.path == 'true' && failure()
+        if: failure()
         uses: actions/upload-artifact@main
         with:
-          name: ${{ runner.os }}-r${{ matrix.config.r }}-${{ matrix.pkgs.label }}-results
+          name: ${{ runner.os }}-r${{ matrix.config.r }}-results
           path: check

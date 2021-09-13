@@ -1,2 +1,5 @@
+^tests/testthat/_snaps$
+^tests/testthat/Rplots.pdf
 ^\.github$
-^\multimark\.github
+^multimark_projects$
+multimark.Rproj
