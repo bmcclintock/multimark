@@ -1,0 +1,6 @@
+^tests/testthat/_snaps$
+^tests/testthat/Rplots.pdf
+^\.github$
+^multimark_projects$
+^.*\.Rproj$
+^\.Rproj\.user$
