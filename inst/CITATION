@@ -8,14 +8,14 @@ citEntry(entry="Article",
   author = personList(as.person("B. T. McClintock")),
   year     = {2015},
   journal = "Ecology and Evolution",
-  volume     = {},
-  number     = {},
-  pages     = {},
-  url = "http://onlinelibrary.wiley.com/doi/10.1002/ece3.1676/full",
+  volume     = {5},
+  number     = {21},
+  pages     = {"4920-4931"},
+  url = "https://doi.org/10.1002/ece3.1676",
   textVersion =
   paste("McClintock, B. T. (2015)",
   "multimark: an R package for analysis of capture-recapture data consisting of multiple ``noninvasive'' marks.",
-  "Ecology and Evolution DOI: 10.1002/ece3.1676"))
+  "Ecology and Evolution 5(21):4920-4931."))
   
 citEntry(entry="Manual",
          title = "multimark: capture-mark-recapture analysis using multiple non-invasive marks",
