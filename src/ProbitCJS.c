@@ -1,5 +1,6 @@
 #include "ranlib.h"
 #include "matrix.h"
+#include "func.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -13,6 +14,341 @@
   #define min( a, b ) ( ((a) < (b)) ? (a) : (b) )
 #endif
 
+/* FUNCTION DEFINITIONS */
+
+double INVPROBIT(double x, double mean, double sd, int lower_tail, int log_p)
+{
+  double invprobit = fmin(1.-tol,fmax(tol,pnorm(x,mean,sd,lower_tail,log_p)));
+  return(invprobit);
+}
+
+void GETTILDE(double *up, double *uphi, double *probitp, double *probitphi, double *zps, double *zphis, int *qs, int T, int supN, int *C, int *Hs, int *Allhists)
+{  
+  int i,t;
+  double muzp,muzphi;
+  int indhist;
+  double trunmuzp,trunmuzphi;
+  
+  for(i=0; i<supN; i++){
+    for(t=0; t<min(C[Hs[i]]-1,T); t++){
+      muzp=probitp[t]+zps[i];
+      muzphi=probitphi[t]+zphis[i];
+      up[i*T+t] = rnorm(muzp,1.0);
+      uphi[i*T+t] = rnorm(muzphi,1.0);   
+    }
+    for(t=(C[Hs[i]]-1); t<T; t++){
+      indhist=Allhists[Hs[i] * (T+1) + t +1];
+      muzp=probitp[(C[Hs[i]]-1)*T+t]+zps[i];
+      muzphi=probitphi[(C[Hs[i]]-1)*T+t]+zphis[i];
+      trunmuzp=INVPROBIT(0.0,muzp,1.0,1,0); 
+      trunmuzphi=INVPROBIT(0.0,muzphi,1.0,1,0);  
+      up[i*T+t] = ( (indhist>0) ? qnorm(runif(trunmuzp,1.0),muzp,1.0,1,0) :  qnorm(runif(0.0,trunmuzp),muzp,1.0,1,0) );
+      uphi[i*T+t] = ( (qs[i*(T+1)+t+1]>0) ? qnorm(runif(trunmuzphi,1.0),muzphi,1.0,1,0) :  qnorm(runif(0.0,trunmuzphi),muzphi,1.0,1,0) );
+    }
+  }
+}  
+
+void mvnorm(int dim, double *mean, double *covar, double *answer)
+{
+  
+  long i,j,p=dim;
+  float mmean[p],ccovar[p * p],param[(p *(p+3)/2+1)],temp[p],work[p];
+  
+  for(i=0; i< p; i++) mmean[i] = (float) mean[i];
+  for(i=0; i< p*p; i++) ccovar[i] = (float) covar[i];
+  
+  setgmn(mmean,ccovar,p,param);
+  genmn(param,work,temp);
+  for(j=0; j<p; j++) *(answer+j) = *(work+j);
+}
+
+void BETAUPDATE(double *beta, double *u, double *z, double *DM, int *qs, int dim, int T, int supN, int *C, int *Hs, double *beta0, double *prec0, int *cohortseq, int pind)
+{
+  int i,j,k,t;
+  double vbeta[dim*dim];
+  Matrix *invvbeta = matrix_alloc(dim,dim); 
+  double tempmbeta[dim];
+  double mbeta[dim];
+  
+  for(i=0; i<dim; i++){
+    for(j=0; j<dim; j++){
+      invvbeta->matrix_entry[i][j] = prec0[i*dim+j];
+      for(k=0; k<supN; k++){
+        for(t=(C[Hs[k]]-1); t<T; t++){
+          invvbeta->matrix_entry[i][j] += DM[(cohortseq[C[Hs[k]]-1]+t-(C[Hs[k]]-1))*dim+i] * DM[(cohortseq[C[Hs[k]]-1]+t-(C[Hs[k]]-1))*dim+j] * qs[k*(T+1)+t+pind];
+        }
+      }
+    }
+  } 
+  matrix_invert(invvbeta);
+  for(i=0; i<dim; i++){
+    for(j=0; j<dim; j++){
+      vbeta[i*dim+j]= invvbeta->matrix_entry[i][j];
+    }
+  }
+  for(i=0; i<dim; i++){
+    tempmbeta[i]=0.;
+    for(j=0; j<dim; j++){
+      tempmbeta[i] = prec0[i*dim+j] * beta0[j];
+    }
+    for(k=0; k<supN; k++){
+      for(t=(C[Hs[k]]-1); t<T; t++){
+        tempmbeta[i] += DM[(cohortseq[C[Hs[k]]-1]+t-(C[Hs[k]]-1))*dim+i] * (u[k*T+t]-z[k])  * qs[k*(T+1)+t+pind];
+      }
+    }
+  }
+  for(i=0; i<dim; i++){
+    mbeta[i]=0.;
+    for(j=0; j<dim; j++){
+      mbeta[i]+=vbeta[i*dim+j]*tempmbeta[j];
+    }
+  }
+  mvnorm(dim, mbeta, vbeta, beta); 
+}
+
+void GETZ(int i, int *q, int T, double *probitp, double *probitphi, double *zp, double *zphi, int *C, int *L, int Hind, double *propz)
+{
+  int t;
+  int firstcap, lastcap;
+  double p,phi,num,probz;
+  
+  propz[i]=0.;
+  firstcap = C[Hind]-1;
+  lastcap = L[Hind]-1;
+  for(t=0; t<firstcap; t++){
+    q[i*(T+1)+t] = 0;
+  }
+  if(Hind){
+    q[i*(T+1)+firstcap] = 1;
+    if(firstcap<T){
+      for(t=firstcap; t<lastcap+1; t++){
+        q[i*(T+1)+t] = 1;
+      }
+      for(t=lastcap+1; t<T+1; t++){
+        p = INVPROBIT((probitp[firstcap*T+t-1] + zp[i]),0.0,1.0,1,0);
+        phi = INVPROBIT((probitphi[firstcap*T+t-1] + zphi[i]),0.0,1.0,1,0); 
+        num = phi * q[i*(T+1)+t-1] * (1.-p);
+        if(t<T) num *= (1.-INVPROBIT((probitphi[firstcap*T+t] + zphi[i]),0.0,1.0,1,0));
+        probz = num / (num + (1.-phi*q[i*(T+1)+t-1]));
+        if(t<T){
+          if(q[i*(T+1)+t+1]) probz = 1.;
+        }
+        q[i*(T+1)+t] = (int) rbinom(1.0,probz);
+        propz[i] += dbinom((double) q[i*(T+1)+t],1.0,probz,1);
+      }
+    }
+  }
+}
+
+double FREQSUMCJS(int *x, int *Allhists, int T, int J, int ind, int *C)
+{
+  int j, t;
+  int freqsum=0;
+  for(j=0; j<J; j++){
+    for(t=(C[j]-1); t<T; t++){
+      freqsum += (Allhists[j*(T+1)+t+1]==ind)*x[j];
+    }
+  }
+  return(freqsum); 
+}
+
+/* Define function GETDELTA for updating delta by drawing from the full conditional posterior distribution */
+void GETDELTACJS(double *deltavect, int *xs, int *Allhists, int T, int J, int dim, double *a0delta, int *C) 
+{
+  int k, kk;
+  double nu[dim];
+  
+  for (kk=0; kk < dim; kk++)  {
+    nu[kk]=FREQSUMCJS(xs,Allhists,T,J,kk+1,C);
+  }
+  nu[dim-1]+=FREQSUMCJS(xs,Allhists,T,J,dim+1,C);
+  
+  double xx[dim], sumx=0.0;
+  for (k = 0; k < dim; k++) {
+    xx[k]=rgamma((nu[k]+a0delta[k]),1.0);
+    sumx += xx[k];
+  }
+  
+  for (k = 0; k < dim; k++) {
+    deltavect[k]=xx[k]/sumx;
+  }
+}
+
+double LIKEProbitCJS(int *q, double *probitp, double *probitphi, double *zp, double *zphi, double delta_1, double delta_2, double alpha, int *Allhists, int *Hs, int T, int supN, int *C)
+{
+  int i,t;
+  double logdens=0.;
+  int indhist;
+  int firstcap;
+  double p, phi;
+  for(i=0; i<supN; i++)  {
+    firstcap = C[Hs[i]]-1;
+    for(t=firstcap; t<T; t++){
+      if(q[i*(T+1)+t]){
+        indhist = Allhists[Hs[i] * (T+1) + t + 1];
+        p = INVPROBIT((probitp[firstcap*T+t] + zp[i]),0.0,1.0,1,0);
+        phi = INVPROBIT((probitphi[firstcap*T+t] + zphi[i]),0.0,1.0,1,0);
+        logdens += log( (indhist==0) * ((1.-p) * phi * q[i*(T+1)+t+1] + (1.-phi)*(1.-q[i*(T+1)+t+1]))
+                          + (indhist==1) * p * delta_1 * phi
+                          + (indhist==2) * p * delta_2 * phi
+                          + (indhist==3) * p * (1.-delta_1-delta_2) * (1.-alpha) * phi
+                          + (indhist==4) * p * (1.-delta_1-delta_2) * alpha * phi );
+      }
+    }     
+  }
+  return(logdens); 
+}
+
+double GETprodhProbitCJS(int *Allhists, int *q, double *probitp, double *probitphi, double *zp, double *zphi, int *C, double delta_1, double delta_2, double alpha, int j,int T, int i, double propz)
+{
+  int t;
+  double logdens=0.0, dens;
+  int indhist;
+  int firstcap = C[j]-1;
+  double p, phi;
+  
+  for(t=firstcap; t<T; t++){
+    if(q[i*(T+1)+t]){
+      indhist = Allhists[j * (T+1) + t + 1];
+      p = INVPROBIT((probitp[firstcap*T+t] + zp[i]),0.0,1.0,1,0);
+      phi = INVPROBIT((probitphi[firstcap*T+t] + zphi[i]),0.0,1.0,1,0);
+      logdens += log( (indhist==0) * ((1.-p) * phi * q[i*(T+1)+t+1] + (1.-phi)*(1.-q[i*(T+1)+t+1]))
+                        + (indhist==1) * p * delta_1 * phi
+                        + (indhist==2) * p * delta_2 * phi
+                        + (indhist==3) * p * (1.-delta_1-delta_2) * (1.-alpha) *phi
+                        + (indhist==4) * p * (1.-delta_1-delta_2) * alpha *phi );
+    }
+  }  
+  dens = exp(propz + logdens);
+  if(dens<tol) dens = tol;
+  return(dens);
+}
+
+void PROPFREQProbitCJS(int icol,int c_k,int *Hnew, int *indBasis, int J, int *xnew, int supN, int T, int *qs, double *probitp, double *probitphi, double *zp, double *zphi, int *C, int *L, double delta_1, double delta_2, double alpha, int *Allhists, double *nprop, double *oprop, double *propz)
+{  
+  int remove_xi[3];
+  int add_xi[3];
+  int j,i,k,t;
+  int absc_k=abs(c_k);
+  int remove[absc_k], add[absc_k];
+  double prodz[supN], prodh[supN], temppropz[supN];
+  double prodzsum, prodhsum;  
+  double temp = runif(0.0,1.0);
+  int ztemp[(T+1)*supN];
+  if(c_k > 0){
+    remove_xi[0]=1;
+    remove_xi[1]=1;
+    remove_xi[2]=0;
+    add_xi[0]=0;
+    add_xi[1]=0;
+    add_xi[2]=1;
+    if(xnew[0]<(c_k)) temp = 0.0;
+  } else if(c_k < 0){
+    add_xi[0]=1;
+    add_xi[1]=1;
+    add_xi[2]=0;
+    remove_xi[0]=0;
+    remove_xi[1]=0;
+    remove_xi[2]=1;
+    if(xnew[0]<(-2*c_k)) temp = 0.0;
+  }
+  int count=0;
+  if(temp<0.5) {
+    goto S10;
+  } else {
+    goto S20;
+  }
+  S10:
+    for(j=0; j<3; j++){
+      prodzsum=0.0;
+      prodhsum=0.0;
+      if(remove_xi[j]){
+        for(i=0; i<supN; i++) {
+          prodz[i] = -1.0;
+          prodh[i] = -1.0;
+          temppropz[i]=propz[i];
+          if(Hnew[i]==indBasis[icol*3+j]){
+            prodz[i] =  1. - GETprodhProbitCJS(Allhists,qs,probitp,probitphi,zp,zphi,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i,propz[i])*((C[indBasis[icol*3+j]]-1)<T);
+            prodzsum+=prodz[i];
+          } else if(!Hnew[i]){
+            for(t=0; t<(T+1); t++){
+              ztemp[i*(T+1)+t] = 0;
+            }
+            GETZ(i,ztemp,T,probitp,probitphi,zp,zphi,C,L,indBasis[icol*3+j],temppropz);
+            prodh[i] = GETprodhProbitCJS(Allhists,ztemp,probitp,probitphi,zp,zphi,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i,temppropz[i]);
+            prodhsum+=prodh[i];
+          }          
+        }
+        ProbSampleNoReplace(supN, prodz, absc_k, remove); 
+        for(k=0; k<absc_k; k++){
+          Hnew[remove[k]]=0;
+          prodh[remove[k]] = 1. - prodz[remove[k]]*((C[indBasis[icol*3+j]]-1)<T);
+          for(t=0; t<T+1; t++){
+            qs[remove[k]*(T+1)+t] = 0;
+          }
+          prodhsum+=prodh[remove[k]];    
+        }
+        for(k=0; k<absc_k; k++){
+          nprop[count] = log(prodz[remove[k]])-log(prodzsum);
+          oprop[count] = log(prodh[remove[k]])-log(prodhsum);// + propz[remove[k]];
+          propz[remove[k]] = 0.;
+          prodzsum -=  prodz[remove[k]];
+          prodhsum -=  prodh[remove[k]];
+          count+=1;
+        }
+      }
+    }
+    if(temp<0.5) goto S20;
+    else goto S30;
+    S20:
+      for(j=0; j<3; j++){
+        prodzsum=0.0;
+        prodhsum=0.0;
+        if(add_xi[j]){
+          for(i=0; i<supN; i++) {
+            prodz[i] = -1.0;
+            prodh[i] = -1.0;
+            temppropz[i]=propz[i];
+            if(!Hnew[i]){
+              for(t=0; t<(T+1); t++){
+                ztemp[i*(T+1)+t] = 0;
+              }
+              GETZ(i,ztemp,T,probitp,probitphi,zp,zphi,C,L,indBasis[icol*3+j],temppropz);
+              prodh[i] = GETprodhProbitCJS(Allhists,ztemp,probitp,probitphi,zp,zphi,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i,temppropz[i]);
+              prodhsum+=prodh[i];
+            } else if(Hnew[i]==indBasis[icol*3+j]){
+              prodz[i] = 1. - GETprodhProbitCJS(Allhists,qs,probitp,probitphi,zp,zphi,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i,propz[i])*((C[indBasis[icol*3+j]]-1)<T);
+              prodzsum+=prodz[i];
+            }
+          }
+          ProbSampleNoReplace(supN, prodh, absc_k, add);
+          for(k=0; k<absc_k; k++){
+            Hnew[add[k]]=indBasis[icol*3+j];
+            prodz[add[k]] = 1. - prodh[add[k]]*((C[indBasis[icol*3+j]]-1)<T);
+            for(t=0; t<T+1; t++){
+              qs[add[k]*(T+1)+t] = ztemp[add[k]*(T+1)+t];
+            }
+            propz[add[k]] = temppropz[add[k]];
+            prodzsum+=prodz[add[k]];
+          }
+          for(k=0; k<absc_k; k++){
+            nprop[count] = log(prodh[add[k]])-log(prodhsum);// + propz[add[k]];  
+            oprop[count] = log(prodz[add[k]])-log(prodzsum); 
+            prodzsum -=  prodz[add[k]];
+            prodhsum -=  prodh[add[k]];
+            count+=1;
+          }
+        }
+      }
+      if(temp>=0.5) goto S10;
+      else goto S30;
+      S30:
+        xnew[indBasis[icol*3]]-=c_k;
+      xnew[indBasis[icol*3+1]]-=c_k;
+      xnew[indBasis[icol*3+2]]+=c_k;  
+      xnew[0]+=c_k;  
+}
+
 // Define function ProbitCJSC to draw samples from the posterior distribution
 
 void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, double *phibeta0, double *phiprec0, double *phibeta, double *zp, double *sigma2_zp, double *zphi, double *sigma2_zphi, double *delta_1, double *delta_2, double *alpha, int *x, double *psi, int *H, int *q,
@@ -24,18 +360,6 @@ void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, doub
 {
   
   GetRNGstate(); 
-
-  /* Declare functions */
-  double LIKEProbitCJS();
-  double FREQSUMCJS();
-  double INVPROBIT();
-  int GETCK();
-  int sample();
-  void BETAUPDATE();
-  void GETZ();
-  void GETTILDE();
-  void PROPFREQProbitCJS();
-  void GETDELTACJS();
 
   int T = *noccas-1;
   double Ttmp = (double) T;
@@ -471,349 +795,3 @@ void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, doub
   PutRNGstate(); 
 }     
 /* End function MCMCloop */
-
-
-
-/* FUNCTION DEFINITIONS */
-
-double INVPROBIT(double x, double mean, double sd, int lower_tail, int log_p)
-{
-  double invprobit = fmin(1.-tol,fmax(tol,pnorm(x,mean,sd,lower_tail,log_p)));
-  return(invprobit);
-}
-
-void GETTILDE(double *up, double *uphi, double *probitp, double *probitphi, double *zps, double *zphis, int *qs, int T, int supN, int *C, int *Hs, int *Allhists)
-{  
-  int i,t;
-  double muzp,muzphi;
-  int indhist;
-  double trunmuzp,trunmuzphi;
-  
-  for(i=0; i<supN; i++){
-    for(t=0; t<min(C[Hs[i]]-1,T); t++){
-      muzp=probitp[t]+zps[i];
-      muzphi=probitphi[t]+zphis[i];
-      up[i*T+t] = rnorm(muzp,1.0);
-      uphi[i*T+t] = rnorm(muzphi,1.0);   
-    }
-    for(t=(C[Hs[i]]-1); t<T; t++){
-      indhist=Allhists[Hs[i] * (T+1) + t +1];
-      muzp=probitp[(C[Hs[i]]-1)*T+t]+zps[i];
-      muzphi=probitphi[(C[Hs[i]]-1)*T+t]+zphis[i];
-      trunmuzp=INVPROBIT(0.0,muzp,1.0,1,0); 
-      trunmuzphi=INVPROBIT(0.0,muzphi,1.0,1,0);  
-      up[i*T+t] = ( (indhist>0) ? qnorm(runif(trunmuzp,1.0),muzp,1.0,1,0) :  qnorm(runif(0.0,trunmuzp),muzp,1.0,1,0) );
-      uphi[i*T+t] = ( (qs[i*(T+1)+t+1]>0) ? qnorm(runif(trunmuzphi,1.0),muzphi,1.0,1,0) :  qnorm(runif(0.0,trunmuzphi),muzphi,1.0,1,0) );
-    }
-  }
-}  
-
-void BETAUPDATE(double *beta, double *u, double *z, double *DM, int *qs, int dim, int T, int supN, int *C, int *Hs, double *beta0, double *prec0, int *cohortseq, int pind)
-{
-  void mvnorm();
-  void matrix_invert();
-  Matrix *matrix_alloc();
-  
-  int i,j,k,t;
-  double vbeta[dim*dim];
-  Matrix *invvbeta = matrix_alloc(dim,dim); 
-  double tempmbeta[dim];
-  double mbeta[dim];
-
-  for(i=0; i<dim; i++){
-    for(j=0; j<dim; j++){
-      invvbeta->matrix_entry[i][j] = prec0[i*dim+j];
-      for(k=0; k<supN; k++){
-        for(t=(C[Hs[k]]-1); t<T; t++){
-          invvbeta->matrix_entry[i][j] += DM[(cohortseq[C[Hs[k]]-1]+t-(C[Hs[k]]-1))*dim+i] * DM[(cohortseq[C[Hs[k]]-1]+t-(C[Hs[k]]-1))*dim+j] * qs[k*(T+1)+t+pind];
-        }
-      }
-    }
-  } 
-  matrix_invert(invvbeta);
-  for(i=0; i<dim; i++){
-    for(j=0; j<dim; j++){
-      vbeta[i*dim+j]= invvbeta->matrix_entry[i][j];
-    }
-  }
-  for(i=0; i<dim; i++){
-    tempmbeta[i]=0.;
-    for(j=0; j<dim; j++){
-      tempmbeta[i] = prec0[i*dim+j] * beta0[j];
-    }
-    for(k=0; k<supN; k++){
-      for(t=(C[Hs[k]]-1); t<T; t++){
-        tempmbeta[i] += DM[(cohortseq[C[Hs[k]]-1]+t-(C[Hs[k]]-1))*dim+i] * (u[k*T+t]-z[k])  * qs[k*(T+1)+t+pind];
-      }
-    }
-  }
-  for(i=0; i<dim; i++){
-    mbeta[i]=0.;
-    for(j=0; j<dim; j++){
-      mbeta[i]+=vbeta[i*dim+j]*tempmbeta[j];
-    }
-  }
-  mvnorm(dim, mbeta, vbeta, beta); 
-}
-
-void GETZ(int i, int *q, int T, double *probitp, double *probitphi, double *zp, double *zphi, int *C, int *L, int Hind, double *propz)
-{
-  int t;
-  int firstcap, lastcap;
-  double p,phi,num,probz;
-
-  propz[i]=0.;
-  firstcap = C[Hind]-1;
-  lastcap = L[Hind]-1;
-  for(t=0; t<firstcap; t++){
-    q[i*(T+1)+t] = 0;
-  }
-  if(Hind){
-    q[i*(T+1)+firstcap] = 1;
-    if(firstcap<T){
-      for(t=firstcap; t<lastcap+1; t++){
-        q[i*(T+1)+t] = 1;
-      }
-      for(t=lastcap+1; t<T+1; t++){
-        p = INVPROBIT((probitp[firstcap*T+t-1] + zp[i]),0.0,1.0,1,0);
-        phi = INVPROBIT((probitphi[firstcap*T+t-1] + zphi[i]),0.0,1.0,1,0); 
-        num = phi * q[i*(T+1)+t-1] * (1.-p);
-        if(t<T) num *= (1.-INVPROBIT((probitphi[firstcap*T+t] + zphi[i]),0.0,1.0,1,0));
-        probz = num / (num + (1.-phi*q[i*(T+1)+t-1]));
-        if(t<T){
-          if(q[i*(T+1)+t+1]) probz = 1.;
-        }
-        q[i*(T+1)+t] = (int) rbinom(1.0,probz);
-        propz[i] += dbinom((double) q[i*(T+1)+t],1.0,probz,1);
-      }
-    }
-  }
-}
-
-double FREQSUMCJS(int *x, int *Allhists, int T, int J, int ind, int *C)
-{
-  int j, t;
-  int freqsum=0;
-  for(j=0; j<J; j++){
-    for(t=(C[j]-1); t<T; t++){
-      freqsum += (Allhists[j*(T+1)+t+1]==ind)*x[j];
-    }
-  }
-  return(freqsum); 
-}
-
-/* Define function GETDELTA for updating delta by drawing from the full conditional posterior distribution */
-void GETDELTACJS(double *deltavect, int *xs, int *Allhists, int T, int J, int dim, double *a0delta, int *C) 
-{
-  int k, kk;
-  double nu[dim];
-  
-  for (kk=0; kk < dim; kk++)  {
-    nu[kk]=FREQSUMCJS(xs,Allhists,T,J,kk+1,C);
-  }
-  nu[dim-1]+=FREQSUMCJS(xs,Allhists,T,J,dim+1,C);
-      
-  double xx[dim], sumx=0.0;
-  for (k = 0; k < dim; k++) {
-    xx[k]=rgamma((nu[k]+a0delta[k]),1.0);
-    sumx += xx[k];
-  }
-
-  for (k = 0; k < dim; k++) {
-    deltavect[k]=xx[k]/sumx;
-  }
-}
-
-double LIKEProbitCJS(int *q, double *probitp, double *probitphi, double *zp, double *zphi, double delta_1, double delta_2, double alpha, int *Allhists, int *Hs, int T, int supN, int *C)
-{
-  int i,t;
-  double logdens=0.;
-  int indhist;
-  int firstcap;
-  double p, phi;
-  for(i=0; i<supN; i++)  {
-    firstcap = C[Hs[i]]-1;
-    for(t=firstcap; t<T; t++){
-      if(q[i*(T+1)+t]){
-        indhist = Allhists[Hs[i] * (T+1) + t + 1];
-        p = INVPROBIT((probitp[firstcap*T+t] + zp[i]),0.0,1.0,1,0);
-        phi = INVPROBIT((probitphi[firstcap*T+t] + zphi[i]),0.0,1.0,1,0);
-        logdens += log( (indhist==0) * ((1.-p) * phi * q[i*(T+1)+t+1] + (1.-phi)*(1.-q[i*(T+1)+t+1]))
-                      + (indhist==1) * p * delta_1 * phi
-                      + (indhist==2) * p * delta_2 * phi
-                      + (indhist==3) * p * (1.-delta_1-delta_2) * (1.-alpha) * phi
-                      + (indhist==4) * p * (1.-delta_1-delta_2) * alpha * phi );
-      }
-    }     
-  }
-  return(logdens); 
-}
-
-double GETprodhProbitCJS(int *Allhists, int *q, double *probitp, double *probitphi, double *zp, double *zphi, int *C, double delta_1, double delta_2, double alpha, int j,int T, int i, double propz)
-{
-  int t;
-  double logdens=0.0, dens;
-  int indhist;
-  int firstcap = C[j]-1;
-  double p, phi;
-  
-  for(t=firstcap; t<T; t++){
-    if(q[i*(T+1)+t]){
-      indhist = Allhists[j * (T+1) + t + 1];
-      p = INVPROBIT((probitp[firstcap*T+t] + zp[i]),0.0,1.0,1,0);
-      phi = INVPROBIT((probitphi[firstcap*T+t] + zphi[i]),0.0,1.0,1,0);
-      logdens += log( (indhist==0) * ((1.-p) * phi * q[i*(T+1)+t+1] + (1.-phi)*(1.-q[i*(T+1)+t+1]))
-                    + (indhist==1) * p * delta_1 * phi
-                    + (indhist==2) * p * delta_2 * phi
-                    + (indhist==3) * p * (1.-delta_1-delta_2) * (1.-alpha) *phi
-                    + (indhist==4) * p * (1.-delta_1-delta_2) * alpha *phi );
-    }
-  }  
-  dens = exp(propz + logdens);
-  if(dens<tol) dens = tol;
-  return(dens);
-}
-
-void PROPFREQProbitCJS(int icol,int c_k,int *Hnew, int *indBasis, int J, int *xnew, int supN, int T, int *qs, double *probitp, double *probitphi, double *zp, double *zphi, int *C, int *L, double delta_1, double delta_2, double alpha, int *Allhists, double *nprop, double *oprop, double *propz)
-{  
-  void ProbSampleNoReplace();
-  
-  int remove_xi[3];
-  int add_xi[3];
-  int j,i,k,t;
-  int absc_k=abs(c_k);
-  int remove[absc_k], add[absc_k];
-  double prodz[supN], prodh[supN], temppropz[supN];
-  double prodzsum, prodhsum;  
-  double temp = runif(0.0,1.0);
-  int ztemp[(T+1)*supN];
-  if(c_k > 0){
-    remove_xi[0]=1;
-    remove_xi[1]=1;
-    remove_xi[2]=0;
-    add_xi[0]=0;
-    add_xi[1]=0;
-    add_xi[2]=1;
-    if(xnew[0]<(c_k)) temp = 0.0;
-  } else if(c_k < 0){
-    add_xi[0]=1;
-    add_xi[1]=1;
-    add_xi[2]=0;
-    remove_xi[0]=0;
-    remove_xi[1]=0;
-    remove_xi[2]=1;
-    if(xnew[0]<(-2*c_k)) temp = 0.0;
-  }
-  int count=0;
-  if(temp<0.5) {
-    goto S10;
-  } else {
-    goto S20;
-  }
-S10:
-    for(j=0; j<3; j++){
-      prodzsum=0.0;
-      prodhsum=0.0;
-      if(remove_xi[j]){
-        for(i=0; i<supN; i++) {
-          prodz[i] = -1.0;
-          prodh[i] = -1.0;
-          temppropz[i]=propz[i];
-          if(Hnew[i]==indBasis[icol*3+j]){
-            prodz[i] =  1. - GETprodhProbitCJS(Allhists,qs,probitp,probitphi,zp,zphi,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i,propz[i])*((C[indBasis[icol*3+j]]-1)<T);
-            prodzsum+=prodz[i];
-          } else if(!Hnew[i]){
-            for(t=0; t<(T+1); t++){
-              ztemp[i*(T+1)+t] = 0;
-            }
-            GETZ(i,ztemp,T,probitp,probitphi,zp,zphi,C,L,indBasis[icol*3+j],temppropz);
-            prodh[i] = GETprodhProbitCJS(Allhists,ztemp,probitp,probitphi,zp,zphi,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i,temppropz[i]);
-            prodhsum+=prodh[i];
-          }          
-        }
-        ProbSampleNoReplace(supN, prodz, absc_k, remove); 
-        for(k=0; k<absc_k; k++){
-          Hnew[remove[k]]=0;
-          prodh[remove[k]] = 1. - prodz[remove[k]]*((C[indBasis[icol*3+j]]-1)<T);
-          for(t=0; t<T+1; t++){
-            qs[remove[k]*(T+1)+t] = 0;
-          }
-          prodhsum+=prodh[remove[k]];    
-        }
-        for(k=0; k<absc_k; k++){
-          nprop[count] = log(prodz[remove[k]])-log(prodzsum);
-          oprop[count] = log(prodh[remove[k]])-log(prodhsum);// + propz[remove[k]];
-          propz[remove[k]] = 0.;
-          prodzsum -=  prodz[remove[k]];
-          prodhsum -=  prodh[remove[k]];
-          count+=1;
-        }
-      }
-    }
-    if(temp<0.5) goto S20;
-    else goto S30;
-S20:
-    for(j=0; j<3; j++){
-      prodzsum=0.0;
-      prodhsum=0.0;
-      if(add_xi[j]){
-        for(i=0; i<supN; i++) {
-          prodz[i] = -1.0;
-          prodh[i] = -1.0;
-          temppropz[i]=propz[i];
-          if(!Hnew[i]){
-            for(t=0; t<(T+1); t++){
-              ztemp[i*(T+1)+t] = 0;
-            }
-            GETZ(i,ztemp,T,probitp,probitphi,zp,zphi,C,L,indBasis[icol*3+j],temppropz);
-            prodh[i] = GETprodhProbitCJS(Allhists,ztemp,probitp,probitphi,zp,zphi,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i,temppropz[i]);
-            prodhsum+=prodh[i];
-          } else if(Hnew[i]==indBasis[icol*3+j]){
-            prodz[i] = 1. - GETprodhProbitCJS(Allhists,qs,probitp,probitphi,zp,zphi,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i,propz[i])*((C[indBasis[icol*3+j]]-1)<T);
-            prodzsum+=prodz[i];
-          }
-        }
-        ProbSampleNoReplace(supN, prodh, absc_k, add);
-        for(k=0; k<absc_k; k++){
-          Hnew[add[k]]=indBasis[icol*3+j];
-          prodz[add[k]] = 1. - prodh[add[k]]*((C[indBasis[icol*3+j]]-1)<T);
-          for(t=0; t<T+1; t++){
-            qs[add[k]*(T+1)+t] = ztemp[add[k]*(T+1)+t];
-          }
-          propz[add[k]] = temppropz[add[k]];
-          prodzsum+=prodz[add[k]];
-        }
-        for(k=0; k<absc_k; k++){
-          nprop[count] = log(prodh[add[k]])-log(prodhsum);// + propz[add[k]];  
-          oprop[count] = log(prodz[add[k]])-log(prodzsum); 
-          prodzsum -=  prodz[add[k]];
-          prodhsum -=  prodh[add[k]];
-          count+=1;
-        }
-      }
-    }
-    if(temp>=0.5) goto S10;
-    else goto S30;
-S30:
-    xnew[indBasis[icol*3]]-=c_k;
-    xnew[indBasis[icol*3+1]]-=c_k;
-    xnew[indBasis[icol*3+2]]+=c_k;  
-    xnew[0]+=c_k;  
-}
-
-void mvnorm(int dim, double *mean, double *covar, double *answer)
-{
-
-void setgmn();
-void genmn();
-
-long i,j,p=dim;
-float mmean[p],ccovar[p * p],param[(p *(p+3)/2+1)],temp[p],work[p];
-
-    for(i=0; i< p; i++) mmean[i] = (float) mean[i];
-    for(i=0; i< p*p; i++) ccovar[i] = (float) covar[i];
-
-    setgmn(mmean,ccovar,p,param);
-    genmn(param,work,temp);
-    for(j=0; j<p; j++) *(answer+j) = *(work+j);
-}

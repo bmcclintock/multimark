@@ -5,3 +5,4 @@ matrix.o
 multimark.so
 multimark_init.o
 ranlib.o
+func.o

@@ -1,4 +1,5 @@
 #include "ranlib.h"
+#include "func.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -12,6 +13,228 @@
   #define min( a, b ) ( ((a) < (b)) ? (a) : (b) )
 #endif
 
+/* FUNCTION DEFINITIONS */
+
+double EXPIT(double x)
+{
+  double expit = fmin(1.-tol,fmax(tol,1.0/(1.0+exp(-x))));
+  return(expit);
+}
+
+double LIKE(double *p, double *c, int *qs, double delta_1, double delta_2, double alpha, int *Allhists, int *Hs, int T, int supN, int *C, double Ns, double pstar)
+{
+  int i,t;
+  double logdens=0.;
+  int indhist;
+  int temp;
+  double n=0.;
+  for(i=0; i<supN; i++)  {
+    if(qs[i]){
+      n+=1.;
+      temp = C[Hs[i]];
+      for(t=0; t<temp; t++) {
+        indhist = Allhists[Hs[i] * T + t];
+        logdens += log( (indhist==0) * (1.0-p[i*T+t])
+                          + (indhist==1) * p[i*T+t] * delta_1  
+                          + (indhist==2) * p[i*T+t] * delta_2
+                          + (indhist==3) * p[i*T+t] * (1.-delta_1-delta_2) * (1.-alpha)
+                          + (indhist==4) * p[i*T+t] * (1.-delta_1-delta_2) * alpha );
+      }
+      for(t=temp; t<T; t++) {
+        indhist = Allhists[Hs[i] * T + t];      
+        logdens += log( (indhist==0) * (1.0-c[i*T+t])
+                          + (indhist==1) * c[i*T+t] * delta_1  
+                          + (indhist==2) * c[i*T+t] * delta_2
+                          + (indhist==3) * c[i*T+t] * (1.-delta_1-delta_2) * (1.-alpha)
+                          + (indhist==4) * c[i*T+t] * (1.-delta_1-delta_2) * alpha );
+      } 
+    }
+  }
+  logdens += dbinom(n,Ns,pstar,1) - n * log(pstar);
+  return(logdens);   
+}
+
+double POSTERIOR(double ll, double *beta, int *qs, double *z, double *deltavect, double alpha, double sigma_z, double Ns, double psi, double *mu0, double *sigma2_mu0, double *a0_delta, double a0_alpha, double b0_alpha, double A, double a0psi, double b0psi, int supN, int pdim, int modh, int datatype, int updatedelta, int deltatype)
+{
+  double pos=ll;
+  int i,j;
+  for(j=0; j<pdim; j++){
+    pos += dnorm(beta[j],mu0[j],sqrt(sigma2_mu0[j]),1);
+  }
+  if(modh){
+    for(i=0; i<supN; i++){
+      pos += dnorm(z[i],0.0,sigma_z,1);
+    }
+    pos += log(2.0*dcauchy(sigma_z,0.0,A,0));
+  }
+  if(updatedelta){
+    if(deltatype){
+      pos += DDIRICHLET(deltavect,a0_delta,3);
+    } else {
+      pos += dbeta((deltavect[0]+deltavect[1]),a0_delta[0],a0_delta[1],1);
+    }
+    if(datatype){
+      pos += dbeta(alpha,a0_alpha,b0_alpha,1);
+    }
+    for(i=0; i<supN; i++){
+      pos += dbinom((double) qs[i],1.0,psi,1);
+    }
+    pos += dbeta(psi,a0psi,b0psi,1);
+  }
+  pos += -log(Ns);
+  return(pos);
+}
+
+double GETprodh(int *Allhists, double *p, double *c, int *C, double delta_1, double delta_2, double alpha, int j,int T, int i)
+{
+  int t;
+  double logdens=0.0;
+  int indhist;
+  
+  int temp = C[j];
+  for(t=0; t<temp; t++) {
+    indhist = Allhists[j * T + t];
+    logdens += log( (indhist==0) * (1.0-p[i*T+t]) 
+                      + (indhist==1) * p[i*T+t] * delta_1 
+                      + (indhist==2) * p[i*T+t] * delta_2
+                      + (indhist==3) * p[i*T+t] * (1.-delta_1-delta_2) * (1.-alpha)
+                      + (indhist==4) * p[i*T+t] * (1.-delta_1-delta_2) * alpha );  
+  }
+  for(t=temp; t<T; t++) {
+    indhist = Allhists[j * T + t];      
+    logdens += log( (indhist==0) * (1.0-c[i*T+t]) 
+                      + (indhist==1) * c[i*T+t] * delta_1 
+                      + (indhist==2) * c[i*T+t] * delta_2
+                      + (indhist==3) * c[i*T+t] * (1.-delta_1-delta_2) * (1.-alpha)
+                      + (indhist==4) * c[i*T+t] * (1.-delta_1-delta_2) * alpha );  
+  }
+  double dens = exp(logdens);
+  if(dens<tol) dens = tol;
+  return(dens);
+}
+
+void PROPFREQ(int icol,int c_k,int *Hnew, int *indBasis, int J, int *xnew, int supN, int T, double *p, double *c, int *C, double delta_1, double delta_2, double alpha, int *Allhists, double *nprop, double *oprop)
+{  
+  int remove_xi[3];
+  int add_xi[3];
+  int j,i,k;
+  int absc_k=abs(c_k);
+  int remove[absc_k], add[absc_k];
+  double prodz[supN], prodh[supN];
+  double prodzsum, prodhsum;  
+  double temp = runif(0.0,1.0);
+  if(c_k > 0){
+    remove_xi[0]=1;
+    remove_xi[1]=1;
+    remove_xi[2]=0;
+    add_xi[0]=0;
+    add_xi[1]=0;
+    add_xi[2]=1;
+    if(xnew[0]<(c_k)) temp = 0.0;
+  } else if(c_k < 0){
+    add_xi[0]=1;
+    add_xi[1]=1;
+    add_xi[2]=0;
+    remove_xi[0]=0;
+    remove_xi[1]=0;
+    remove_xi[2]=1;
+    if(xnew[0]<(-2*c_k)) temp = 0.0;
+  } 
+  int count=0;
+  if(temp<0.5) {
+    goto S10;
+  } else {
+    goto S20;
+  }
+  S10:
+    for(j=0; j<3; j++){
+      prodzsum=0.0;
+      prodhsum=0.0;
+      if(remove_xi[j]){
+        for(i=0; i<supN; i++) {
+          prodz[i] = -1.0;
+          prodh[i] = -1.0;
+          if(Hnew[i]==indBasis[icol*3+j]){
+            prodz[i] = 1. - GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i);
+            prodzsum+=prodz[i];
+          } else if(!Hnew[i]){
+            prodh[i] = GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i);
+            prodhsum+=prodh[i];
+          }          
+        }
+        ProbSampleNoReplace(supN, prodz, absc_k, remove); 
+        for(k=0; k<absc_k; k++){
+          Hnew[remove[k]]=0;
+          prodh[remove[k]] = 1. - prodz[remove[k]];
+          prodhsum+=prodh[remove[k]];    
+        }
+        for(k=0; k<absc_k; k++){
+          nprop[count] = log(prodz[remove[k]])-log(prodzsum);
+          oprop[count] = log(prodh[remove[k]])-log(prodhsum);
+          prodzsum -=  prodz[remove[k]];
+          prodhsum -=  prodh[remove[k]];
+          count+=1;
+        }
+      }
+    }
+    if(temp<0.5) goto S20;
+    else goto S30;
+    S20:
+      for(j=0; j<3; j++){
+        prodzsum=0.0;
+        prodhsum=0.0;
+        if(add_xi[j]){
+          for(i=0; i<supN; i++) {
+            prodz[i] = -1.0;
+            prodh[i] = -1.0;
+            if(!Hnew[i]){
+              prodh[i] = GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i);
+              prodhsum+=prodh[i];
+            } else if(Hnew[i]==indBasis[icol*3+j]){
+              prodz[i] = 1. - GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i);
+              prodzsum+=prodz[i];
+            }
+          }
+          ProbSampleNoReplace(supN, prodh, absc_k, add);
+          for(k=0; k<absc_k; k++){
+            Hnew[add[k]]=indBasis[icol*3+j];
+            prodz[add[k]] = 1. - prodh[add[k]];
+            prodzsum+=prodz[add[k]];
+          }
+          for(k=0; k<absc_k; k++){
+            nprop[count] = log(prodh[add[k]])-log(prodhsum);  
+            oprop[count] = log(prodz[add[k]])-log(prodzsum); 
+            prodzsum -=  prodz[add[k]];
+            prodhsum -=  prodh[add[k]];
+            count+=1;
+          }
+        }
+      }
+      if(temp>=0.5) goto S10;
+      else goto S30;
+      S30:
+        xnew[indBasis[icol*3]]-=c_k;
+      xnew[indBasis[icol*3+1]]-=c_k;
+      xnew[indBasis[icol*3+2]]+=c_k;  
+      xnew[0]+=c_k;
+}
+
+double GETPSTAR(int npts, double *weight, double *node, double *logitp, double sigma_zs, int dimp, int T)
+{
+  int i,t;
+  double temp[npts];
+  double oneminuspstar=0.;
+  for(i=0; i<npts; i++){
+    temp[i]=1.;
+    for(t=0; t<T; t++){
+      temp[i]*=(1. - 1. / (1. + exp(-(sqrt(2.0)*sigma_zs*node[i]+logitp[t]))));
+    }
+    oneminuspstar += 1.0/sqrt(3.14159265359)*weight[i]*temp[i]; 
+  }
+  double pstar = 1.-fmin(1.-tol,fmax(tol,oneminuspstar));
+  return(pstar);
+}
+
 // Define function ClosedC to draw samples from the posterior distribution
 
 void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double *z, double *sigma2_z, double *delta_1, double *delta_2, double *alpha, int *x, double *N, double *psi, int *H, 
@@ -23,17 +246,6 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
 {
   
   GetRNGstate(); 
-
-  /* Declare functions */
-  double EXPIT();
-  double LIKE();
-  double POSTERIOR();
-  double FREQSUM();
-  int GETCK();
-  int sample();
-  void PROPFREQ();
-  void GETDELTA();
-  double GETPSTAR();
 
   int T = *noccas;
   int supN = *M; 
@@ -456,378 +668,3 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
   PutRNGstate(); 
 }     
 /* End function MCMCloop */
-
-
-
-/* FUNCTION DEFINITIONS */
-
-double EXPIT(double x)
-{
-  double expit = fmin(1.-tol,fmax(tol,1.0/(1.0+exp(-x))));
-  return(expit);
-}
-
-double LIKE(double *p, double *c, int *qs, double delta_1, double delta_2, double alpha, int *Allhists, int *Hs, int T, int supN, int *C, double Ns, double pstar)
-{
-  int i,t;
-  double logdens=0.;
-  int indhist;
-  int temp;
-  double n=0.;
-  for(i=0; i<supN; i++)  {
-    if(qs[i]){
-      n+=1.;
-      temp = C[Hs[i]];
-      for(t=0; t<temp; t++) {
-        indhist = Allhists[Hs[i] * T + t];
-        logdens += log( (indhist==0) * (1.0-p[i*T+t])
-                      + (indhist==1) * p[i*T+t] * delta_1  
-                      + (indhist==2) * p[i*T+t] * delta_2
-                      + (indhist==3) * p[i*T+t] * (1.-delta_1-delta_2) * (1.-alpha)
-                      + (indhist==4) * p[i*T+t] * (1.-delta_1-delta_2) * alpha );
-      }
-      for(t=temp; t<T; t++) {
-        indhist = Allhists[Hs[i] * T + t];      
-        logdens += log( (indhist==0) * (1.0-c[i*T+t])
-                      + (indhist==1) * c[i*T+t] * delta_1  
-                      + (indhist==2) * c[i*T+t] * delta_2
-                      + (indhist==3) * c[i*T+t] * (1.-delta_1-delta_2) * (1.-alpha)
-                      + (indhist==4) * c[i*T+t] * (1.-delta_1-delta_2) * alpha );
-      } 
-    }
-  }
-  logdens += dbinom(n,Ns,pstar,1) - n * log(pstar);
-  return(logdens);   
-}
-
-double DDIRICHLET(double *x, double *alpha, int dim)
-{
-  int i;
-  double sumalpha=0.0;
-  double sumx=0.0;
-  double s=0.0;
-  double logD=0.0;
-  double logdens;
-  int ind=1;
-  for(i=0; i<dim; i++){
-    sumx += x[i];
-    sumalpha += alpha[i];
-    s += (alpha[i]-1.)*log(x[i]);
-    logD += lgamma(alpha[i]);
-    if(x[i]<0 || x[i]>1) ind=0;
-  }
-  logD +=  - lgamma(sumalpha);
-  if(fabs(sumx-1.)>1.e-7) ind=0;
-  logdens=( ind ? (s-logD) : log(0.0));
-  return(logdens);
-}
-
-double POSTERIOR(double ll, double *beta, int *qs, double *z, double *deltavect, double alpha, double sigma_z, double Ns, double psi, double *mu0, double *sigma2_mu0, double *a0_delta, double a0_alpha, double b0_alpha, double A, double a0psi, double b0psi, int supN, int pdim, int modh, int datatype, int updatedelta, int deltatype)
-{
-  double pos=ll;
-  int i,j;
-  for(j=0; j<pdim; j++){
-    pos += dnorm(beta[j],mu0[j],sqrt(sigma2_mu0[j]),1);
-  }
-  if(modh){
-    for(i=0; i<supN; i++){
-      pos += dnorm(z[i],0.0,sigma_z,1);
-    }
-    pos += log(2.0*dcauchy(sigma_z,0.0,A,0));
-  }
-  if(updatedelta){
-    if(deltatype){
-      pos += DDIRICHLET(deltavect,a0_delta,3);
-    } else {
-      pos += dbeta((deltavect[0]+deltavect[1]),a0_delta[0],a0_delta[1],1);
-    }
-    if(datatype){
-      pos += dbeta(alpha,a0_alpha,b0_alpha,1);
-    }
-    for(i=0; i<supN; i++){
-      pos += dbinom((double) qs[i],1.0,psi,1);
-    }
-    pos += dbeta(psi,a0psi,b0psi,1);
-  }
-  pos += -log(Ns);
-  return(pos);
-}
-
-double FREQSUM(int *x, int *Allhists, int T, int J, int ind)
-{
-  int j, t;
-  int freqsum=0;
-  for(j=0; j<J; j++){
-    for(t=0; t<T; t++){
-      freqsum += (Allhists[j*T+t]==ind)*x[j];
-    }
-  }
-  return(freqsum); 
-}
-
-/* Define function GETDELTA for updating delta by drawing from the full conditional posterior distribution */
-void GETDELTA(double *deltavect, int *xs, int *Allhists, int T, int J, int dim, double *a0delta) 
-{
-  int k, kk;
-  double nu[dim];
-  
-  for (kk=0; kk < dim; kk++)  {
-    nu[kk]=FREQSUM(xs,Allhists,T,J,kk+1);
-  }
-  nu[dim-1]+=FREQSUM(xs,Allhists,T,J,dim+1);
-      
-  double xx[dim], sumx=0.0;
-  for (k = 0; k < dim; k++) {
-    xx[k]=rgamma((nu[k]+a0delta[k]),1.0);
-    sumx += xx[k];
-  }
-
-  for (k = 0; k < dim; k++) {
-    deltavect[k]=xx[k]/sumx;
-  }
-}
-
-int GETCK(int populationSize, int nogo)
-{
-    int n = 1;
-    int N = populationSize;
-    int sample;
-
-    int t = 0; 
-    int m = 0; 
-    double u;
-
-    while (m < n)
-    {
-        u = runif(0.0,1.0); 
-
-        if ( ((N - t)*u > n - m))
-        {
-            t++;
-        }
-        else
-        {
-            sample = (t>= nogo) ? t+1 : t;
-            t++; m++;
-        }
-    }
-    return(sample);
-}
-
-int sample(int n, double *prob)
-{
-    double rT, mass, totalmass, pz[n], pzsum=0.0;
-    int i, j, k, n1;
-    int perm[n];
-    int nans = 1;
-    int ans;
-
-    /* Record element identities */
-    for (i = 0; i < n; i++) {perm[i] = i + 1; pz[i]=prob[i]; pzsum+=pz[i];}
-
-    /* Sort probabilities into descending order */
-    /* Order element identities in parallel */
-    revsort(pz, perm, n);
-
-    /* Compute the sample */
-    totalmass = pzsum;
-    for (i = 0, n1 = n-1; i < nans; i++, n1--) {
-      rT = totalmass * unif_rand();
-      mass = 0;
-      for (j = 0; j < n1; j++) {
-    	    mass += pz[j];
-        	if (rT <= mass) break;
-    	}
-    	ans = perm[j] - 1;
-    	totalmass -= pz[j];
-    	for(k = j; k < n1; k++) {
-    	    pz[k] = pz[k + 1];
-    	    perm[k] = perm[k + 1];
-    	}
-    }
-    return(ans);
-}
-
-void ProbSampleNoReplace(int n, double *prob, int nans, int *ans)
-{
-    double rT, mass, totalmass, pz[n], pzsum=0.0;
-    int i, j, k, n1;
-    int perm[n];
-
-    /* Record element identities */
-    for (i = 0; i < n; i++) {perm[i] = i + 1; pz[i]=prob[i];}
-
-    /* Sort probabilities into descending order */
-    /* Order element identities in parallel */
-    revsort(pz, perm, n);
-    
-    /* set impermissible probs to zero */
-    for (i = 0; i < n; i++) {if(pz[i]<0) pz[i]=0.; pzsum+=pz[i];}
-
-    /* Compute the sample */
-    totalmass = pzsum;
-    for (i = 0, n1 = n-1; i < nans; i++, n1--) {
-      rT = totalmass * unif_rand();
-      mass = 0;
-    	for (j = 0; j < n1; j++) {
-    	    mass += pz[j];
-    	    if (rT <= mass) break;
-    	}
-    	ans[i] = perm[j] - 1;
-    	totalmass -= pz[j];
-    	for(k = j; k < n1; k++) {
-    	    pz[k] = pz[k + 1];
-    	    perm[k] = perm[k + 1];
-    	}
-    }
-}
-
-double GETprodh(int *Allhists, double *p, double *c, int *C, double delta_1, double delta_2, double alpha, int j,int T, int i)
-{
-  int t;
-  double logdens=0.0;
-  int indhist;
-  
-  int temp = C[j];
-  for(t=0; t<temp; t++) {
-    indhist = Allhists[j * T + t];
-    logdens += log( (indhist==0) * (1.0-p[i*T+t]) 
-                  + (indhist==1) * p[i*T+t] * delta_1 
-                  + (indhist==2) * p[i*T+t] * delta_2
-                  + (indhist==3) * p[i*T+t] * (1.-delta_1-delta_2) * (1.-alpha)
-                  + (indhist==4) * p[i*T+t] * (1.-delta_1-delta_2) * alpha );  
-  }
-  for(t=temp; t<T; t++) {
-    indhist = Allhists[j * T + t];      
-    logdens += log( (indhist==0) * (1.0-c[i*T+t]) 
-                  + (indhist==1) * c[i*T+t] * delta_1 
-                  + (indhist==2) * c[i*T+t] * delta_2
-                  + (indhist==3) * c[i*T+t] * (1.-delta_1-delta_2) * (1.-alpha)
-                  + (indhist==4) * c[i*T+t] * (1.-delta_1-delta_2) * alpha );  
-  }
-  double dens = exp(logdens);
-  if(dens<tol) dens = tol;
-  return(dens);
-}
-
-void PROPFREQ(int icol,int c_k,int *Hnew, int *indBasis, int J, int *xnew, int supN, int T, double *p, double *c, int *C, double delta_1, double delta_2, double alpha, int *Allhists, double *nprop, double *oprop)
-{  
-  int remove_xi[3];
-  int add_xi[3];
-  int j,i,k;
-  int absc_k=abs(c_k);
-  int remove[absc_k], add[absc_k];
-  double prodz[supN], prodh[supN];
-  double prodzsum, prodhsum;  
-  double temp = runif(0.0,1.0);
-  if(c_k > 0){
-    remove_xi[0]=1;
-    remove_xi[1]=1;
-    remove_xi[2]=0;
-    add_xi[0]=0;
-    add_xi[1]=0;
-    add_xi[2]=1;
-    if(xnew[0]<(c_k)) temp = 0.0;
-  } else if(c_k < 0){
-    add_xi[0]=1;
-    add_xi[1]=1;
-    add_xi[2]=0;
-    remove_xi[0]=0;
-    remove_xi[1]=0;
-    remove_xi[2]=1;
-    if(xnew[0]<(-2*c_k)) temp = 0.0;
-  } 
-  int count=0;
-  if(temp<0.5) {
-    goto S10;
-  } else {
-    goto S20;
-  }
-S10:
-    for(j=0; j<3; j++){
-      prodzsum=0.0;
-      prodhsum=0.0;
-      if(remove_xi[j]){
-        for(i=0; i<supN; i++) {
-          prodz[i] = -1.0;
-          prodh[i] = -1.0;
-          if(Hnew[i]==indBasis[icol*3+j]){
-            prodz[i] = 1. - GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i);
-            prodzsum+=prodz[i];
-          } else if(!Hnew[i]){
-            prodh[i] = GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i);
-            prodhsum+=prodh[i];
-          }          
-        }
-        ProbSampleNoReplace(supN, prodz, absc_k, remove); 
-        for(k=0; k<absc_k; k++){
-          Hnew[remove[k]]=0;
-          prodh[remove[k]] = 1. - prodz[remove[k]];
-          prodhsum+=prodh[remove[k]];    
-        }
-        for(k=0; k<absc_k; k++){
-          nprop[count] = log(prodz[remove[k]])-log(prodzsum);
-          oprop[count] = log(prodh[remove[k]])-log(prodhsum);
-          prodzsum -=  prodz[remove[k]];
-          prodhsum -=  prodh[remove[k]];
-          count+=1;
-        }
-      }
-    }
-    if(temp<0.5) goto S20;
-    else goto S30;
-S20:
-    for(j=0; j<3; j++){
-      prodzsum=0.0;
-      prodhsum=0.0;
-      if(add_xi[j]){
-        for(i=0; i<supN; i++) {
-          prodz[i] = -1.0;
-          prodh[i] = -1.0;
-          if(!Hnew[i]){
-            prodh[i] = GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i);
-            prodhsum+=prodh[i];
-          } else if(Hnew[i]==indBasis[icol*3+j]){
-            prodz[i] = 1. - GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i);
-            prodzsum+=prodz[i];
-          }
-        }
-        ProbSampleNoReplace(supN, prodh, absc_k, add);
-        for(k=0; k<absc_k; k++){
-          Hnew[add[k]]=indBasis[icol*3+j];
-          prodz[add[k]] = 1. - prodh[add[k]];
-          prodzsum+=prodz[add[k]];
-        }
-        for(k=0; k<absc_k; k++){
-          nprop[count] = log(prodh[add[k]])-log(prodhsum);  
-          oprop[count] = log(prodz[add[k]])-log(prodzsum); 
-          prodzsum -=  prodz[add[k]];
-          prodhsum -=  prodh[add[k]];
-          count+=1;
-        }
-      }
-    }
-    if(temp>=0.5) goto S10;
-    else goto S30;
-S30:
-    xnew[indBasis[icol*3]]-=c_k;
-    xnew[indBasis[icol*3+1]]-=c_k;
-    xnew[indBasis[icol*3+2]]+=c_k;  
-    xnew[0]+=c_k;
-}
-
-double GETPSTAR(int npts, double *weight, double *node, double *logitp, double sigma_zs, int dimp, int T)
-{
-  int i,t;
-  double temp[npts];
-  double oneminuspstar=0.;
-  for(i=0; i<npts; i++){
-    temp[i]=1.;
-    for(t=0; t<T; t++){
-      temp[i]*=(1. - 1. / (1. + exp(-(sqrt(2.0)*sigma_zs*node[i]+logitp[t]))));
-    }
-    oneminuspstar += 1.0/sqrt(3.14159265359)*weight[i]*temp[i]; 
-  }
-  double pstar = 1.-fmin(1.-tol,fmax(tol,oneminuspstar));
-  return(pstar);
-}

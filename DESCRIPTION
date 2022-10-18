@@ -1,8 +1,8 @@
 Package: multimark
 Type: Package
 Title: Capture-Mark-Recapture Analysis using Multiple Non-Invasive Marks
-Version: 2.1.4
-Date: 2022-03-07
+Version: 2.1.5
+Date: 2022-10-18
 Depends:
     R (>= 3.2.1)
 Imports:
@@ -36,5 +36,5 @@ Suggests: testthat
 License: GPL-2
 LazyData: yes
 ByteCompile: TRUE
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.1
 Encoding: UTF-8

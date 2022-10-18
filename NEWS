@@ -1,3 +1,10 @@
+multimark 2.1.5 2022-10-18
+-----------------
+CHANGES
+
+* fix compilation warnings on linux with -Wstrict-prototypes in CFLAGS
+
+
 multimark 2.1.4 2022-03-07
 -----------------
 CHANGES
