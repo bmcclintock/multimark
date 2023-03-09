@@ -1,28 +1,63 @@
-citHeader("To cite the 'multimark' package in publications use:")
-
-year <- sub(".*(2[[:digit:]]{3})-.*", "\\1", meta$Date, perl = TRUE)
-vers <- paste("R package version", meta$Version)
-
-citEntry(entry="Article",
-  title = "multimark: an R package for analysis of capture-recapture data consisting of multiple ``noninvasive'' marks",
-  author = personList(as.person("B. T. McClintock")),
+bibentry(bibtype="Article",
+  title = "{multimark}: an {R} package for analysis of capture--recapture data consisting of multiple ``noninvasive'' marks",
+  author = person(given  = c("Brett","T."),
+                    family = "McClintock"),
   year     = {2015},
   journal = "Ecology and Evolution",
   volume     = {5},
   number     = {21},
-  pages     = {"4920-4931"},
+  pages     = {"4920--4931"},
   url = "https://doi.org/10.1002/ece3.1676",
   textVersion =
-  paste("McClintock, B. T. (2015)",
-  "multimark: an R package for analysis of capture-recapture data consisting of multiple ``noninvasive'' marks.",
-  "Ecology and Evolution 5(21):4920-4931."))
-  
-citEntry(entry="Manual",
-         title = "multimark: capture-mark-recapture analysis using multiple non-invasive marks",
-         author = personList(as.person("Brett McClintock")),
-         year = year,
-         note = vers,
-         textVersion =
-         paste("McClintock, B. T. (", year,
-               ") multimark: capture-mark-recapture analysis using multiple non-invasive marks. ",
-               vers, ".", sep="") )
+    paste("McClintock, B. T. (2015)",
+    'multimark: an R package for analysis of capture-recapture data consisting of multiple "noninvasive" marks.',
+    "Ecology and Evolution 5(21):4920-4931."),
+  header = "To cite package ‘multimark’ in publications use:",
+  footer = paste("To help with reproducibility of output please cite its version number. This is 'multimark' version",meta$Version)
+)
+
+#bibentry(bibtype="Article",
+#  title = "Integrated modeling of bilateral photo-identification data in mark--recapture analyses",
+#  author = c(person(given  = c("Brett","T."),
+#                    family = "McClintock"),
+#             person(given  = c("Paul","B."),
+#                    family = "Conn"),
+#             person(given  = c("Robert","S."),
+#                    family = "Alonso"),
+#             person(given  = c("Kevin","R."),
+#                    family = "Crooks")),
+#  year = {2013},
+#  journal = "Ecology",
+#  volume={94},
+#  number={7},
+#  pages={"1464-1471"},
+#  url = "https://doi.org/10.1890/12-1613.1",
+#  textVersion =
+#    paste("McClintock, B. T., Conn, P. B., Alonso, R. S., and Crooks, F. (2013)",
+#    "Integrated modeling of bilateral photo-identification data in mark--recapture analyses.",
+#    "Ecology 94(7):1464-1471."),
+#  header = "To cite the non-spatial capture-recapture models in 'multimark':"
+#)
+
+#bibentry(bibtype="Article",
+#  title = "Spatial capture–recapture with multiple noninvasive marks: An application to camera-trapping data of the {E}uropean wildcat (Felis silvestris) using {R} package multimark",
+#  author = c(person(given  = "Lea",
+#                    family = "Maronde"),
+#             person(given  = c("Brett","T."),
+#                    family = "McClintock"),
+#             person(given  = "Urs",
+#                    family = "Breitenmoser"),
+#             person(given  = "Fridolin",
+#                    family = "Zimmermann")),
+#  year = {2020},
+#  journal = "Ecology and Evolution",
+#  volume = {10},
+#  number = {24},
+#  pages = {"13968-13979"},
+#  url = "https://doi.org/10.1002/ece3.6990",
+#  textVersion =
+#    paste("Maronde, L., McClintock, B. T., Breitenmoser, U., and Zimmermann, F. (2020)",
+#    "Spatial capture–recapture with multiple noninvasive marks: An application to camera-trapping data of the European wildcat (Felis silvestris) using R package multimark.",
+#    "Ecology and Evolution 10(24):13968-13979."),
+#  header = "To cite the spatial capture-recapture models in 'multimark':"
+#)
