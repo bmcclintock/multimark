@@ -250,7 +250,7 @@ get_DMCJS<-function(mod.p,mod.phi,mod.delta,Enc.Mat,covs,type="CJS",...){
   if(length(which(ch==paste(rep(0,ncol(Enc.Mat)),collapse="")))){
     ch<-ch[-which(ch==paste(rep(0,ncol(Enc.Mat)),collapse=""))] 
   }
-  CH<-process.data(data.frame(ch,options(stringsAsFactors = FALSE)),model=type)
+  CH<-process.data(data.frame(ch,stringsAsFactors = FALSE),model=type)
   temp<-make.design.data(CH,...)
   if((CH$nocc-1) %% 2 == 0){
     temp$Phi$Time <- temp$Phi$Time+1-((CH$nocc-1)/2)-.5

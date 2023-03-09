@@ -92,10 +92,10 @@ get_DMClosed<-function(mod.p,mod.delta,Enc.Mat,covs,type="Closed",ntraps=1,detec
     ch<-ch[-which(ch==paste(rep(0,ncol(Enc.Mat)),collapse=""))] 
   }
   if(!is.null(detection)){
-    ch<-data.frame(ch=ch,trap=as.factor(rep(1:ntraps)),options(stringsAsFactors = FALSE))
+    ch<-data.frame(ch=ch,trap=as.factor(rep(1:ntraps)),stringsAsFactors = FALSE)
     CH<-process.data(ch,groups="trap",model=type)
   } else {
-    ch<-data.frame(ch,options(stringsAsFactors = FALSE))
+    ch<-data.frame(ch,stringsAsFactors = FALSE)
     CH<-process.data(ch,model=type)
   }
   temp<-make.design.data(CH,...)
