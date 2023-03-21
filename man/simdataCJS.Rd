@@ -19,7 +19,7 @@ simdataCJS(
 )
 }
 \arguments{
-\item{N}{Number of individuals.}
+\item{N}{Number of individuals. At each occasion \eqn{t \in \{1,\ldots,\code{noccas}\}}, individuals are first encountered with probability \eqn{1/(\code{noccas}-t+1)}, such that all \code{N} individuals are encountered at least once.}
 
 \item{noccas}{Number of sampling occasions. \code{floor(N/noccas)} individuals are first encountered on each occasion.}
 
@@ -27,7 +27,7 @@ simdataCJS(
 
 \item{sigma2_zp}{Logit- or probit-scale individual heterogeneity variance term for capture probability (p).}
 
-\item{phibeta}{Logit- or probit-scale intercept term(s) for survival probability (\eqn{\phi}). Must be a scaler or vector of length \code{noccas}.}
+\item{phibeta}{Logit- or probit-scale intercept term(s) for survival probability (\eqn{\phi}). Must be a scaler or vector of length \code{noccas-1}.}
 
 \item{sigma2_zphi}{Logit- or probit-scale individual heterogeneity variance term for survival probability (\eqn{\phi}).}
 

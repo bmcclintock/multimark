@@ -3,11 +3,11 @@
 #' This function generates encounter histories from simulated open population capture-mark-recapture data consisting of multiple non-invasive marks. 
 #' 
 #' 
-#' @param N Number of individuals.
+#' @param N Number of individuals. At each occasion \eqn{t \in \{1,\ldots,\code{noccas}\}}, individuals are first encountered with probability \eqn{1/(\code{noccas}-t+1)}, such that all \code{N} individuals are encountered at least once.
 #' @param noccas Number of sampling occasions. \code{floor(N/noccas)} individuals are first encountered on each occasion.
 #' @param pbeta Logit- or probit-scale intercept term(s) for capture probability (p). Must be a scaler or vector of length \code{noccas}.
 #' @param sigma2_zp Logit- or probit-scale individual heterogeneity variance term for capture probability (p).
-#' @param phibeta Logit- or probit-scale intercept term(s) for survival probability (\eqn{\phi}). Must be a scaler or vector of length \code{noccas}.
+#' @param phibeta Logit- or probit-scale intercept term(s) for survival probability (\eqn{\phi}). Must be a scaler or vector of length \code{noccas-1}.
 #' @param sigma2_zphi Logit- or probit-scale individual heterogeneity variance term for survival probability (\eqn{\phi}).
 #' @param delta_1 Conditional probability of type 1 encounter, given detection.
 #' @param delta_2 Conditional probability of type 2 encounter, given detection.
@@ -59,30 +59,30 @@ simdataCJS <- function(N=100,noccas=5,pbeta=-0.25,sigma2_zp=0,phibeta=1.6,sigma2
     stop("'data.type' must be 'never', 'sometimes', or 'always'")
   }
   
-  n <- floor(N/noccas)
+  if(!link %in% c("probit","logit")) stop("link function must be 'probit' or 'logit'")
+  
   tEnc.Mat <-matrix(0,nrow=N,ncol=noccas)
-  first <- sort(rep(1:noccas,n))
+  # entry into population is random
+  first <- sort(sample.int(noccas,N,prob=rep(1/noccas,noccas),replace=TRUE))
   zp <- rnorm(N,0,sqrt(sigma2_zp))
   zphi <- rnorm(N,0,sqrt(sigma2_zphi))
-  tmp.phibeta <- c(phibeta,0)
-  for(i in 1:(n*(noccas-1))){
+  for(i in 1:N){
     ind <- tEnc.Mat[i,first[i]] <- 1
-    for(j in (first[i]+1):noccas){
-      if(link=="probit"){
-        p<-pnorm(pbeta[j]+zp[i])
-        phi<-pnorm(tmp.phibeta[j]+zphi[i])
-      } else if(link=="logit"){
-        p<-expit(pbeta[j]+zp[i])      
-        phi<-expit(tmp.phibeta[j]+zphi[i])  
-      } else {stop("link function must be 'probit' or 'logit'")}
-      tEnc.Mat[i,j]<-rbinom(1,1,p*ind)
-      if(runif(1)>phi){
-        ind<-0
+    if(first[i]<noccas){
+      for(j in (first[i]+1):noccas){
+        if(link=="probit"){
+          p<-pnorm(pbeta[j]+zp[i])
+          phi<-pnorm(phibeta[j-1]+zphi[i])
+        } else if(link=="logit"){
+          p<-expit(pbeta[j]+zp[i])      
+          phi<-expit(phibeta[j-1]+zphi[i])  
+        }
+        if(runif(1)>phi){
+          ind<-0
+        }
+        tEnc.Mat[i,j]<-rbinom(1,1,p*ind)
       }
     }
-  }
-  for(i in ((noccas-1)*n + 1):N){
-    tEnc.Mat[i,first[i]]<-1
   }
   Rand.Mat<-matrix(runif(N*noccas,0,1),N,noccas)
   tEnc.Mat[which(tEnc.Mat==1 & Rand.Mat<delta_2)] <- 2      # type 2 encounters

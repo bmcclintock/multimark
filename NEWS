@@ -1,3 +1,10 @@
+multimark 2.1.7 2023-03-21
+-----------------
+BUG FIXES
+
+* simdataCJS did not properly account for mortality between first encounter occasion and the subsequent occasion. Thanks to Nathan Crum for identifying the issue.
+
+
 multimark 2.1.6 2023-03-09
 -----------------
 CHANGES
