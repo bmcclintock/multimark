@@ -174,7 +174,8 @@ setClass("multimarkSCRsetup", representation=list(Enc.Mat="matrix",data.type="ch
          package="multimark")
 
 
-tol <- 1.e-6
+#tol <- 1.e-6
+tol <- .Machine$double.xmin
 
 #' @importFrom prodlim row.match
 getfreq<-function(Enc.Mat,vAll.hists,data.type){
@@ -1056,7 +1057,8 @@ processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer(
   } else {
     Basis <- Basis[,-1]
     ncolbasis<-ncol(Basis)
-    indBasis<-as.vector(which(Basis!=0)-J*rep(seq(0,ncolbasis-1),each=3),mode="integer")
+    #indBasis<-as.vector(which(Basis!=0)-J*rep(seq(0,ncolbasis-1),each=3),mode="integer")
+    indBasis<-as.integer((which(Basis!=0)-as.numeric(J)*as.numeric(rep(seq(0,ncolbasis-1),each=3))))
   }
   mms<-new(Class="multimarksetup",Enc.Mat=Enc.Mat,data.type=data.type,vAll.hists=A$vAll.hists,Aprime=A$Aprime,indBasis=indBasis,ncolbasis=ncolbasis,knownx=knownx,C=C,L=L,naivex=naivex,covs=covs)  
   return(mms)
@@ -1231,7 +1233,8 @@ processdataSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=NU
   } else {
     Basis <- Basis[,-1]
     ncolbasis<-ncol(Basis)
-    indBasis<-as.vector(which(Basis!=0)-J*rep(seq(0,ncolbasis-1),each=3),mode="integer")
+    #indBasis<-as.vector(which(Basis!=0)-J*rep(seq(0,ncolbasis-1),each=3),mode="integer")
+    indBasis<-as.integer((which(Basis!=0)-as.numeric(J)*as.numeric(rep(seq(0,ncolbasis-1),each=3))))
   }
   
   mms<-new(Class="multimarkSCRsetup",Enc.Mat=Enc.Mat,data.type=data.type,vAll.hists=A$vAll.hists,Aprime=A$Aprime,indBasis=indBasis,ncolbasis=ncolbasis,knownx=knownx,C=C,L=L,naivex=naivex,covs=covs,spatialInputs=spatialInputs)  

@@ -1,8 +1,20 @@
-multimark 2.1.7 2023-03-21
+multimark 2.2.0 2023-10-18
 -----------------
+CHANGES
+
+* The marginal likelihood (integrated over q) is now used in multimarkCJS for proposing updates of the latent histories
+
+* While standard CJS detection history likelihoods are conditional on first capture, first captures now inform the conditional probabilities of type 1, type 2, type 3, and type 4 encounters in the multimarkCJS models. Unlike for detection probabilities, this assumes that the conditional probabilities for type 1, type 2, type 3, and type 4 encounters are the same for first capture and all subsequent recaptures. This assumption could be violated if a particular data collection method is used only for first captures and a different data collection method is used for all subsequent recaptures (for any of the encounter types) or if there is a behavioral response to first capture that affects the probabilities of type 1, type 2, type 3, and/or type 4 encounters. Such violations are uncommon when using non-invasive sampling.
+
+* Minimum value for detection probabilities has been reduced to DBL_TRUE_MIN (i.e. the minimum positive double). While in most cases this should have little impact on MCMC results, previous analyses with very low detection probabilities should be revisited to confirm
+
+* Updates for sigma2_scr in multimarkClosedSCR and markClosedSCR (and latent histories in multimarkClosedSCR) now include joint updates with N
+
 BUG FIXES
 
-* simdataCJS did not properly account for mortality between first encounter occasion and the subsequent occasion. Thanks to Nathan Crum for identifying the issue.
+* simdataCJS did not properly account for mortality between first encounter occasion and the subsequent occasion. Thanks to Nathan Crum for identifying the issue
+
+* The likelihoods for multimarkCJS (and multimodelCJS) models were missing some multimonimal coefficients. While in most cases this should have little impact on MCMC results, previous analyses using multimarkCJS (and multimodelCJS) should be revisited to confirm
 
 
 multimark 2.1.6 2023-03-09

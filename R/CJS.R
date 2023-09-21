@@ -425,12 +425,22 @@ loglikeCJS<-function(parms,DM,noccas,C,All.hists){
   p <- pmin(pmax(pnorm(matrix(XBp[DMind]+rep(zp[Find],each=noccas-1),byrow=TRUE,nrow=length(Find),ncol=noccas-1)),tol),1.-tol)
   phi <- pmin(pmax(pnorm(matrix(XBphi[DMind]+rep(zphi[Find],each=noccas-1),byrow=TRUE,nrow=length(Find),ncol=noccas-1)),tol),1.-tol)
   indhists <- All.hists[H[Find],-1]
-  base::sum(log( ((indhists==0) * ((1.-p) * phi *q[Find,2:noccas] + (1.-phi)*(1.-q[Find,2:noccas]))
+  loglike <- base::sum(log( ((indhists==0) * ((1.-p) * phi *q[Find,2:noccas] + (1.-phi)*(1.-q[Find,2:noccas]))
                   + (indhists==1) * p * delta_1 * phi
                   + (indhists==2) * p * delta_2 * phi
                   + (indhists==3) * p * (1.-delta_1-delta_2) *(1.-alpha) * phi
                   + (indhists==4) * p * (1.-delta_1-delta_2) *alpha * phi)[which(q[Find,1:(noccas-1)]==1)] ))
   
+  firstcaps <- All.hists[cbind(H[which(firstcap<=noccas)],firstcap[which(firstcap<=noccas)])]
+  loglike <- loglike + base::sum(log( (  (firstcaps==1) * delta_1
+                             + (firstcaps==2) * delta_2
+                             + (firstcaps==3) * (1.-delta_1-delta_2) *(1.-alpha) 
+                             + (firstcaps==4) * (1.-delta_1-delta_2) *alpha ) ))
+  
+  loglike <- loglike + lgamma(sum(firstcap==noccas)+1.) - sum(lgamma(table(H[which(firstcap==noccas)])+1.))
+  loglike <- loglike - lgamma(sum(firstcap>noccas)+1.) - lgamma(length(H)-sum(firstcap>noccas)+1.)
+  
+  return(loglike)
 }
 
 #' @importFrom mvtnorm dmvnorm

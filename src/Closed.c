@@ -7,7 +7,7 @@
 #include <Rmath.h>
 #include <Rinternals.h>
 
-#define tol 1.e-6
+#define tol DBL_TRUE_MIN
 
 #ifndef min
   #define min( a, b ) ( ((a) < (b)) ? (a) : (b) )
