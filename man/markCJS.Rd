@@ -9,6 +9,7 @@ markCJS(
   covs = data.frame(),
   mod.p = ~1,
   mod.phi = ~1,
+  useInitial = TRUE,
   parms = c("pbeta", "phibeta"),
   nchains = 1,
   iter = 12000,
@@ -46,6 +47,8 @@ markCJS(
 \item{mod.p}{Model formula for detection probability (\eqn{p}). For example, \code{mod.p=~1} specifies no effects (i.e., intercept only), \code{mod.p~time} specifies temporal effects, \code{mod.p~age} specifies age effects, \code{mod.p~h} specifies individual heterogeneity, and \code{mod.p~time+age} specifies additive temporal and age effects.}
 
 \item{mod.phi}{Model formula for survival probability (\eqn{\phi}). For example, \code{mod.phi=~1} specifies no effects (i.e., intercept only), \code{mod.phi~time} specifies temporal effects, \code{mod.phi~age} specifies age effects, \code{mod.phi~h} specifies individual heterogeneity, and \code{mod.phi~time+age} specifies additive temporal and age effects.}
+
+\item{useInitial}{logical indicating whether or not to allow first captures to contribute to the estimation of the conditional probabilities of each encounter type (i.e., delta_1, delta_2, and alpha). Default: \code{TRUE}, which assumes that the conditional probabilities for type 1, type 2, type 3, and type 4 encounters are the same for first capture and all subsequent recaptures.}
 
 \item{parms}{A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are probit-scale detection probability parameters ("\code{pbeta}" for \eqn{p} and "\code{phibeta}" for \eqn{\phi}), probit-scale individual heterogeneity variance terms ("\code{sigma2_zp}" for \eqn{p} and "\code{sigma2_zphi}" for \eqn{\phi}), and probit-scale individual effects ("\code{zp}" and "\code{zphi}"). Latent variable indicators for whether each individual was alive (1) or dead (0) during each sampling occasion ("\code{q}") and the log likelihood ("\code{loglike}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.}
 

@@ -12,6 +12,7 @@ multimarkCJS(
   mod.p = ~1,
   mod.phi = ~1,
   mod.delta = ~type,
+  useInitial = TRUE,
   parms = c("pbeta", "phibeta", "delta"),
   nchains = 1,
   iter = 12000,
@@ -68,6 +69,8 @@ multimarkCJS(
 \item{mod.phi}{Model formula for survival probability (\eqn{\phi}). For example, \code{mod.phi=~1} specifies no effects (i.e., intercept only), \code{mod.phi~time} specifies temporal effects, \code{mod.phi~age} specifies age effects, \code{mod.phi~h} specifies individual heterogeneity, and \code{mod.phi~time+age} specifies additive temporal and age effects.}
 
 \item{mod.delta}{Model formula for conditional probabilities of type 1 (delta_1) and type 2 (delta_2) encounters, given detection. Currently only \code{mod.delta=~1} (i.e., \eqn{\delta_1 = \delta_2}) and \code{mod.delta=~type} (i.e., \eqn{\delta_1 \ne \delta_2}) are implemented.}
+
+\item{useInitial}{logical indicating whether or not to allow first captures to contribute to the estimation of the conditional probabilities of each encounter type (i.e., delta_1, delta_2, and alpha). Default: \code{TRUE}, which assumes that the conditional probabilities for type 1, type 2, type 3, and type 4 encounters are the same for first capture and all subsequent recaptures.}
 
 \item{parms}{A character vector giving the names of the parameters and latent variables to monitor. Possible parameters are probit-scale detection probability parameters ("\code{pbeta}" for \eqn{p} and "\code{phibeta}" for \eqn{\phi}), conditional probability of type 1 or type 2 encounter, given detection ("\code{delta})", probability of simultaneous type 1 and type 2 detection, given both types encountered ("\code{alpha}"), probit-scale individual heterogeneity variance terms ("\code{sigma2_zp}" for \eqn{p} and "\code{sigma2_zphi}" for \eqn{\phi}), probit-scale individual effects ("\code{zp}" and "\code{zphi}"), and the probability that a randomly selected individual from the \code{M = nrow(Enc.Mat)} observed individuals belongs to the \eqn{n} unique individuals encountered at least once ("\code{psi}"). Individual encounter history indices ("\code{H}"), latent variable indicators for whether each individual was alive (1) or dead (0) during each sampling occasion ("\code{q}"), and the log likelihood ("\code{loglike}") may also be monitored. Setting \code{parms="all"} monitors all possible parameters and latent variables.}
 
