@@ -155,17 +155,17 @@ void PROPFREQ(int icol,int c_k,int *Hnew, int *indBasis, int J, int *xnew, int s
           prodz[i] = -1.0;
           prodh[i] = -1.0;
           if(Hnew[i]==indBasis[icol*3+j]){
-            prodz[i] = 1. - GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i);
+            prodz[i] = fmax(1. - GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i),tol);
             prodzsum+=prodz[i];
           } else if(!Hnew[i]){
-            prodh[i] = GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i);
+            prodh[i] = fmax(GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i),tol);
             prodhsum+=prodh[i];
           }          
         }
         ProbSampleNoReplace(supN, prodz, absc_k, remove); 
         for(k=0; k<absc_k; k++){
           Hnew[remove[k]]=0;
-          prodh[remove[k]] = 1. - prodz[remove[k]];
+          prodh[remove[k]] = fmax(1. - prodz[remove[k]],tol);
           prodhsum+=prodh[remove[k]];    
         }
         for(k=0; k<absc_k; k++){
@@ -188,17 +188,17 @@ void PROPFREQ(int icol,int c_k,int *Hnew, int *indBasis, int J, int *xnew, int s
             prodz[i] = -1.0;
             prodh[i] = -1.0;
             if(!Hnew[i]){
-              prodh[i] = GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i);
+              prodh[i] = fmax(GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i),tol);
               prodhsum+=prodh[i];
             } else if(Hnew[i]==indBasis[icol*3+j]){
-              prodz[i] = 1. - GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i);
+              prodz[i] = fmax(1. - GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i),tol);
               prodzsum+=prodz[i];
             }
           }
           ProbSampleNoReplace(supN, prodh, absc_k, add);
           for(k=0; k<absc_k; k++){
             Hnew[add[k]]=indBasis[icol*3+j];
-            prodz[add[k]] = 1. - prodh[add[k]];
+            prodz[add[k]] = fmax(1. - prodh[add[k]],tol);
             prodzsum+=prodz[add[k]];
           }
           for(k=0; k<absc_k; k++){
