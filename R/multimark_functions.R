@@ -268,7 +268,7 @@ get_A<-function(Enc.Mat,data.type){
     
     for(i in 1:nEnc.Mat1){
       for(j in 1:nEnc.Mat2){
-        All.hists[starthist+(i-1)*nEnc.Mat2+j,]<-Enc.Mat1[i,]+Enc.Mat2[j,]    
+        if(!(any((Enc.Mat1[i,]+Enc.Mat2[j,])>2) & data.type=="always")) All.hists[starthist+(i-1)*nEnc.Mat2+j,]<-Enc.Mat1[i,]+Enc.Mat2[j,]    
       }
     }
   } else {
@@ -300,7 +300,7 @@ get_A<-function(Enc.Mat,data.type){
 }
 
 get_basis_vectors <- function(tA,ivect,data.type){
-  #This function caculates basis vectors based on data type (data.type) and latent frequencies (x).  
+  #This function calculates basis vectors based on data type (data.type) and latent frequencies (x).  
   #Function returns a matrix of the relevant basis vectors for the null space of A'.
   
   # Arguments: 
