@@ -51,6 +51,7 @@ simdataCJS(
 A list containing the following:
 \item{Enc.Mat}{A matrix containing the observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions.}
 \item{trueEnc.Mat}{A matrix containing the true (latent) encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions.}
+\item{q}{A matrix containing the true (latent) survival histories (1=alive, 0=dead or not yet captured) with rows corresponding to individuals and columns corresponding to sampling occasions.}
 }
 \description{
 This function generates encounter histories from simulated open population capture-mark-recapture data consisting of multiple non-invasive marks.

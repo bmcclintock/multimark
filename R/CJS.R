@@ -25,6 +25,7 @@
 #' @return A list containing the following:
 #' \item{Enc.Mat}{A matrix containing the observed encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions.}
 #' \item{trueEnc.Mat}{A matrix containing the true (latent) encounter histories with rows corresponding to individuals and columns corresponding to sampling occasions.}
+#' \item{q}{A matrix containing the true (latent) survival histories (1=alive, 0=dead or not yet captured) with rows corresponding to individuals and columns corresponding to sampling occasions.}
 #' @author Brett T. McClintock 
 #' @seealso \code{\link{processdata}}, \code{\link{multimarkCJS}}
 #' @references
@@ -61,13 +62,13 @@ simdataCJS <- function(N=100,noccas=5,pbeta=-0.25,sigma2_zp=0,phibeta=1.6,sigma2
   
   if(!link %in% c("probit","logit")) stop("link function must be 'probit' or 'logit'")
   
-  tEnc.Mat <-matrix(0,nrow=N,ncol=noccas)
+  tEnc.Mat <- q <- matrix(0,nrow=N,ncol=noccas)
   # entry into population is random
   first <- sort(sample.int(noccas,N,prob=rep(1/noccas,noccas),replace=TRUE))
   zp <- rnorm(N,0,sqrt(sigma2_zp))
   zphi <- rnorm(N,0,sqrt(sigma2_zphi))
   for(i in 1:N){
-    ind <- tEnc.Mat[i,first[i]] <- 1
+    tEnc.Mat[i,first[i]] <- q[i,first[i]] <- 1
     if(first[i]<noccas){
       for(j in (first[i]+1):noccas){
         if(link=="probit"){
@@ -77,10 +78,12 @@ simdataCJS <- function(N=100,noccas=5,pbeta=-0.25,sigma2_zp=0,phibeta=1.6,sigma2
           p<-expit(pbeta[j]+zp[i])      
           phi<-expit(phibeta[j-1]+zphi[i])  
         }
-        if(runif(1)>phi){
-          ind<-0
-        }
-        tEnc.Mat[i,j]<-rbinom(1,1,p*ind)
+        if(q[i,j-1]){
+          if(runif(1)>phi){
+            q[i,j]<-0
+          } else q[i,j] <- 1
+        }  
+        tEnc.Mat[i,j]<-rbinom(1,1,p*q[i,j])
       }
     }
   }
@@ -89,7 +92,7 @@ simdataCJS <- function(N=100,noccas=5,pbeta=-0.25,sigma2_zp=0,phibeta=1.6,sigma2
   tEnc.Mat[which(tEnc.Mat==1 & Rand.Mat>(1-delta_B))] <- 4  # type 1 and type 2 encounters
   tEnc.Mat[which(tEnc.Mat==4)] <- tEnc.Mat[which(tEnc.Mat==4)]-(runif(base::sum(tEnc.Mat==4))<(1-alpha))   # unobserved type 1 and type 2 encounters
   Enc.Mat <- get_Enc(tEnc.Mat,data.type)
-  return(list(Enc.Mat=Enc.Mat,trueEnc.Mat=tEnc.Mat))
+  return(list(Enc.Mat=Enc.Mat,trueEnc.Mat=tEnc.Mat,q=q))
 }
 
 get_q<-function(mms,DM,H,pbeta,zp,phibeta,zphi){
@@ -120,7 +123,7 @@ get_q<-function(mms,DM,H,pbeta,zp,phibeta,zphi){
           num <- phi[firstcap,i,t-1] * q[i,t-1] * (1.-p[firstcap,i,t-1]);
           if(t<noccas) num <- num * (1.-phi[firstcap,i,t])
           probq <- num/(num + (1.-phi[firstcap,i,t-1]*q[i,t-1]));
-          if(t<noccas){
+          if(q[i,t-1] & t<noccas){
             if(q[i,t+1]) probq <- 1
           }
           q[i,t] <- rbinom(1,1.0,probq);
@@ -439,8 +442,10 @@ loglikeCJS<-function(parms,DM,noccas,C,All.hists,useInitial){
                                + (firstcaps==4) * (1.-delta_1-delta_2) *alpha ) ))
   }
   
-  loglike <- loglike + lgamma(sum(firstcap==noccas)+1.) - sum(lgamma(table(H[which(firstcap==noccas)])+1.))
-  loglike <- loglike - lgamma(sum(firstcap>noccas)+1.) - lgamma(length(H)-sum(firstcap>noccas)+1.)
+  firstcapvec <- table(firstcap)[1:noccas]
+  loglike <- loglike + sum(lgamma(firstcapvec[1:(noccas-1+useInitial)]+1.))
+  loglike <- loglike - sum(lgamma(table(H[Find])+1.))
+  if(useInitial) loglike <- loglike - sum(lgamma(table(H[which(firstcap==noccas)])+1.))
   
   return(loglike)
 }
@@ -1027,7 +1032,7 @@ checkparmsCJS <- function(mms,modlist,params,parmlist,M){
 }
 
 checkmmCJSinput<-function(mmslist,modlist,nmod,nchains,iter,miter,mburnin,mthin,modprior,M1){
-  if(!all(match(unlist(unique(lapply(modlist,names))),c("mcmc","mod.p","mod.phi","mod.delta","DM","initial.values","priorparms","mms"),nomatch=0))) stop("each object in 'modlist' must be a list returned by multimarkCJS()")
+  if(!all(match(unlist(unique(lapply(modlist,names))),c("mcmc","mod.p","mod.phi","mod.delta","DM","initial.values","priorparms","mms","useInitial"),nomatch=0))) stop("each object in 'modlist' must be a list returned by multimarkCJS()")
   if(!all(lapply(modlist,function(x) is.mcmc.list(x$mcmc))==TRUE)) stop("mcmc output for each model must be an object of type 'mcmc.list'")
   if(nmod<2) stop("'modlist' must contain at least two models")
   if(length(mmslist)!=1) stop("'multimarksetup' (mms) object must be identical for each model")
@@ -1040,7 +1045,7 @@ checkmmCJSinput<-function(mmslist,modlist,nmod,nchains,iter,miter,mburnin,mthin,
   if(!all(match(M1,1:nmod,nomatch=0))) stop("'M1' must be an integer vector of length ",nchains," with values ranging from 1 to ",nmod)
   mms<-mmslist[[1]]
   if(!inherits(mms,"multimarksetup")) stop("'mms' for each model must be an object of class 'multimarksetup'")
-  if(!all(unlist(lapply(mmslist[2:nmod],function(x) x$useInitial==mms@useInitial)))) stop("'useInitial' must be the same for each model")
+  if(!all(unlist(lapply(modlist[2:nmod],function(x) x$useInitial==modlist[[1]]$useInitial)))) stop("'useInitial' must be the same for each model")
   return(mms)
 }
 
@@ -1352,7 +1357,7 @@ multimodelCJS<-function(modlist,modprior=rep(1/length(modlist),length(modlist)),
   if(is.null(miter)) miter <- iter
   
   mms<-checkmmCJSinput(mmslist,modlist,nmod,nchains,iter,miter,mburnin,mthin,modprior,M1)
-  useInitial <- mms$useInitial
+  useInitial <- modlist[[1]]$useInitial
   
   noccas<-ncol(mms@Enc.Mat)
   M<-nrow(mms@Enc.Mat)

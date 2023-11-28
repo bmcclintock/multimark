@@ -294,7 +294,10 @@ loglikeClosed<-function(parms,DM,noccas,C,All.hists,gq){
     pstar <- 1-min(1.-tol,max(tol,prod(1-expit(DM$p%*%pbeta))))
   }    
   loglike <- loglike + dbinom(n,parms$N,pstar,1) - n * log(pstar)  
-  loglike
+  loglike <- loglike + lgamma(n+1.);
+  loglike <- loglike - sum(lgamma(table(Hind)+1.))
+  
+  return(loglike)
 }
 
 priorsClosed<-function(parms,DM,priorparms,data_type){
@@ -311,8 +314,8 @@ priorsClosed<-function(parms,DM,priorparms,data_type){
     if(data_type=="sometimes"){
       priors <- priors + dbeta(parms$alpha,priorparms$a0alpha,priorparms$b0alpha,log=TRUE)
     }
-    priors <- priors + (base::sum(dbinom((parms$H>1),1,parms$psi,log=TRUE))
-                         + dbeta(parms$psi,priorparms$a0psi,priorparms$b0psi,log=TRUE))
+    #priors <- priors + (base::sum(dbinom((parms$H>1),1,parms$psi,log=TRUE))
+    #                     + dbeta(parms$psi,priorparms$a0psi,priorparms$b0psi,log=TRUE))
   }
   
   if(DM$mod.p.h){

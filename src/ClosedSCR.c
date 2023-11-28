@@ -85,7 +85,7 @@ double GETprodhSCR(int *Allhists, double *p, double *c, int *C, double delta_1, 
   return(dens);
 }
 
-double LIKESCR(double *p, double *c, int *qs, double delta_1, double delta_2, double alpha, int *Allhists, int *Hs, int T, int K, int supN, int *C, double Ns, double pstar)
+double LIKESCR(double *p, double *c, int *qs, double delta_1, double delta_2, double alpha, int *Allhists, int *Hs, int T, int K, int supN, int *C, double Ns, double pstar, int *x, int J)
 {
   int i, k, t;
   double logdens=0.;
@@ -110,6 +110,10 @@ double LIKESCR(double *p, double *c, int *qs, double delta_1, double delta_2, do
     }
   }
   logdens += dbinom(n,Ns,pstar,1) - n * log(pstar);
+  //logdens += lgamma(n+1.);
+  //for(int j=1; j<J; j++){
+  //  logdens -= lgamma((double) x[j]+1.);
+  //}
   //Rprintf("pstar %f logdens %f \n",pstar,logdens);
   return(logdens);   
 }
@@ -117,7 +121,7 @@ double LIKESCR(double *p, double *c, int *qs, double delta_1, double delta_2, do
 double POSTERIORSCR(double ll, double *beta, int *qs, double *deltavect, double alpha, double sigma2_scr, double Ns, double psi, double *mu0, double *sigma2_mu0, double *a0_delta, double a0_alpha, double b0_alpha, double *sigma_bounds, double a0psi, double b0psi, int supN, int pdim, int datatype, int updatedelta, int deltatype, double Area)
 {
   double pos=ll;
-  int i,j;
+  int j;
   for(j=0; j<pdim; j++){
     pos += dnorm(beta[j],mu0[j],sqrt(sigma2_mu0[j]),1);
   }
@@ -130,10 +134,10 @@ double POSTERIORSCR(double ll, double *beta, int *qs, double *deltavect, double 
     if(datatype){
       pos += dbeta(alpha,a0_alpha,b0_alpha,1);
     }
-    for(i=0; i<supN; i++){
-      pos += dbinom((double) qs[i],1.0,psi,1);
-    }
-    pos += dbeta(psi,a0psi,b0psi,1);
+    //for(i=0; i<supN; i++){
+    //  pos += dbinom((double) qs[i],1.0,psi,1);
+    //}
+    //pos += dbeta(psi,a0psi,b0psi,1);
   }
   pos += dunif(sqrt(sigma2_scr),sigma_bounds[0],sigma_bounds[1],1);//log(2.0*dcauchy(sqrt(sigma2_scr),0.0,A,0));
   pos += supN * log(1./Area);
@@ -439,7 +443,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
   double temp;
   
   /* Calculate the log-likelihood */  
-  double ll=LIKESCR(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,K,supN,C,Ns,pstar);
+  double ll=LIKESCR(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,K,supN,C,Ns,pstar,xs,J);
   posterior[0]=POSTERIORSCR(ll,betas,qs,deltavect,alphas,sigma2_scrs,Ns,psis,mu0,sigma2_mu0,a0_delta,*a0alpha,*b0alpha,sigma_bounds,*a0psi,*b0psi,supN,dimp,datatype,*updatedelta,deltatype,*Area);
   //Rprintf("ll %f posterior %f \n",ll,posterior[0]);
   if(!R_FINITE(ll)) {
@@ -477,7 +481,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
       //  }
       //}      
       proppstar=GETPSTARSCR(dist2, cloglogp, sigma2_scrs, T, K, ncells, msk, cummind, mind, *dexp);
-      np=LIKESCR(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,K,supN,C,Ns,proppstar);
+      np=LIKESCR(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,K,supN,C,Ns,proppstar,xs,J);
       //Rprintf("g %d l %d betastar %f beta %f np %f ll %f nprior %f oprior %f R %f \n",g,l,betastar[l],betas[l],np,ll,dnorm(betastar[l],mu0[l],sqrt(sigma2_mu0[l]),1),dnorm(betas[l],mu0[l],sqrt(sigma2_mu0[l]),1),exp(np+dnorm(betastar[l],mu0[l],sqrt(sigma2_mu0[l]),1)-ll-dnorm(betas[l],mu0[l],sqrt(sigma2_mu0[l]),1)));
       if(runif(0.0,1.0)<exp(np+dnorm(betastar[l],mu0[l],sqrt(sigma2_mu0[l]),1)-ll-dnorm(betas[l],mu0[l],sqrt(sigma2_mu0[l]),1))){
         betas[l]=betastar[l];
@@ -534,7 +538,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
       np+=dnbinom((double) Ns - ns,(double) ns,pstar,1.0) - log((double) Ns);
       
       op+=ll;
-      nl=LIKESCR(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,K,supN,C,Nstar,proppstar);      
+      nl=LIKESCR(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,K,supN,C,Nstar,proppstar,xs,J);      
       np+=nl;
       //Rprintf("g %d sigma2_scrstar %f sigma2_scr %f nl %f ll %f np %f op %f R %f \n",g,sigma2_scrstar,sigma2_scrs,nl,ll,np,op,exp(np-op));
       
@@ -639,7 +643,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
     Ns=ns+rnbinom((double) ns,pstar);
     Nstar=Ns;
     
-    ll=LIKESCR(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,K,supN,C,Ns,pstar);
+    ll=LIKESCR(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,K,supN,C,Ns,pstar,xs,J);
     
     /* update x and H (latent history frequencies) */
     /* includes joint update for N */
@@ -703,18 +707,19 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
       for(i=0; i<supN; i++){
         qnew[i] = ((Hnew[i]) ? (int) 1 : (int) 0);
         nstar += (double) qnew[i];
-        op += dbinom((double) qs[i],1.0,psis,1);
-        np += dbinom((double) qnew[i],1.0,psis,1);
+        //op += dbinom((double) qs[i],1.0,psis,1);
+        //np += dbinom((double) qnew[i],1.0,psis,1);
       }
       Nstar = nstar+rnbinom((double) nstar,pstar);
       
-      nl = LIKESCR(p,c,qnew,delta_1s,delta_2s,alphas,Allhists,Hnew,T,K,supN,C,Nstar,pstar);  
+      nl = LIKESCR(p,c,qnew,delta_1s,delta_2s,alphas,Allhists,Hnew,T,K,supN,C,Nstar,pstar,xnew,J);  
       np += nl;     
       
       op += dnbinom((double) Nstar - nstar,(double) nstar,pstar,1.0) - log((double) Ns);
       np += dnbinom((double) Ns - ns,(double) ns,pstar,1.0) - log((double) Nstar);
       
       if(runif(0.0,1.0)<exp(np-op)){
+        //Rprintf("bam %d nl %f ll %f np %f op %f R %f newx0 %d oldx0 %d psi %f alpha %f delta_1 %f delta_2 %f N %f p %f sigma2_scr %f \n",g,nl,ll,np,op,exp(np-op),xnew[0],xs[0],psis,alphas,delta_1s,delta_2s,Nstar,p[0],sigma2_scrs);
         for(i=0; i<J; i++){
           xs[i]=xnew[i];
         }
@@ -737,7 +742,7 @@ void ClosedSCRC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, doub
     Nstar=Ns;
     nstar=ns;
     
-    //ll=LIKESCR(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,K,supN,C,Ns,pstar);   
+    //ll=LIKESCR(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,K,supN,C,Ns,pstar,xs,J);   
     
     /* Save draws according to thin specification */ 
     if((g % th)==0)  {

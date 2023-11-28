@@ -21,7 +21,7 @@ double EXPIT(double x)
   return(expit);
 }
 
-double LIKE(double *p, double *c, int *qs, double delta_1, double delta_2, double alpha, int *Allhists, int *Hs, int T, int supN, int *C, double Ns, double pstar)
+double LIKE(double *p, double *c, int *qs, double delta_1, double delta_2, double alpha, int *Allhists, int *Hs, int T, int supN, int *C, double Ns, double pstar, int *x, int J)
 {
   int i,t;
   double logdens=0.;
@@ -51,6 +51,10 @@ double LIKE(double *p, double *c, int *qs, double delta_1, double delta_2, doubl
     }
   }
   logdens += dbinom(n,Ns,pstar,1) - n * log(pstar);
+  logdens += lgamma(n+1.);
+  for(int j=1; j<J; j++){
+    logdens -= lgamma((double) x[j]+1.);
+  }
   return(logdens);   
 }
 
@@ -76,10 +80,10 @@ double POSTERIOR(double ll, double *beta, int *qs, double *z, double *deltavect,
     if(datatype){
       pos += dbeta(alpha,a0_alpha,b0_alpha,1);
     }
-    for(i=0; i<supN; i++){
-      pos += dbinom((double) qs[i],1.0,psi,1);
-    }
-    pos += dbeta(psi,a0psi,b0psi,1);
+    //for(i=0; i<supN; i++){
+    //  pos += dbinom((double) qs[i],1.0,psi,1);
+    //}
+    //pos += dbeta(psi,a0psi,b0psi,1);
   }
   pos += -log(Ns);
   return(pos);
@@ -155,17 +159,17 @@ void PROPFREQ(int icol,int c_k,int *Hnew, int *indBasis, int J, int *xnew, int s
           prodz[i] = -1.0;
           prodh[i] = -1.0;
           if(Hnew[i]==indBasis[icol*3+j]){
-            prodz[i] = fmax(1. - GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i),tol);
+            prodz[i] = 1.;//fmax(1. - GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i),tol);
             prodzsum+=prodz[i];
           } else if(!Hnew[i]){
-            prodh[i] = fmax(GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i),tol);
+            prodh[i] = 1.;//fmax(GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i),tol);
             prodhsum+=prodh[i];
           }          
         }
         ProbSampleNoReplace(supN, prodz, absc_k, remove); 
         for(k=0; k<absc_k; k++){
           Hnew[remove[k]]=0;
-          prodh[remove[k]] = fmax(1. - prodz[remove[k]],tol);
+          prodh[remove[k]] = 1.;//fmax(1. - prodz[remove[k]],tol);
           prodhsum+=prodh[remove[k]];    
         }
         for(k=0; k<absc_k; k++){
@@ -188,17 +192,17 @@ void PROPFREQ(int icol,int c_k,int *Hnew, int *indBasis, int J, int *xnew, int s
             prodz[i] = -1.0;
             prodh[i] = -1.0;
             if(!Hnew[i]){
-              prodh[i] = fmax(GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i),tol);
+              prodh[i] = 1.;//fmax(GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i),tol);
               prodhsum+=prodh[i];
             } else if(Hnew[i]==indBasis[icol*3+j]){
-              prodz[i] = fmax(1. - GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i),tol);
+              prodz[i] = 1.;//fmax(1. - GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i),tol);
               prodzsum+=prodz[i];
             }
           }
           ProbSampleNoReplace(supN, prodh, absc_k, add);
           for(k=0; k<absc_k; k++){
             Hnew[add[k]]=indBasis[icol*3+j];
-            prodz[add[k]] = fmax(1. - prodh[add[k]],tol);
+            prodz[add[k]] = 1.;//fmax(1. - prodh[add[k]],tol);
             prodzsum+=prodz[add[k]];
           }
           for(k=0; k<absc_k; k++){
@@ -359,7 +363,7 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
   int ind, obasesum, nbasesum;
     
   /* Calculate the log-likelihood */  
-  double ll=LIKE(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,supN,C,Ns,pstar);
+  double ll=LIKE(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,supN,C,Ns,pstar,xs,J);
   posterior[0]=POSTERIOR(ll,betas,qs,zs,deltavect,alphas,sigma_zs,Ns,psis,mu0,sigma2_mu0,a0_delta,*a0alpha,*b0alpha,*A,*a0psi,*b0psi,supN,dimp,*mod_h,datatype,*updatedelta,deltatype);
   if(!R_FINITE(ll)) {
     Rprintf("Fatal error in chain %d: initial likelihood is '%f'. \n",*ichain,ll);
@@ -393,7 +397,7 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
         }
       }
       proppstar=GETPSTAR(npts, weight, node, logitpstar, sigma_zs, dimp, T);
-      np=LIKE(propp,propc,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,supN,C,Ns,proppstar);
+      np=LIKE(propp,propc,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,supN,C,Ns,proppstar,xs,J);
       if(runif(0.0,1.0)<exp(np+dnorm(betastar[j],mu0[j],sqrt(sigma2_mu0[j]),1)-ll-dnorm(betas[j],mu0[j],sqrt(sigma2_mu0[j]),1))){
         betas[j]=betastar[j];
         for(t=0; t<T; t++){
@@ -493,7 +497,7 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
       psis = rbeta(sha,sca);
     }
     
-    ll=LIKE(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,supN,C,Ns,pstar);
+    ll=LIKE(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,supN,C,Ns,pstar,xs,J);
   
     /* update x and H (latent history frequencies) */
     op=0.0;
@@ -531,8 +535,8 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
         for(i=0; i<(dimrem+dimadd); i++){
           if(!R_FINITE(nprop[i])) {Rprintf("PROPFREQ nprop %f fatal error in chain %d: please report to <brett.mcclintock@noaa.gov> \n",nprop[i],*ichain); *iter = g; return;}
           if(!R_FINITE(oprop[i])) {Rprintf("PROPFREQ oprop %f fatal error in chain %d: please report to <brett.mcclintock@noaa.gov> \n",oprop[i],*ichain); *iter = g; return;}
-          op += nprop[i];
-          np += oprop[i]; 
+          //op += nprop[i];
+          //np += oprop[i]; 
         }
         nbasesum=0;
         for(i=0; i< *ncolBasis; i++){
@@ -556,18 +560,19 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
       for(i=0; i<supN; i++){
         qnew[i] = ((Hnew[i]) ? (int) 1 : (int) 0);
         nstar += (double) qnew[i];
-        op += dbinom((double) qs[i],1.0,psis,1);
-        np += dbinom((double) qnew[i],1.0,psis,1);
+        //op += dbinom((double) qs[i],1.0,psis,1);
+        //np += dbinom((double) qnew[i],1.0,psis,1);
       }
       Nstar = nstar+rnbinom((double) nstar,pstar);
   
-      nl = LIKE(p,c,qnew,delta_1s,delta_2s,alphas,Allhists,Hnew,T,supN,C,Nstar,pstar);
+      nl = LIKE(p,c,qnew,delta_1s,delta_2s,alphas,Allhists,Hnew,T,supN,C,Nstar,pstar,xnew,J);
       np += nl;     
       
       op += dnbinom((double) Nstar - nstar,(double) nstar,pstar,1.0) - log((double) Ns);
       np += dnbinom((double) Ns - ns,(double) ns,pstar,1.0) - log((double) Nstar);
       
       if(runif(0.0,1.0)<exp(np-op)){
+        //Rprintf("bam %d nl %f ll %f np %f op %f R %f newx0 %d oldx0 %d psi %f alpha %f delta_1 %f delta_2 %f N %f p %f sigma2_zp %f \n",g,nl,ll,np,op,exp(np-op),xnew[0],xs[0],psis,alphas,delta_1s,delta_2s,Nstar,p[0],sigma2_zs);
         for(i=0; i<J; i++){
           xs[i]=xnew[i];
         }
@@ -593,7 +598,7 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
     /* Update N */
     Ns=ns+rnbinom((double) ns,pstar);
     
-    ll=LIKE(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,supN,C,Ns,pstar);   
+    ll=LIKE(p,c,qs,delta_1s,delta_2s,alphas,Allhists,Hs,T,supN,C,Ns,pstar,xs,J);   
     
      /* Save draws according to thin specification */ 
     if((g % th)==0)  {

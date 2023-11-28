@@ -1055,7 +1055,7 @@ processdata<-function(Enc.Mat,data.type="never",covs=data.frame(),known=integer(
     ncolbasis<-integer(1)
     indBasis<-integer()    
   } else {
-    Basis <- Basis[,-1]
+    Basis <- Basis[,-1,drop=FALSE]
     ncolbasis<-ncol(Basis)
     #indBasis<-as.vector(which(Basis!=0)-J*rep(seq(0,ncolbasis-1),each=3),mode="integer")
     indBasis<-as.integer((which(Basis!=0)-as.numeric(J)*as.numeric(rep(seq(0,ncolbasis-1),each=3))))
@@ -1231,7 +1231,7 @@ processdataSCR<-function(Enc.Mat,trapCoords,studyArea=NULL,buffer=NULL,ncells=NU
     ncolbasis<-integer(1)
     indBasis<-integer()    
   } else {
-    Basis <- Basis[,-1]
+    Basis <- Basis[,-1,drop=FALSE]
     ncolbasis<-ncol(Basis)
     #indBasis<-as.vector(which(Basis!=0)-J*rep(seq(0,ncolbasis-1),each=3),mode="integer")
     indBasis<-as.integer((which(Basis!=0)-as.numeric(J)*as.numeric(rep(seq(0,ncolbasis-1),each=3))))
