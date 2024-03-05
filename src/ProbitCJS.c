@@ -332,6 +332,7 @@ void PROPFREQProbitCJS(int icol,int c_k,int *Hnew, int *indBasis, int J, int *xn
   double prodzsum, prodhsum;  
   double temp = runif(0.0,1.0);
   
+  int bInd[3];
   if(c_k > 0){
     remove_xi[0]=1;
     remove_xi[1]=1;
@@ -339,7 +340,10 @@ void PROPFREQProbitCJS(int icol,int c_k,int *Hnew, int *indBasis, int J, int *xn
     add_xi[0]=0;
     add_xi[1]=0;
     add_xi[2]=1;
-    if(xnew[0]<(c_k)) temp = 0.0;
+    bInd[0]=0;
+    bInd[1]=1;
+    bInd[2]=2;
+    //if(xnew[0]<(c_k)) temp = 0.0;
   } else if(c_k < 0){
     add_xi[0]=1;
     add_xi[1]=1;
@@ -347,93 +351,71 @@ void PROPFREQProbitCJS(int icol,int c_k,int *Hnew, int *indBasis, int J, int *xn
     remove_xi[0]=0;
     remove_xi[1]=0;
     remove_xi[2]=1;
-    if(xnew[0]<(-2*c_k)) temp = 0.0;
+    bInd[0]=2;
+    bInd[1]=1;
+    bInd[2]=0;
+    if(xnew[0]<(-c_k)) temp = 0.0;
   }
   int count=0;
-  if(temp<0.5) {
-    goto S10;
-  } else {
-    goto S20;
-  }
-  S10:
+  
+  if(temp > 0.){
     for(j=0; j<3; j++){
       prodzsum=0.0;
       prodhsum=0.0;
-      if(remove_xi[j]){
-        for(i=0; i<supN; i++) {
-          prodz[i] = -1.0;
-          prodh[i] = -1.0;
-          if(Hnew[i]==indBasis[icol*3+j]){
-            prodz[i] =  1.;//fmax((1. - GETprodhProbitCJS(Allhists,probitp,probitphi,zp,zphi,C,L,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i,useInitial)*(useInitial ? 1.0 : ((C[indBasis[icol*3+j]]-1)<T))),tol);
-            prodzsum+=prodz[i];
-            //Rprintf("remove i %d Hnew %d prodz %f prodzsum %f useInitial %d mult %f \n",i,Hnew[i],prodz[i],prodzsum,useInitial,(useInitial ? 1.0 : ((C[indBasis[icol*3+j]]-1)<T)));
-          } else if(!Hnew[i]){
-            prodh[i] = 1.;//fmax(GETprodhProbitCJS(Allhists,probitp,probitphi,zp,zphi,C,L,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i,useInitial),tol);
-            prodhsum+=prodh[i];
-            //Rprintf("remove i %d Hnew %d prodh %f prodhsum %f useInitial %d mult %f \n",i,Hnew[i],prodh[i],prodhsum,useInitial,(useInitial ? 1.0 : ((C[indBasis[icol*3+j]]-1)<T)));
-          }          
+      for(i=0; i<supN; i++) {
+        prodz[i] = -1.0;
+        prodh[i] = -1.0;
+        if(Hnew[i]==indBasis[icol*3+bInd[j]]){
+          prodh[i] = 1.;//fmax(1.-GETprodhProbitCJS(Allhists,probitp,probitphi,zp,zphi,C,L,delta_1,delta_2,alpha,indBasis[icol*3+bInd[j]],T,i,useInitial),tol);
+          prodhsum+=prodh[i];
+        } else if(!Hnew[i]){
+          prodz[i] =  1.;//fmax(GETprodhProbitCJS(Allhists,probitp,probitphi,zp,zphi,C,L,delta_1,delta_2,alpha,indBasis[icol*3+bInd[j]],T,i,useInitial),tol);
+          prodzsum+=prodz[i];
         }
-        ProbSampleNoReplace(supN, prodz, absc_k, remove); 
-        for(k=0; k<absc_k; k++){
+      }
+      
+      if(remove_xi[bInd[j]]) ProbSampleNoReplace(supN, prodh, absc_k, remove); 
+      if(add_xi[bInd[j]]) ProbSampleNoReplace(supN, prodz, absc_k, add); 
+      
+      for(k=0; k<absc_k; k++){
+        if(add_xi[bInd[j]]){
+          prodh[add[k]] = 1.;//fmax((1. - prodz[add[k]]),tol);
+          prodhsum+=prodh[add[k]];
+          //Rprintf("added i %d Hnew %d Hs %d prodz %f prodzsum %f prodh %f prodhsum %f useInitial %d mult %f \n",add[k],indBasis[icol*3+bInd[j]],Hnew[add[k]],prodz[add[k]],prodzsum,prodh[add[k]],prodhsum,useInitial,(useInitial ? 1.0 : ((C[indBasis[icol*3+bInd[j]]]-1)<T)));
+          Hnew[add[k]]=indBasis[icol*3+bInd[j]];
+        } else {
+          prodz[remove[k]]= 1.;//fmax((1. - prodh[remove[k]]),tol);
+          prodzsum+=prodz[remove[k]];
+          //Rprintf("removed i %d Hnew %d Hs %d prodh %f prodhsum %f prodz %f prodzsum %f useInitial %d mult %f \n",remove[k],0,Hnew[remove[k]],prodh[remove[k]],prodhsum,prodz[remove[k]],prodzsum,useInitial,(useInitial ? 1.0 : ((C[indBasis[icol*3+bInd[j]]]-1)<T)));
           Hnew[remove[k]]=0;
-          prodh[remove[k]] = 1.;//fmax((1. - prodz[remove[k]]*(useInitial ? 1.0 : ((C[indBasis[icol*3+j]]-1)<T))),tol);
-          prodhsum+=prodh[remove[k]];    
-          //Rprintf("removed i %d Hnew %d Hs %d prodh %f prodhsum %f useInitial %d mult %f \n",remove[k],Hnew[remove[k]],indBasis[icol*3+j],prodh[remove[k]],prodhsum,useInitial,(useInitial ? 1.0 : ((C[indBasis[icol*3+j]]-1)<T)));
         }
-        for(k=0; k<absc_k; k++){
-          nprop[count] = log(prodz[remove[k]])-log(prodzsum);
-          oprop[count] = log(prodh[remove[k]])-log(prodhsum);
-          //Rprintf("removed %d prodz %f prodh %f prodzsum %f prodhsum %f nprop %f oprop %f \n",remove[k],prodz[remove[k]],prodh[remove[k]],prodzsum,prodhsum,nprop[count],oprop[count]);
+        
+      }
+      for(k=0; k<absc_k; k++){
+        if(add_xi[bInd[j]]){
+          nprop[count] = log(prodz[add[k]])-log(prodzsum);
+          oprop[count] = log(prodh[add[k]])-log(prodhsum);
+          //Rprintf("prop added i %d Hnew %d Hs %d prodz %f prodzsum %f prodh %f prodhsum %f nprop %f oprop %f \n",add[k],indBasis[icol*3+bInd[j]],0,prodz[add[k]],prodzsum,prodh[add[k]],prodhsum,nprop[count],oprop[count]);
+          prodzsum -=  prodz[add[k]];
+          prodhsum -=  prodh[add[k]];
+          
+        } else {
+          nprop[count] = log(prodh[remove[k]])-log(prodhsum);
+          oprop[count] = log(prodz[remove[k]])-log(prodzsum);
+          //Rprintf("prop removed %d Hnew %d Hs %d prodh %f prodhsum %f prodz %f prodzsum %f nprop %f oprop %f \n",remove[k],0,indBasis[icol*3+bInd[j]],prodh[remove[k]],prodhsum,prodz[remove[k]],prodzsum,nprop[count],oprop[count]);
           prodzsum -=  prodz[remove[k]];
           prodhsum -=  prodh[remove[k]];
-          count+=1;
         }
+        count+=1;
       }
     }
-    if(temp<0.5) goto S20;
-    else goto S30;
-    S20:
-      for(j=0; j<3; j++){
-        prodzsum=0.0;
-        prodhsum=0.0;
-        if(add_xi[j]){
-          for(i=0; i<supN; i++) {
-            prodz[i] = -1.0;
-            prodh[i] = -1.0;
-            if(!Hnew[i]){
-              prodh[i] = 1.;//fmax(GETprodhProbitCJS(Allhists,probitp,probitphi,zp,zphi,C,L,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i,useInitial),tol);
-              prodhsum+=prodh[i];
-              //Rprintf("add i %d Hnew %d prodh %f prodhsum %f useInitial %d mult %f \n",i,Hnew[i],prodh[i],prodhsum,useInitial,(useInitial ? 1.0 : ((C[indBasis[icol*3+j]]-1)<T)));
-            } else if(Hnew[i]==indBasis[icol*3+j]){
-              prodz[i] = 1.;//fmax((1. - GETprodhProbitCJS(Allhists,probitp,probitphi,zp,zphi,C,L,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i,useInitial)*(useInitial ? 1.0 : ((C[indBasis[icol*3+j]]-1)<T))),tol);
-              prodzsum+=prodz[i];
-              //Rprintf("add i %d Hnew %d prodz %f prodzsum %f useInitial %d mult %f \n",i,Hnew[i],prodz[i],prodzsum,useInitial,(useInitial ? 1.0 : ((C[indBasis[icol*3+j]]-1)<T)));
-            }
-          }
-          ProbSampleNoReplace(supN, prodh, absc_k, add);
-          for(k=0; k<absc_k; k++){
-            Hnew[add[k]]=indBasis[icol*3+j];
-            prodz[add[k]] = 1.;//fmax((1. - prodh[add[k]]*(useInitial ? 1.0 : ((C[indBasis[icol*3+j]]-1)<T))),tol);
-            prodzsum+=prodz[add[k]];
-            //Rprintf("added i %d Hnew %d Hs %d prodz %f prodzsum %f useInitial %d mult %f \n",add[k],Hnew[add[k]],indBasis[icol*3+j],prodz[add[k]],prodzsum,useInitial,(useInitial ? 1.0 : ((C[indBasis[icol*3+j]]-1)<T)));
-          }
-          for(k=0; k<absc_k; k++){
-            nprop[count] = log(prodh[add[k]])-log(prodhsum);
-            oprop[count] = log(prodz[add[k]])-log(prodzsum);
-            //Rprintf("added %d prodh %f prodz %f prodhsum %f prodzsum %f nprop %f oprop %f \n",add[k],prodh[add[k]],prodz[add[k]],prodhsum,prodzsum,nprop[count],oprop[count]);
-            prodzsum -=  prodz[add[k]];
-            prodhsum -=  prodh[add[k]];
-            count+=1;
-          }
-        }
-      }
-      if(temp>=0.5) goto S10;
-      else goto S30;
-      S30:
-        xnew[indBasis[icol*3]]-=c_k;
-      xnew[indBasis[icol*3+1]]-=c_k;
-      xnew[indBasis[icol*3+2]]+=c_k;  
-      xnew[0]+=c_k;  
+    
+    xnew[indBasis[icol*3]]-=c_k;
+    xnew[indBasis[icol*3+1]]-=c_k;
+    xnew[indBasis[icol*3+2]]+=c_k;  
+    xnew[0]+=c_k;  
+    
+  }
 }
 
 // Define function ProbitCJSC to draw samples from the posterior distribution
@@ -740,7 +722,12 @@ void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, doub
         double nprop[dimadd+dimrem];
         double oprop[dimadd+dimrem];
         
+        op += -log((double) xind+min(xnew[indBasis[base*3]]-knownxs[indBasis[base*3]],xnew[indBasis[base*3+1]]-knownxs[indBasis[base*3+1]]));
+        
         PROPFREQProbitCJS(base,c_k,Hnew,indBasis,J,xnew,supN,T,probitp,probitphi,zps,zphis,C,L,delta_1s,delta_2s,alphas,Allhists,nprop,oprop,*useInitial);
+        
+        xind = min(xnew[indBasis[base*3+2]] - knownxs[indBasis[base*3+2]],xnew[0]);
+        np += -log((double) xind+min(xnew[indBasis[base*3]]-knownxs[indBasis[base*3]],xnew[indBasis[base*3+1]]-knownxs[indBasis[base*3+1]]));
         
         for(t=0; t<(T+1); t++){
           firstcapvecstar[t] = FIRSTCAP(xnew, T, J, t, C);
@@ -791,7 +778,6 @@ void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, doub
       op += ll;
       nl = LIKEProbitCJS(qnew,probitp,probitphi,zps,zphis,delta_1s,delta_2s,alphas,Allhists,Hnew,T,supN,C,xnew,J,firstcapvecstar,*useInitial);
       np += nl;
-      //Rprintf("%d nl %f ll %f np %f op %f R %f newx0 %d oldx0 %d psi %f \n",g,nl,ll,np,op,exp(np-op),xnew[0],xs[0],psis);
       if(runif(0.0,1.0)<exp(np-op)){
         //Rprintf("bam %d nl %f ll %f np %f op %f R %f newx0 %d oldx0 %d psi %f alpha %f delta_1 %f delta_2 %f phi %f p %f sigma2_zphi %f \n",g,nl,ll,np,op,exp(np-op),xnew[0],xs[0],psis,alphas,delta_1s,delta_2s,probitphi[0],probitp[0],sigma2_zphis);
         for(i=0; i<J; i++){
@@ -810,7 +796,7 @@ void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, doub
           firstcapvec[t] = firstcapvecstar[t];
         }
         ll=nl;
-      }
+      }// else Rprintf("%d nl %f ll %f np %f op %f R %f newx0 %d oldx0 %d psi %f \n",g,nl,ll,np,op,exp(np-op),xnew[0],xs[0],psis);
     }
     for(i=0; i<J; i++){
       xnew[i]=xs[i];

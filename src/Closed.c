@@ -127,6 +127,8 @@ void PROPFREQ(int icol,int c_k,int *Hnew, int *indBasis, int J, int *xnew, int s
   double prodz[supN], prodh[supN];
   double prodzsum, prodhsum;  
   double temp = runif(0.0,1.0);
+  
+  int bInd[3];
   if(c_k > 0){
     remove_xi[0]=1;
     remove_xi[1]=1;
@@ -134,7 +136,10 @@ void PROPFREQ(int icol,int c_k,int *Hnew, int *indBasis, int J, int *xnew, int s
     add_xi[0]=0;
     add_xi[1]=0;
     add_xi[2]=1;
-    if(xnew[0]<(c_k)) temp = 0.0;
+    bInd[0]=0;
+    bInd[1]=1;
+    bInd[2]=2;
+    //if(xnew[0]<(c_k)) temp = 0.0;
   } else if(c_k < 0){
     add_xi[0]=1;
     add_xi[1]=1;
@@ -142,85 +147,67 @@ void PROPFREQ(int icol,int c_k,int *Hnew, int *indBasis, int J, int *xnew, int s
     remove_xi[0]=0;
     remove_xi[1]=0;
     remove_xi[2]=1;
-    if(xnew[0]<(-2*c_k)) temp = 0.0;
-  } 
-  int count=0;
-  if(temp<0.5) {
-    goto S10;
-  } else {
-    goto S20;
+    bInd[0]=2;
+    bInd[1]=1;
+    bInd[2]=0;
+    if(xnew[0]<(-c_k)) temp = 0.0;
   }
-  S10:
+  int count=0;
+  
+  if(temp > 0.){
     for(j=0; j<3; j++){
       prodzsum=0.0;
       prodhsum=0.0;
-      if(remove_xi[j]){
-        for(i=0; i<supN; i++) {
-          prodz[i] = -1.0;
-          prodh[i] = -1.0;
-          if(Hnew[i]==indBasis[icol*3+j]){
-            prodz[i] = 1.;//fmax(1. - GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i),tol);
-            prodzsum+=prodz[i];
-          } else if(!Hnew[i]){
-            prodh[i] = 1.;//fmax(GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i),tol);
-            prodhsum+=prodh[i];
-          }          
+      for(i=0; i<supN; i++) {
+        prodz[i] = -1.0;
+        prodh[i] = -1.0;
+        if(Hnew[i]==indBasis[icol*3+bInd[j]]){
+          prodh[i] = 1.;//fmax(1.-GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+bInd[j]],T,i),tol);
+          prodhsum+=prodh[i];
+        } else if(!Hnew[i]){
+          prodz[i] =  1.;//fmax(GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+bInd[j]],T,i),tol);
+          prodzsum+=prodz[i];
         }
-        ProbSampleNoReplace(supN, prodz, absc_k, remove); 
-        for(k=0; k<absc_k; k++){
+      }
+      
+      if(remove_xi[bInd[j]]) ProbSampleNoReplace(supN, prodh, absc_k, remove); 
+      if(add_xi[bInd[j]]) ProbSampleNoReplace(supN, prodz, absc_k, add); 
+      
+      for(k=0; k<absc_k; k++){
+        if(add_xi[bInd[j]]){
+          prodh[add[k]] = 1.;//fmax((1. - prodz[add[k]]),tol);
+          prodhsum+=prodh[add[k]];
+          Hnew[add[k]]=indBasis[icol*3+bInd[j]];
+        } else {
+          prodz[remove[k]]= 1.;//fmax((1. - prodh[remove[k]]),tol);
+          prodzsum+=prodz[remove[k]];
           Hnew[remove[k]]=0;
-          prodh[remove[k]] = 1.;//fmax(1. - prodz[remove[k]],tol);
-          prodhsum+=prodh[remove[k]];    
         }
-        for(k=0; k<absc_k; k++){
-          nprop[count] = log(prodz[remove[k]])-log(prodzsum);
-          oprop[count] = log(prodh[remove[k]])-log(prodhsum);
+        
+      }
+      for(k=0; k<absc_k; k++){
+        if(add_xi[bInd[j]]){
+          nprop[count] = log(prodz[add[k]])-log(prodzsum);
+          oprop[count] = log(prodh[add[k]])-log(prodhsum);
+          prodzsum -=  prodz[add[k]];
+          prodhsum -=  prodh[add[k]];
+          
+        } else {
+          nprop[count] = log(prodh[remove[k]])-log(prodhsum);
+          oprop[count] = log(prodz[remove[k]])-log(prodzsum);
           prodzsum -=  prodz[remove[k]];
           prodhsum -=  prodh[remove[k]];
-          count+=1;
         }
+        count+=1;
       }
     }
-    if(temp<0.5) goto S20;
-    else goto S30;
-    S20:
-      for(j=0; j<3; j++){
-        prodzsum=0.0;
-        prodhsum=0.0;
-        if(add_xi[j]){
-          for(i=0; i<supN; i++) {
-            prodz[i] = -1.0;
-            prodh[i] = -1.0;
-            if(!Hnew[i]){
-              prodh[i] = 1.;//fmax(GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i),tol);
-              prodhsum+=prodh[i];
-            } else if(Hnew[i]==indBasis[icol*3+j]){
-              prodz[i] = 1.;//fmax(1. - GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+j],T,i),tol);
-              prodzsum+=prodz[i];
-            }
-          }
-          ProbSampleNoReplace(supN, prodh, absc_k, add);
-          for(k=0; k<absc_k; k++){
-            Hnew[add[k]]=indBasis[icol*3+j];
-            prodz[add[k]] = 1.;//fmax(1. - prodh[add[k]],tol);
-            prodzsum+=prodz[add[k]];
-          }
-          for(k=0; k<absc_k; k++){
-            nprop[count] = log(prodh[add[k]])-log(prodhsum);  
-            oprop[count] = log(prodz[add[k]])-log(prodzsum); 
-            prodzsum -=  prodz[add[k]];
-            prodhsum -=  prodh[add[k]];
-            count+=1;
-          }
-        }
-      }
-      if(temp>=0.5) goto S10;
-      else goto S30;
-      S30:
-        xnew[indBasis[icol*3]]-=c_k;
-      xnew[indBasis[icol*3+1]]-=c_k;
-      xnew[indBasis[icol*3+2]]+=c_k;  
-      xnew[0]+=c_k;
+    
+    xnew[indBasis[icol*3]]-=c_k;
+    xnew[indBasis[icol*3+1]]-=c_k;
+    xnew[indBasis[icol*3+2]]+=c_k;  
+    xnew[0]+=c_k;  
+    
+  }
 }
 
 double GETPSTAR(int npts, double *weight, double *node, double *logitp, double sigma_zs, int dimp, int T)
@@ -530,7 +517,12 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
         double nprop[dimadd+dimrem];
         double oprop[dimadd+dimrem];
         
+        op += -log((double) xind+min(xnew[indBasis[base*3]]-knownxs[indBasis[base*3]],xnew[indBasis[base*3+1]]-knownxs[indBasis[base*3+1]]));
+        
         PROPFREQ(base,c_k,Hnew,indBasis,J,xnew,supN,T,p,c,C,delta_1s,delta_2s,alphas,Allhists,nprop,oprop);
+        
+        xind = min(xnew[indBasis[base*3+2]] - knownxs[indBasis[base*3+2]],xnew[0]);
+        np += -log((double) xind+min(xnew[indBasis[base*3]]-knownxs[indBasis[base*3]],xnew[indBasis[base*3+1]]-knownxs[indBasis[base*3+1]]));
         
         for(i=0; i<(dimrem+dimadd); i++){
           if(!R_FINITE(nprop[i])) {Rprintf("PROPFREQ nprop %f fatal error in chain %d: please report to <brett.mcclintock@noaa.gov> \n",nprop[i],*ichain); *iter = g; return;}

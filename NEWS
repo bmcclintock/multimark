@@ -1,4 +1,4 @@
-multimark 2.2.0 2023-10-18
+multimark 2.2.0 2024-06-06
 -----------------
 CHANGES
 
@@ -14,7 +14,7 @@ BUG FIXES
 
 * simdataCJS did not properly account for mortality between first encounter occasion and the subsequent occasion. Thanks to Nathan Crum for identifying the issue
 
-* The likelihoods for multimarkCJS (and multimodelCJS) models were missing some multimonimal coefficients. While in most cases this should have little impact on MCMC results, previous analyses using multimarkCJS (and multimodelCJS) should be revisited to confirm
+* The likelihoods for multimarkCJS and multimarkClosed models were missing some multimonimal coefficients. While in most cases this should have little impact on MCMC results, previous analyses using multimarkCJS and multimarkClosed should be revisited to confirm
 
 
 multimark 2.1.6 2023-03-09
