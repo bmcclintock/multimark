@@ -1,4 +1,4 @@
-# multimark  [![R-CMD-check](https://github.com/bmcclintock/multimark/workflows/R-CMD-check/badge.svg)](https://github.com/bmcclintock/multimark/actions) [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![CRAN_Downloads](https://cranlogs.r-pkg.org/badges/multimark)](https://cran.r-project.org/package=multimark) [![CRAN_Downloads](https://cranlogs.r-pkg.org/badges/grand-total/multimark)](https://cran.r-project.org/package=multimark)
+# multimark  [![R-CMD-check](https://github.com/bmcclintock/multimark/workflows/R-CMD-check/badge.svg)](https://github.com/bmcclintock/multimark/actions) [![CRAN_Downloads](https://cranlogs.r-pkg.org/badges/multimark)](https://cran.r-project.org/package=multimark) [![CRAN_Downloads](https://cranlogs.r-pkg.org/badges/grand-total/multimark)](https://cran.r-project.org/package=multimark)
 
 R package for capture-recapture analysis with multiple non-invasive marks
 
