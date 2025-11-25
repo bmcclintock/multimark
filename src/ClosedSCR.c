@@ -190,10 +190,10 @@ void PROPFREQSCR(int icol,int c_k,int *Hnew, int *indBasis, int J, int *xnew, in
         prodz[i] = -1.0;
         prodh[i] = -1.0;
         if(Hnew[i]==indBasis[icol*3+bInd[j]]){
-          prodh[i] = fmax(1.-GETprodhSCR(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+bInd[j]],T,K,i),tol);
+          prodh[i] = 1.;//fmax(1.-GETprodhSCR(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+bInd[j]],T,K,i),tol);
           prodhsum+=prodh[i];
         } else if(!Hnew[i]){
-          prodz[i] =  fmax(GETprodhSCR(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+bInd[j]],T,K,i),tol);
+          prodz[i] =  1.;//fmax(GETprodhSCR(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+bInd[j]],T,K,i),tol);
           prodzsum+=prodz[i];
         }
       }
@@ -203,11 +203,11 @@ void PROPFREQSCR(int icol,int c_k,int *Hnew, int *indBasis, int J, int *xnew, in
       
       for(k=0; k<absc_k; k++){
         if(add_xi[bInd[j]]){
-          prodh[add[k]] = fmax((1. - prodz[add[k]]),tol);
+          prodh[add[k]] = 1.;//fmax((1. - prodz[add[k]]),tol);
           prodhsum+=prodh[add[k]];
           Hnew[add[k]]=indBasis[icol*3+bInd[j]];
         } else {
-          prodz[remove[k]]= fmax((1. - prodh[remove[k]]),tol);
+          prodz[remove[k]]= 1.;//fmax((1. - prodh[remove[k]]),tol);
           prodzsum+=prodz[remove[k]];
           Hnew[remove[k]]=0;
         }
