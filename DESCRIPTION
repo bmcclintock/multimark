@@ -36,5 +36,5 @@ Suggests: testthat
 License: GPL-2
 LazyData: yes
 ByteCompile: TRUE
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Encoding: UTF-8
