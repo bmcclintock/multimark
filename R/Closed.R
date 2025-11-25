@@ -852,7 +852,7 @@ drawmissingClosed<-function(M.cur,missing,pbetapropsd,sigppropshape,sigppropscal
   missing
 }
 
-#' @importFrom Brobdingnag brob as.brob sum
+#' @importFrom Brobdingnag brob as.brob
 getbrobprobClosed<-function(imod,modprior,posterior,cur.parms,missing,pbetapropsd,sigppropshape,sigppropscale){
   deltadens <- 0
   if(length(missing$missingdeltaparms[[imod]])){

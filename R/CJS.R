@@ -1055,7 +1055,7 @@ drawmissingCJS<-function(M.cur,missing,pbetapropsd,phibetapropsd,sigppropshape,s
   missing
 }
 
-#' @importFrom Brobdingnag brob as.brob sum
+#' @importFrom Brobdingnag brob as.brob
 getbrobprobCJS<-function(imod,modprior,posterior,cur.parms,missing,pbetapropsd,phibetapropsd,sigppropshape,sigppropscale,sigphipropshape,sigphipropscale){
   deltadens <- 0
   if(length(missing$missingdeltaparms[[imod]])){

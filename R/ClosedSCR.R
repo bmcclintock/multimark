@@ -1122,7 +1122,7 @@ getcurClosedSCRparmslist<-function(cur.parms,DM,M,noccas,data_type,alpha,centerm
 }
 
 #' @importFrom utils flush.console
-#' @importFrom Brobdingnag brob as.brob sum
+#' @importFrom Brobdingnag brob as.brob
 rjmcmcClosedSCR <- function(ichain,mms,M,noccas,ntraps,spatialInputs,data_type,alpha,C,All.hists,modlist,DMlist,deltalist,detlist,priorlist,mod.p.h,iter,miter,mburnin,mthin,modprior,M1,monitorparms,missing,pbetapropsd,sigpropmean,sigpropsd,pmodnames,deltamodnames,printlog){
   
   multimodel <- matrix(0,nrow=(max(1,floor(miter/mthin)))-(floor(mburnin/mthin)),ncol=length(monitorparms$parms)+1,dimnames=list(NULL,c(monitorparms$parms,"M")))
