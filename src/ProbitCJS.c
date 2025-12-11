@@ -247,12 +247,12 @@ double LIKEProbitCJS(int *q, double *probitp, double *probitphi, double *zp, dou
       }     
     }
   }
-  for(t=0; t<T+useInitial; t++){
-    logdens += lgamma((double) firstcapvec[t]+1.);
-  }
-  for(j=1; j<J; j++){
-    if(((C[j]-1)<T) | useInitial) logdens -= lgamma((double) x[j]+1.);
-  }
+  //for(t=0; t<T+useInitial; t++){
+  //  logdens += lgamma((double) firstcapvec[t]+1.);
+  //}
+  //for(j=1; j<J; j++){
+  //  if(((C[j]-1)<T) | useInitial) logdens -= lgamma((double) x[j]+1.);
+  //}
   //Rprintf("logdens %f pbeta %f phibeta %f alpha %f delta_1 %f delta_2 %f x0 %d \n",logdens,probitp[firstcap*T+t],probitphi[firstcap*T+t],alpha,delta_1,delta_2,x[0]);
   return(logdens); 
 }
@@ -736,8 +736,8 @@ void ProbitCJSC(int *ichain, double *pbeta0, double *pprec0, double *pbeta, doub
         for(i=0; i<(dimrem+dimadd); i++){
           if(!R_FINITE(nprop[i])) {Rprintf("PROPFREQ nprop %f fatal error in chain %d: please report to <brett.mcclintock@noaa.gov> \n",nprop[i],*ichain); *iter = g; return;}
           if(!R_FINITE(oprop[i])) {Rprintf("PROPFREQ oprop %f fatal error in chain %d: please report to <brett.mcclintock@noaa.gov> \n",oprop[i],*ichain); *iter = g; return;}
-          //op += nprop[i];
-          //np += oprop[i]; 
+          op += nprop[i];
+          np += oprop[i]; 
           //Rprintf("%d i %d nprop %f oprop %f np %f op %f \n",g,i,nprop[i],oprop[i],np,op);
         }
         nbasesum=0;

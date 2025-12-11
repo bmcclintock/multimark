@@ -51,10 +51,10 @@ double LIKE(double *p, double *c, int *qs, double delta_1, double delta_2, doubl
     }
   }
   logdens += dbinom(n,Ns,pstar,1) - n * log(pstar);
-  logdens += lgamma(n+1.);
-  for(int j=1; j<J; j++){
-    logdens -= lgamma((double) x[j]+1.);
-  }
+  //logdens += lgamma(n+1.);
+  //for(int j=1; j<J; j++){
+  //  logdens -= lgamma((double) x[j]+1.);
+  //}
   return(logdens);   
 }
 
@@ -527,8 +527,8 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
         for(i=0; i<(dimrem+dimadd); i++){
           if(!R_FINITE(nprop[i])) {Rprintf("PROPFREQ nprop %f fatal error in chain %d: please report to <brett.mcclintock@noaa.gov> \n",nprop[i],*ichain); *iter = g; return;}
           if(!R_FINITE(oprop[i])) {Rprintf("PROPFREQ oprop %f fatal error in chain %d: please report to <brett.mcclintock@noaa.gov> \n",oprop[i],*ichain); *iter = g; return;}
-          //op += nprop[i];
-          //np += oprop[i]; 
+          op += nprop[i];
+          np += oprop[i]; 
         }
         nbasesum=0;
         for(i=0; i< *ncolBasis; i++){
