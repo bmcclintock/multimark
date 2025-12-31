@@ -369,8 +369,8 @@ priorsClosedSCR<-function(parms,DM,priorparms,data_type,spatialInputs){
     if(data_type=="sometimes"){
       priors <- priors + dbeta(parms$alpha,priorparms$a0alpha,priorparms$b0alpha,log=TRUE)
     }
-    priors <- priors + (base::sum(dbinom((parms$H>1),1,parms$psi,log=TRUE))
-                        + dbeta(parms$psi,priorparms$a0psi,priorparms$b0psi,log=TRUE))
+    #priors <- priors + (base::sum(dbinom((parms$H>1),1,parms$psi,log=TRUE))
+    #                    + dbeta(parms$psi,priorparms$a0psi,priorparms$b0psi,log=TRUE))
   }
   
   #priors <- priors + log(2.0*dcauchy(sqrt(parms$sigma2_scr),0.0,priorparms$a,log=FALSE))

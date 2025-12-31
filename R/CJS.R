@@ -443,9 +443,11 @@ loglikeCJS<-function(parms,DM,noccas,C,All.hists,useInitial){
   }
   
   firstcapvec <- table(firstcap)[1:noccas]
-  loglike <- loglike + sum(lgamma(firstcapvec[1:(noccas-1+useInitial)]+1.))
-  loglike <- loglike - sum(lgamma(table(H[Find])+1.))
-  if(useInitial) loglike <- loglike - sum(lgamma(table(H[which(firstcap==noccas)])+1.))
+  if(useInitial) {
+    counts <- table(factor(firstcap[firstcap <= noccas], levels = 1:noccas), 
+                    factor(firstcaps, levels = 1:4))
+    loglike <- loglike - sum(lgamma(counts + 1))
+  } else loglike <- loglike - sum(lgamma(firstcapvec+1.))
   
   return(loglike)
 }
@@ -468,9 +470,9 @@ priorsCJS<-function(parms,DM,priorparms,data_type,C,noccas){
     if(data_type=="sometimes"){
       priors <- priors + dbeta(parms$alpha,priorparms$a0alpha,priorparms$b0alpha,log=TRUE)
     }
-    priors <- priors + (dbeta(parms$psi,priorparms$a0psi,priorparms$b0psi,log=TRUE)
-                    #+ base::sum(dbinom((firstcap<noccas),1,parms$psi,log=TRUE)))
-                     + base::sum(dbinom((parms$H>1),1,parms$psi,log=TRUE)))
+    #priors <- priors + (dbeta(parms$psi,priorparms$a0psi,priorparms$b0psi,log=TRUE)
+    #                #+ base::sum(dbinom((firstcap<noccas),1,parms$psi,log=TRUE)))
+    #                 + base::sum(dbinom((parms$H>1),1,parms$psi,log=TRUE)))
   }
   
   if(DM$mod.p.h){

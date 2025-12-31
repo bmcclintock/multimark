@@ -7,7 +7,7 @@
 #include <Rmath.h>
 #include <Rinternals.h>
 
-#define tol DBL_TRUE_MIN
+#define tol 1.e-200
 
 #ifndef min
   #define min( a, b ) ( ((a) < (b)) ? (a) : (b) )
@@ -119,95 +119,95 @@ double GETprodh(int *Allhists, double *p, double *c, int *C, double delta_1, dou
 
 void PROPFREQ(int icol,int c_k,int *Hnew, int *indBasis, int J, int *xnew, int supN, int T, double *p, double *c, int *C, double delta_1, double delta_2, double alpha, int *Allhists, double *nprop, double *oprop)
 {  
-  int remove_xi[3];
-  int add_xi[3];
-  int j,i,k;
-  int absc_k=abs(c_k);
-  int remove[absc_k], add[absc_k];
-  double prodz[supN], prodh[supN];
-  double prodzsum, prodhsum;  
-  double temp = runif(0.0,1.0);
+  const double mytol = tol;
+  int remove_xi[3] = {0,0,0}, add_xi[3] = {0,0,0}, bInd[3];
+  int absc_k = abs(c_k);
+  if (absc_k == 0) return;
   
-  int bInd[3];
-  if(c_k > 0){
-    remove_xi[0]=1;
-    remove_xi[1]=1;
-    remove_xi[2]=0;
-    add_xi[0]=0;
-    add_xi[1]=0;
-    add_xi[2]=1;
-    bInd[0]=0;
-    bInd[1]=1;
-    bInd[2]=2;
-    //if(xnew[0]<(c_k)) temp = 0.0;
-  } else if(c_k < 0){
-    add_xi[0]=1;
-    add_xi[1]=1;
-    add_xi[2]=0;
-    remove_xi[0]=0;
-    remove_xi[1]=0;
-    remove_xi[2]=1;
-    bInd[0]=2;
-    bInd[1]=1;
-    bInd[2]=0;
-    if(xnew[0]<(-c_k)) temp = 0.0;
+  if (c_k > 0) {
+    remove_xi[0]=1; remove_xi[1]=1; remove_xi[2]=0;
+    add_xi[0]=0;   add_xi[1]=0;    add_xi[2]=1;
+    bInd[0]=0; bInd[1]=1; bInd[2]=2;
+  } else {
+    add_xi[0]=1; add_xi[1]=1; add_xi[2]=0;
+    remove_xi[0]=0; remove_xi[1]=0; remove_xi[2]=1;
+    bInd[0]=2; bInd[1]=1; bInd[2]=0;
   }
-  int count=0;
   
-  if(temp > 0.){
-    for(j=0; j<3; j++){
-      prodzsum=0.0;
-      prodhsum=0.0;
-      for(i=0; i<supN; i++) {
-        prodz[i] = -1.0;
-        prodh[i] = -1.0;
-        if(Hnew[i]==indBasis[icol*3+bInd[j]]){
-          prodh[i] = 1.;//fmax(1.-GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+bInd[j]],T,i),tol);
-          prodhsum+=prodh[i];
-        } else if(!Hnew[i]){
-          prodz[i] =  1.;//fmax(GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,indBasis[icol*3+bInd[j]],T,i),tol);
-          prodzsum+=prodz[i];
-        }
+  int count = 0;
+  double *prodz = (double *)calloc(supN, sizeof(double));
+  double *prodh = (double *)calloc(supN, sizeof(double));
+  int *sel_remove = (int *)calloc(absc_k, sizeof(int));
+  int *sel_add = (int *)calloc(absc_k, sizeof(int));
+  
+  for (int jm = 0; jm < 3; jm++) {
+    int jhist = indBasis[icol*3 + bInd[jm]];
+    
+    for (int i = 0; i < supN; i++) {
+      double h = GETprodh(Allhists,p,c,C,delta_1,delta_2,alpha,jhist,T,i);
+      prodz[i] = fmin(1.0, fmax(h, mytol));
+      prodh[i] = fmin(1.0, fmax(1.0 - h, mytol));
+    }
+    
+    double *wh_sample = (double *)calloc(supN, sizeof(double));
+    double *wz_sample = (double *)calloc(supN, sizeof(double));
+    double sum_rem_fwd = 0.0, sum_add_fwd = 0.0;
+    
+    for (int i = 0; i < supN; i++) {
+      if (Hnew[i] == jhist) { wh_sample[i] = prodh[i]; sum_rem_fwd += prodh[i]; }
+      if (Hnew[i] == 0)     { wz_sample[i] = prodz[i]; sum_add_fwd += prodz[i]; }
+    }
+    
+    if (remove_xi[bInd[jm]]) {
+      ProbSampleNoReplace(supN, wh_sample, absc_k, sel_remove);
+      double cur_sum = sum_rem_fwd;
+      for (int k = 0; k < absc_k; k++) {
+        nprop[count + k] = log(prodh[sel_remove[k]]) - log(cur_sum);
+        cur_sum -= prodh[sel_remove[k]];
       }
-      
-      if(remove_xi[bInd[j]]) ProbSampleNoReplace(supN, prodh, absc_k, remove); 
-      if(add_xi[bInd[j]]) ProbSampleNoReplace(supN, prodz, absc_k, add); 
-      
-      for(k=0; k<absc_k; k++){
-        if(add_xi[bInd[j]]){
-          prodh[add[k]] = 1.;//fmax((1. - prodz[add[k]]),tol);
-          prodhsum+=prodh[add[k]];
-          Hnew[add[k]]=indBasis[icol*3+bInd[j]];
-        } else {
-          prodz[remove[k]]= 1.;//fmax((1. - prodh[remove[k]]),tol);
-          prodzsum+=prodz[remove[k]];
-          Hnew[remove[k]]=0;
-        }
-        
-      }
-      for(k=0; k<absc_k; k++){
-        if(add_xi[bInd[j]]){
-          nprop[count] = log(prodz[add[k]])-log(prodzsum);
-          oprop[count] = log(prodh[add[k]])-log(prodhsum);
-          prodzsum -=  prodz[add[k]];
-          prodhsum -=  prodh[add[k]];
-          
-        } else {
-          nprop[count] = log(prodh[remove[k]])-log(prodhsum);
-          oprop[count] = log(prodz[remove[k]])-log(prodzsum);
-          prodzsum -=  prodz[remove[k]];
-          prodhsum -=  prodh[remove[k]];
-        }
-        count+=1;
+    } else {
+      ProbSampleNoReplace(supN, wz_sample, absc_k, sel_add);
+      double cur_sum = sum_add_fwd;
+      for (int k = 0; k < absc_k; k++) {
+        nprop[count + k] = log(prodz[sel_add[k]]) - log(cur_sum);
+        cur_sum -= prodz[sel_add[k]];
       }
     }
     
-    xnew[indBasis[icol*3]]-=c_k;
-    xnew[indBasis[icol*3+1]]-=c_k;
-    xnew[indBasis[icol*3+2]]+=c_k;  
-    xnew[0]+=c_k;  
+    for (int k = 0; k < absc_k; k++) {
+      if (add_xi[bInd[jm]]) Hnew[sel_add[k]] = jhist;
+      else Hnew[sel_remove[k]] = 0;
+    }
     
+    double sum_rem_rev = 0.0, sum_add_rev = 0.0;
+    for (int i = 0; i < supN; i++) {
+      if (Hnew[i] == jhist) sum_rem_rev += prodh[i];
+      if (Hnew[i] == 0) sum_add_rev += prodz[i];
+    }
+    
+    if (remove_xi[bInd[jm]]) { // Reverse is add
+      double cur_sum = sum_add_rev;
+      for (int k = 0; k < absc_k; k++) {
+        oprop[count + k] = log(prodz[sel_remove[k]]) - log(cur_sum);
+        cur_sum -= prodz[sel_remove[k]];
+      }
+    } else { // Reverse is remove
+      double cur_sum = sum_rem_rev;
+      for (int k = 0; k < absc_k; k++) {
+        oprop[count + k] = log(prodh[sel_add[k]]) - log(cur_sum);
+        cur_sum -= prodh[sel_add[k]];
+      }
+    }
+    
+    count += absc_k;
+    free(wh_sample); free(wz_sample);
   }
+  
+  free(prodz); free(prodh); free(sel_remove); free(sel_add);
+  xnew[indBasis[icol*3+0]] -= c_k;
+  xnew[indBasis[icol*3+1]] -= c_k;
+  xnew[indBasis[icol*3+2]] += c_k;
+  xnew[0] += c_k;
 }
 
 double GETPSTAR(int npts, double *weight, double *node, double *logitp, double sigma_zs, int dimp, int T)
@@ -539,8 +539,8 @@ void ClosedC(int *ichain, double *mu0, double *sigma2_mu0, double *beta, double 
             indbase[i]=0.0;
           }
         }
-        op += -log((double) obasesum);
-        np += -log((double) nbasesum);
+        op += -log((double) nbasesum);
+        np += -log((double) obasesum);
         obasesum=nbasesum;
       }
     }

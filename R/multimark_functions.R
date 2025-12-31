@@ -174,8 +174,7 @@ setClass("multimarkSCRsetup", representation=list(Enc.Mat="matrix",data.type="ch
          package="multimark")
 
 
-#tol <- 1.e-6
-tol <- .Machine$double.xmin
+tol <- 1.e-200
 
 #' @importFrom prodlim row.match
 getfreq<-function(Enc.Mat,vAll.hists,data.type){

@@ -294,9 +294,6 @@ loglikeClosed<-function(parms,DM,noccas,C,All.hists,gq){
     pstar <- 1-min(1.-tol,max(tol,prod(1-expit(DM$p%*%pbeta))))
   }    
   loglike <- loglike + dbinom(n,parms$N,pstar,1) - n * log(pstar)  
-  loglike <- loglike + lgamma(n+1.);
-  loglike <- loglike - sum(lgamma(table(Hind)+1.))
-  
   return(loglike)
 }
 
